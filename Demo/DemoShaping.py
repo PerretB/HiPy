@@ -40,9 +40,13 @@ from HiPy.Hierarchies.ComponentTree import * #@UnusedWildImport
 from HiPy.Hierarchies.TreeOfShape import * #@UnusedWildImport
 from HiPy.Util.Histogram import * #@UnusedWildImport
 from HiPy.Structures import Adjacency2d4
-from HiPy.Util.Geometry2d import crop2d
+
 
 def dummyDemoShapping():
+    '''
+    Demonstrates that performing a threshold on an increasing attribute value in the original tree space
+    is equivalent to thresholding the level of the shape tree.
+    '''
     print("Reading image...")
     image = readImage("../samples/blood1.png")
     image.adjacency = Adjacency2d4(image.embedding.size)
@@ -69,63 +73,38 @@ def dummyDemoShapping():
     else:
         print("Yeark: does not work")
     
-
-class prettyfloat(float):
-    def __repr__(self):
-        return "%10.2f" % self
-
 def demoNonIncreasingFilter(): 
+    '''
+    Demonstrate how to select attribute maxima of high value using a shaping
+    '''
     print("Reading image...")
     image = readImage("../samples/blood1.png")
-    image = crop2d(image,100,200,100,200)
     image.adjacency = Adjacency2d4(image.embedding.size)
     
     print("Building tree...")
-    tree=constructTreeOfShapes(image,verbose=False)
-    
-#     print(tree.nbLeaves)
-#     print(len(tree.data))
-#     print(list(map(prettyfloat, tree.data)))
-    
-
-    
+    tree=constructTreeOfShapes(image)
     addAttributeCompactness(tree)
-#     print(list(map(prettyfloat, tree.compactness.data)))
-#     print(list(map(prettyfloat, tree.area.data)))
     
-    
-    tree.filterDirect(lambda _,x:tree.area[x]<20)
+    #prefiltering
+    tree.filterDirect(lambda _,x:(tree.area[x]<200 or tree.area[x]>tree.nbLeaves*0.6))
     updateAttributeAfterFiltering(tree, "compactness")
-    print(list(map(prettyfloat, tree.compactness.data)))
-#     nbLeaves = tree.nbLeaves
-#     print(list(map(prettyfloat, tree.area.data[nbLeaves:-1])))
-#     print(list(map(prettyfloat, tree.perimeter.data[nbLeaves:-1])))
-#     print(list(map(prettyfloat, tree.compactness.data[nbLeaves:-1])))
-    
+
     print("Building tree of tree on Compactness...")
     compactness=prepareForShapping(tree,tree.compactness)
     tree2 = constructComponentTree(compactness)
-    addAttributeHighest(tree2)
-    addAttributeDynamics(tree2,"highest")
     addAttributeExtrema(tree2)
-    nbLeaves=tree2.nbLeaves
-    nbNodes=len(tree2)
-    print(list(map(prettyfloat, tree2.level.data[nbLeaves:nbNodes])))
-    print(list(map(prettyfloat, tree2.highest.data[nbLeaves:nbNodes])))
-    print(list(map(prettyfloat, tree2.dynamics.data[nbLeaves:nbNodes])))
-    print(list(map(prettyfloat, tree2.extrema.data[nbLeaves:nbNodes])))
-    print("Filtering tree of tree on Compactness based on dynamics..")
-    tree2.filterDirect(lambda _,x:not(tree2.level[x]>0.5))# and tree2.extrema[x]))# 
+
     print("Shaping first tree based on previous filter result...")
-    res = tree.reconstructImage("level",lambda x: shapingCriterion(tree2)(x) and tree.area[x]>10)
+    tree2.filterDirect(lambda _,x: tree2.level[x]<0.6 or tree2.extrema[x]==False)
+    res = tree.reconstructImage("level",lambda x: (shapingCriterion(tree2)(x)))
     
     print("Saving result...")
-    saveImage(res, "res.png")
+    saveImage(res, "Results/Shaping - high maxima of compactness.png")
 
     
 def main():
     demoNonIncreasingFilter()
-    #dummyDemoShapping()
+    dummyDemoShapping()
     
 if __name__ == '__main__':
     main()

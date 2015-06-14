@@ -114,14 +114,14 @@ def testNeuriteFiltering():
         
     dccTree.filterDirect(filterRule)
     r1=dccTree.reconstructImage()
-    saveImage(r1,"Neurite-Filtered-DCC.png")
+    saveImage(r1,"Results/Neurite-Filtered-DCC.png")
      
     print("=> Result saved in file " + " 'Neurite-Filtered-DCC.png'")
     
     regularizeSelectMax(dccTree)
     regularizeSelectMaxTree(dccTree)
     r2=dccTree.reconstructImage()
-    saveImage(r2,"Neurite-Filtered-DCC-Regularized.png")
+    saveImage(r2,"Results/Neurite-Filtered-DCC-Regularized.png")
    
     print("=> Result saved in file " + " 'Neurite-Filtered-DCC-Regularized.png'")
     

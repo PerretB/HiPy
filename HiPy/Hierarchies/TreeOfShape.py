@@ -60,7 +60,7 @@ def constructTreeOfShapes(image,interpolation=max,verbose=False):
     # sorting
     if verbose:
         print("Sorting")
-    (sortedPixels, enqueuedLevels)=sort(image2,max(image.data)+1)
+    (sortedPixels, enqueuedLevels)=sort(image2,max(image)+1)
     # generic tree construction
     if verbose:
         print("Union Find")

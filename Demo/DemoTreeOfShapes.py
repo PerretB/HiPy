@@ -42,33 +42,17 @@ from HiPy.Hierarchies.ComponentTree import addAttributeArea
 from HiPy.Hierarchies.TreeOfShape import constructTreeOfShapes
 from HiPy.IO import readImage, saveImage
 
-def testImage():
-    im=Image(30,[6,5],2)
-    im.setPixel2D(1,1,0)
-    im.setPixel2D(1,2,0)
-    im.setPixel2D(1,3,0)
-    
-    im.setPixel2D(2,1,0)
-    im.setPixel2D(2,2,2)
-    im.setPixel2D(2,3,0)
-    
-    im.setPixel2D(3,1,4)
-    im.setPixel2D(3,2,2)
-    im.setPixel2D(3,3,4)
-    
-    im.setPixel2D(4,1,4)
-    im.setPixel2D(4,2,4)
-    im.setPixel2D(4,3,4)
-
-    return im
 
 def testTreeIsomorphism(tree1,tree2):
-    if(len(tree1.data)!=len(tree2.data) or tree1.nbLeaves!=tree2.nbLeaves):
+    '''
+    Test if tree1 and tree2 are isomorph assuming that leaves are ordered
+    '''
+    if(len(tree1)!=len(tree2) or tree1.nbLeaves!=tree2.nbLeaves):
         return False
     
     #both tree have same size so we need to find an injection m from the nodes of t1 to the nodes of t2 such that 
     # for any node n of t1 m(parent(n))=parent(m(n))
-    mapT1T2 = [-1]*len(tree1.data)
+    mapT1T2 = [-1]*len(tree1)
     
     
     for i in range(len(mapT1T2)-1): #root is root !
@@ -123,7 +107,7 @@ def testAreaFilter():
     reconstr=reduceKhalimsky(reconstr)
     reconstr=removeBorder(reconstr)
     
-    resultName = 'reconstructionAreaFilter_TreeOfShapes.png'
+    resultName = 'Results/reconstructionAreaFilter_TreeOfShapes.png'
     print("Image save: " +  resultName)
     saveImage(reconstr, resultName)
 

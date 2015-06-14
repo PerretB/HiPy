@@ -209,10 +209,10 @@ def filterRetine(imageNumber,method=1):
   
     saveName=fileName+"_result_method_" + str(method)+".png"  
     r1=dccTree.reconstructImage()
-    saveImage(r1,saveName)
-    #saveImage(r1,"DRIVE\\" + saveName)
+    saveImage(r1,"Results/" +saveName)
+
     
-    print("=> Result saved in file " + "DRIVE\\" +saveName)
+    print("=> Result saved in file " + saveName)
   
 
 # Retinal image filtering of all the images of the DRIVE database

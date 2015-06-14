@@ -28,7 +28,7 @@
 # The fact that you are presently reading this means that you have had
 # knowledge of the CeCILL license and that you accept its terms.
 
-from HiPy.Structures  import Tree, AdjacencyEdgeWeightedGraph
+from HiPy.Structures  import Tree, AdjacencyEdgeWeightedGraph, Image
 
 
 from HiPy.Util.UnionFind import *
@@ -54,7 +54,7 @@ def DirectedComponentHierarchy(image):
     # adjacency relations
     adj=[]   
     # max weight
-    lvlMax=max(image.data)
+    lvlMax=max(image)
     # variables related to the previous level of the hierarchy
     graphPred, labelsPred, currentLabelPred, numLabelsPred = None, None, None, None
     
@@ -676,7 +676,8 @@ def buildFinalDCCTree(nbPoints, parent, completeGraphEdges, Lvls, image, nbOut=[
     tree.addAttribute("sucs", [])
     tree.addAttribute("preds", [])
     tree.addAttribute("nbOut", -1)
-    tree.nbOut.data = nbOut
+    tree.nbOut = Image(len(nbOut))
+    tree.nbOut.setAll(nbOut)
     
     for e in completeGraphEdges:
         tree.sucs[e[0]].append(e[1])
@@ -721,7 +722,7 @@ def computeAttributeDirectedComponent(dccTree, attributeName, baseAttributeName,
         return
     baseAttr=dccTree.getAttribute(baseAttributeName)
     succesors=dccTree.sucs
-    visit=[None]*len(dccTree.data)
+    visit=[None]*len(dccTree)
     
     def computeRec(i,ref):
         visit[i]=ref

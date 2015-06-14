@@ -46,13 +46,12 @@ ComponentTreeType  = enum(MinTree = 1, MaxTree = 2)
 
 
 def constructComponentTree(image,treeType = ComponentTreeType.MaxTree, verbose=False):
-    
+    '''
+    Construct the min or max tree of the given image
+    '''
     # sorting
     if verbose:
         print("Sorting")  
-    
-    
-     
     if treeType == ComponentTreeType.MaxTree:
         sortedPixels = sorted(range(len(image)), key=lambda x:image[x])
     elif treeType == ComponentTreeType.MinTree:
@@ -70,13 +69,17 @@ def constructComponentTree(image,treeType = ComponentTreeType.MaxTree, verbose=F
         print("Canonize")
     canonizeTree(parent,image,sortedPixels)
     parent,levels = expandCanonizedParentRelation(parent,image,sortedPixels)
+    
     # encapsulated tree for ease of manipulation
     if verbose:
         print("Tree finalization")
     return Tree(parent,levels,image)
 
-# Generic tree construction using ordered pixels and union find
+
 def preTreeConstruction(image, sortedPixels):
+    '''
+    Generic tree construction using ordered pixels and union find
+    '''
     parent = image.copy(False)
     ufParent = Image(len(image),None)
     ufRank = Image(len(image))
@@ -101,8 +104,11 @@ def preTreeConstruction(image, sortedPixels):
                     
     return parent
 
-# tree "canonization"
+
 def canonizeTree(parent,enqueuedLevels,sortedPixels):
+    '''
+    Parent relation "canonization" (path compression) after preTreeConstruction
+    '''
     for p in sortedPixels:
         q=parent[p]
         if enqueuedLevels[parent[q]]==enqueuedLevels[q]:
@@ -110,6 +116,9 @@ def canonizeTree(parent,enqueuedLevels,sortedPixels):
 
 
 def expandCanonizedParentRelation(canonizedTreeImage,nodeLevels,sortedPixels):
+    '''
+    Expand a canonized parent relation to a regular parent relation (each node is represented individually)
+    '''
     levels=nodeLevels.copy(True)
     data = [None]*len(canonizedTreeImage)
     for j in range(len(canonizedTreeImage)-1,-1,-1):
@@ -121,7 +130,7 @@ def expandCanonizedParentRelation(canonizedTreeImage,nodeLevels,sortedPixels):
         if(data[parent]==None):
             data.append(-1)
             data[parent]=len(data)-1;
-            levels.data.append(nodeLevels[parent])
+            levels.append(nodeLevels[parent])
         data[i]=data[parent]
         
     for j in range(len(canonizedTreeImage)-1,-1,-1):
@@ -133,9 +142,13 @@ def expandCanonizedParentRelation(canonizedTreeImage,nodeLevels,sortedPixels):
     #data[-1]=-1
     return data,levels            
 
-
-# regularize the result of a selection criterion using the select max hierarchical strategy               
+            
 def regularizeSelectMaxTree(tree):
+    '''
+    Regularize the result of a selection criterion using the select max hierarchical strategy.
+    
+    A node is mark deleted if and only if it and all his ancestors were marked deleted. 
+    '''
     deleted=tree.getAttribute("deleted")
     addAttributeChildren(tree)
     children=tree.getAttribute("children")
@@ -163,15 +176,29 @@ def prepareForShapping(tree,attributeImage):
         im[i]=im[tree[i]]
     return im
 
-def updateAttributeAfterFiltering(tree, attributeName):
+def updateAttributeAfterFiltering(tree, attributeName, defaultValue=0):
+    '''
+    Update attribute values according to a filtering.
+    
+    The attribute value of each node marked as deleted is set to the attribute value of its closest non deleted ancestor.
+    
+    If no such ancestor exist, its attribute value is set to "defaultValue".
+    '''
     deleted=tree.deleted
     attr = tree.getAttribute(attributeName)
     for i in tree.iterateFromRootToLeaves():
         if deleted[i]:
-            attr[i]=attr[tree[i]]
+            par=tree[i]
+            if par!=-1:
+                attr[i]=attr[par]
+            else:
+                attr[i]=defaultValue
               
 
 def shapingCriterion(tree):
+    '''
+    Creates a filtering criterion that maps a filter applied to a shaping tree "tree" back to the orignal tree.
+    '''
     return lambda x: not tree.deleted[tree[x]]
             
 def addAttributeRandomColor(tree, name="randomColor"):
@@ -219,11 +246,14 @@ def addAttributeVolume(tree, name="volume"):
             attr[i]=attr[i]+v
             attr[par]=attr[par]+v
             
-# Compute the attribute "attributeName" on the graph.
-# For each node, the attribute is set to true if the  connected 
-# component of the node contains a point of the image "markerImage" 
-# having the value "markerValue"
+
 def addAttributeMarker(tree, markerImage, markerValue, attributeName):
+    '''
+    Compute the attribute "attributeName" on the graph.
+    For each node, the attribute is set to true if the  connected 
+    component of the node contains a point of the image "markerImage" 
+    having the value "markerValue"
+    '''
     addAttributeChildren(tree)
     
     attr=tree.addAttribute(attributeName)
@@ -242,8 +272,11 @@ def addAttributeMarker(tree, markerImage, markerValue, attributeName):
                 break
         attr[i]=flag
 
-# Compute the moments [M00 M10 M01 M11 M20 M02] of each component
+
 def addAttributeSimpleMoments2d(tree, name="moments"):
+    '''
+    Compute the moments [M00 M10 M01 M11 M20 M02] of each component
+    '''
     attr=tree.addAttribute(name)
     if attr==None:
         return
@@ -268,8 +301,11 @@ def addAttributeSimpleMoments2d(tree, name="moments"):
                 mp[j] += m[j]
 
 
-# Compute the moment of inertia of each compoenent 
+
 def addAttributeInertia2d(tree,name="inertia",momentAttributeName="moments"):
+    '''
+    Compute the moment of inertia of each component 
+    '''
     attr=tree.addAttribute(name)
     if attr==None:
         return
@@ -286,8 +322,11 @@ def addAttributeInertia2d(tree,name="inertia",momentAttributeName="moments"):
     for i in tree.iterateFromLeavesToRoot():
         attr[i]=computeInitertia(attrMoment[i])
         
-# Compute the elongation and orientation of each component
+
 def addAttributeElongationOrientation2d(tree,nameElongation="elongation",nameOrientation="orientation",momentAttributeName="moments"):
+    '''
+    Compute the elongation and orientation of each component
+    '''
     attrElongation=tree.addAttribute(nameElongation)
     attrOrientation=tree.addAttribute(nameOrientation)
     if attrElongation==None or attrOrientation==None:
@@ -419,7 +458,6 @@ def addAttributePerimeter(tree, name="perimeter", adjacency=None):
                 visited[c]=True
            
         attr[i] = attr[i] - remove
-    #attr[len(tree)-1]=2*(tree.leavesEmbedding.width+tree.leavesEmbedding.height) #yeurk
             
 def addAttributeCompactness(tree, name="compactness"):
     attr=tree.addAttribute(name,0)

@@ -130,7 +130,7 @@ def testHeartSegmentation():
 
     print("Reconstruction")
     r1=dccTree.reconstructImage()
-    saveImage(r1,"Heart-Segmentation-DCC.png")  
+    saveImage(r1,"Results/Heart-Segmentation-DCC.png")  
     print("=> Result saved in file " + " 'Heart-Segmentation-DCC.png'")
     
     print("Done\n\n")  

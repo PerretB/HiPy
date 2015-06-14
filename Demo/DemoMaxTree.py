@@ -42,14 +42,14 @@ from HiPy.Hierarchies.ComponentTree import addAttributeArea, constructComponentT
 def testAreaFilter():
     im = readImage('../samples/lennaGray256.png')
     im.adjacency = Adjacency2d4([im.embedding.width,im.embedding.height])
-
+    
     tree= constructComponentTree(im,ComponentTreeType.MaxTree,True)
     addAttributeArea(tree)
 
     print("Reconstruction")
     reconstr1 = tree.reconstructImage("level",lambda x : tree.area[x]>10000)
 
-    resultName = 'reconstructionAreaFilter_MaxTree.png'
+    resultName = 'Results/reconstructionAreaFilter_MaxTree.png'
     print("Image save: " +  resultName)
     saveImage(reconstr1, resultName)
 

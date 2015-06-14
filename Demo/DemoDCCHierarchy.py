@@ -65,7 +65,7 @@ def testAlgoArticle():
     levels = computeLevelsAsDepth(parents)
 
     dccTree = buildFinalDCCTree(graph.nbPoints, parents, adj, levels, image)
-    drawGraphVizAttr("DCC-Hierarchy-Fig5.pdf", dccTree, ["level"],False)
+    drawGraphVizAttr("Results/DCC-Hierarchy-Fig5.pdf", dccTree, ["level"],False)
     print("=> Result saved in file " + " 'DCC-Hierarchy-Fig5.pdf'")
     print("Done\n\n")
 
@@ -86,7 +86,7 @@ def testAlgoStackGraphArticle():
     ensureTree(parent, Lvls)
     dccTree = buildFinalDCCTree(stack.nbPoints, parent, DAGsAdj, Lvls, image)
     
-    drawGraphVizAttr("DCC-Hierarchy-Fig5-Stack.pdf", dccTree, ["level"],False)
+    drawGraphVizAttr("Results/DCC-Hierarchy-Fig5-Stack.pdf", dccTree, ["level"],False)
     print("=> Result saved in file " + " 'DCC-Hierarchy-Fig5-Stack.pdf'")
     print("Done\n\n")
 
@@ -107,7 +107,7 @@ def testAlgoStackGraphArticleFast():
     ensureTree(parent, Lvls)
     dccTree = buildFinalDCCTree(stack.nbPoints, parent, DAGsAdj, Lvls, image)
     
-    drawGraphVizAttr("DCC-Hierarchy-Fig5-Stack-Fast.pdf", dccTree, ["level"],False)
+    drawGraphVizAttr("Results/DCC-Hierarchy-Fig5-Stack-Fast.pdf", dccTree, ["level"],False)
     print("=> Result saved in file " + " 'DCC-Hierarchy-Fig5-Stack-Fast.pdf'")
     print("Done\n\n")
     

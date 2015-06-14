@@ -37,6 +37,7 @@ Created on 3 juin 2015
 
 
 from HiPy.Structures import Image, Embedding2dGrid, AdjacencyEdgeWeightedGraph
+import os
 
 # for image I/O
 try:
@@ -44,7 +45,10 @@ try:
 except ImportError:
     print("Error: PIL library not available !")
     
-    
+def ensureDirectoryExists(f):
+    d = os.path.dirname(f)
+    if not os.path.exists(d):
+        os.makedirs(d)    
 
 def readImage(filename, grayScale=True): 
     image= ImagePIL.open(filename)
@@ -56,36 +60,40 @@ def readImage(filename, grayScale=True):
         if len(pixdata[(0,0)])>3:
             print("Warning: Image.Read, image has more than 3 channels (alpha component?), one or more channels will be ignored during the grayscale conversion.")
         for i in range(size[0]*size[1]):
-            im.data[i]=sum(pixdata[coord(i)][0:3])//3
+            im[i]=sum(pixdata[coord(i)][0:3])//3
     else:
         for i in range(size[0]*size[1]):
-            im.data[i]=(pixdata[coord(i)])
+            im[i]=(pixdata[coord(i)])
     im.embedding = Embedding2dGrid(size[0],size[1])
     return im
 
 def saveImage(image,filename):
+    ensureDirectoryExists(filename)
     width=image.embedding.width;
     size=[width,image.embedding.height]
-    if isinstance(image.data[0], (list, tuple)):
+    if isinstance(image[0], (list, tuple)):
         im = ImagePIL.new("RGB", size, 0)
     else:
         im = ImagePIL.new("L", size, 0)
     pix = im.load()
     
     for i in range(len(image)):
-        pix[i%width,i//width]=image.data[i]
+        pix[i%width,i//width]=image[i]
     im.save(filename, "PNG")
     
     
 
-# Read a graph (AdjacencyEdgeWeightedGraph) from ascii file.
-# format (weights are optionnale, vertices are numbered from 0 to numberOfVertices-1):
-# numberOfVertices numberOfEdges
-# sourceVertexOfEdge_1 destinationVertexOfEdge_1 weightOfEdge_1
-# sourceVertexOfEdge_2 destinationVertexOfEdge_2 weightOfEdge_2
-# ...
-# sourceVertexOfEdge_NumberOfEdges destinationVertexOfEdge_NumberOfEdges weightOfEdge_NumberOfEdges
+
 def readGraph(filename):
+    '''
+    Read a graph (AdjacencyEdgeWeightedGraph) from ascii file.
+    format (weights are optionnale, vertices are numbered from 0 to numberOfVertices-1):
+    numberOfVertices numberOfEdges
+    sourceVertexOfEdge_1 destinationVertexOfEdge_1 weightOfEdge_1
+    sourceVertexOfEdge_2 destinationVertexOfEdge_2 weightOfEdge_2
+    ...
+    sourceVertexOfEdge_NumberOfEdges destinationVertexOfEdge_NumberOfEdges weightOfEdge_NumberOfEdges
+    '''
     infile = open(filename, "r")
     line = infile.readline()
     while(line[0] == '#'):
@@ -105,8 +113,10 @@ def readGraph(filename):
     
     return graph
 
-# Save a graph (AdjacencyEdgeWeightedGraph) in a file as plain text
 def saveGraph(graph, filename):
+    '''
+    Save a graph (AdjacencyEdgeWeightedGraph) in a file as plain text
+    '''
     out = open(filename, "w")
     out.write(str(graph["nbPoints"]) + " " + str(len(graph["edges"])) + "\n")
     for e in graph["edges"]:
