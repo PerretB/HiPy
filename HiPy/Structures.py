@@ -366,6 +366,8 @@ class AdjacencyEdgeWeightedGraph(Adjacency):
             for i in range(adj.nbPoints):
                 for j in baseAdjacency.getSuccesors(i):
                     adj.createEdge(i, j)
+                    
+        return adj
     
     
     def getSuccesors(self, i):
@@ -505,6 +507,9 @@ class Tree(Image):
         self.addAttribute('reconstructedValue')
             
     def getParent(self,i):
+        '''
+        Return the parent of the node i, -1 if i is a root
+        '''
         return self[i]
         
     def addAttribute(self,name,defaultValue=None):
@@ -518,6 +523,9 @@ class Tree(Image):
         return None
             
     def getAttribute(self,name):
+        '''
+        Return the attribute "name"
+        '''
         return self.__dict__[name]
 
     # apply a given selection criterion f on the tree
@@ -603,3 +611,19 @@ class Tree(Image):
             return range(len(self)-1,-1,-1)
         else:
             return range(len(self)-1,self.nbLeaves-1,-1)
+        
+    def iterateOnLeaves(self):
+        return range(self.nbLeaves)
+        
+    def lca(self,i,j):
+        '''
+        Lowest common ancestor between nodes i and j
+        Warning: Assume that the attribute depth is present !
+        '''
+        while i != j:
+            if self.depth[i] > self.depth[j]:
+                i = self[i]
+            else:
+                j = self[j]
+
+        return i

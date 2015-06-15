@@ -7,8 +7,6 @@
 # modify and/ or redistribute the software under the terms of the CeCILL
 # license as circulated by CEA, CNRS and INRIA at the following URL
 # "http://www.cecill.info". 
-from HiPy.Util import UnionFind
-
 # As a counterpart to the access to the source code and  rights to copy,
 # modify and redistribute granted by the license, users are provided only
 # with a limited warranty  and the software's author,  the holder of the
@@ -36,8 +34,10 @@ Created on 15 juin 2015
 '''
 
 import HiPy.Util.UnionFind as UnionFind
-from HiPy.Structures import Tree, AdjacencyEdgeWeightedGraph
-from HiPy.Hierarchies.ComponentTree import addAttributeChildren
+from HiPy.Structures import Tree, AdjacencyEdgeWeightedGraph, Embedding,\
+    Adjacency2d4, Embedding2dGrid, Image
+from HiPy.Hierarchies.ComponentTree import addAttributeChildren,\
+    addAttributeDepth
 
 def constructAltitudeBPT(image, verbose=False):
     
@@ -122,7 +122,7 @@ def computeMSTBPT(image,sortedEdgeList):
     nbEdgeMST=len(image)-1
     mst=[]
     parent = [-1]*len(image)
-    ufParent = [None]*len(image)
+    ufParent = [i for i in range(len(image))]
     ufRank = [0]*len(image)
     root = [i for i in range(len(image))]
     nbEdgeFound=0
@@ -144,3 +144,47 @@ def computeMSTBPT(image,sortedEdgeList):
     
     return mst, parent
 
+def computeSaliencyMap(partitionTree,adjacency):
+    '''
+    Compute the saliency values of the edges of the given adjacency w.r.t the given partition tree.
+    
+    A new adjacency is created during the process.
+    '''
+    addAttributeDepth(partitionTree)
+    level=partitionTree.level
+    lca=partitionTree.lca
+    return AdjacencyEdgeWeightedGraph.createAdjacency(adjacency, lambda i,j:level[lca(i,j)])
+
+def drawSaliencyMap(size,saliency):
+    '''
+    Represent a saliency map as a contour image.
+    Size is the size [width, height] of the image => result size [2*width-1,2*height-1].
+    Saliency must represent a 4 adjacency on the 2d grid (typically an Adjacency2d4), results are unpredictable otherwise
+    '''
+    w=size[0]
+    h=size[1]
+    grid = Embedding2dGrid(w,h)
+    rw=w*2-1
+    rh=h*2-1
+    grid2 = Embedding2dGrid(rw,rh)
+    
+    res = Image(rw*rh,0,Adjacency2d4([rw,rh]),grid2)
+    for y in range(h):
+        for x in range(w):
+            p=grid.getLinearCoordinate(x,y)
+            for n in saliency.getOutEdges(p):
+                if n[1]>p:
+                    ng=grid.fromLinearCoordinate(n[1])
+                    res.setPixelWCS(n[2],x+ng[0],y+ng[1])
+    
+    for y in range(1,rh-1,2):
+        for x in range(1,rw-1,2):
+            p=grid2.getLinearCoordinate(x,y)
+            vmax=-999999
+            for n in res.getNeighbours(p):
+                vn=res[n]
+                if vn>vmax:
+                    vmax=vn
+            res[p]=vmax
+    
+    return res
