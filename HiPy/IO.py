@@ -39,11 +39,14 @@ Created on 3 juin 2015
 from HiPy.Structures import Image, Embedding2dGrid, AdjacencyEdgeWeightedGraph
 import os
 
+PILAvailable=False
 # for image I/O
 try:
-    from PIL import Image as ImagePIL
+    from PIL import Image as PILimage
+    PILAvailable=True
 except ImportError:
     print("Error: PIL library not available !")
+    
     
 def ensureDirectoryExists(f):
     d = os.path.dirname(f)
@@ -51,7 +54,9 @@ def ensureDirectoryExists(f):
         os.makedirs(d)    
 
 def readImage(filename, grayScale=True): 
-    image= ImagePIL.open(filename)
+    if not PILAvailable:
+        raise Exception("PIL needed to load image")
+    image= PILimage.open(filename)
     size = image.size
     coord = lambda x: (x % size[0], x // size[0])
     pixdata = image.load()
@@ -68,13 +73,15 @@ def readImage(filename, grayScale=True):
     return im
 
 def saveImage(image,filename):
+    if not PILAvailable:
+        raise Exception("PIL needed to save image")
     ensureDirectoryExists(filename)
     width=image.embedding.width;
     size=[width,image.embedding.height]
     if isinstance(image[0], (list, tuple)):
-        im = ImagePIL.new("RGB", size, 0)
+        im = PILimage.new("RGB", size, 0)
     else:
-        im = ImagePIL.new("L", size, 0)
+        im = PILimage.new("L", size, 0)
     pix = im.load()
     
     for i in range(len(image)):

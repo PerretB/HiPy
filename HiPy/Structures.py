@@ -120,6 +120,9 @@ class Image(list):
             if not equalFunction(self[i],image[i]):
                 return False
         return True
+    
+    def iterateOnPixels(self):
+        return range(len(self))
 
 class Embedding(object):
     '''
@@ -156,6 +159,9 @@ class Adjacency(object):
     '''
     Abstract directed adjacency relation
     '''
+    
+    def __init__(self,nbPoints):
+        self.nbPoints=nbPoints
     
     def getSuccesors(self, i):
         '''
@@ -200,6 +206,7 @@ class Adjacency2d4(Adjacency):
     '''
     
     def __init__(self,size):
+        super(Adjacency2d4,self).__init__(size[0]*size[1])
         self.size=size
     
     def __getCoordsLin(self,x,y):
@@ -262,6 +269,7 @@ class AdjacencyTree(Adjacency):
     '''
 
     def __init__(self,tree):
+        super(AdjacencyTree,self).__init__(len(tree))
         self.tree=tree
         
     def getNeighbours(self, i):
@@ -330,6 +338,7 @@ class AdjacencyEdgeWeightedGraph(Adjacency):
     '''
     
     def __init__(self,size):
+        super(AdjacencyEdgeWeightedGraph,self).__init__(size)
         '''
          Create a new adjacency on a set of size elements
         '''
@@ -341,7 +350,23 @@ class AdjacencyEdgeWeightedGraph(Adjacency):
         self.prevEdge=[]
         self.nextEdge=[]
 
- 
+    @staticmethod
+    def createAdjacency(baseAdjacency,weightingFunction=None):
+        '''
+        Create a new adjacency equivalent to the given adjacency but with a different weighting function.
+        
+        Typical use is to transform an implicit k-adjacency into an explicit weighted adjacency.
+        '''
+        adj=AdjacencyEdgeWeightedGraph(baseAdjacency.nbPoints)
+        if weightingFunction!=None:
+            for i in range(adj.nbPoints):
+                for j in baseAdjacency.getSuccesors(i):
+                    adj.createEdge(i, j, weightingFunction(i,j))
+        else:
+            for i in range(adj.nbPoints):
+                for j in baseAdjacency.getSuccesors(i):
+                    adj.createEdge(i, j)
+    
     
     def getSuccesors(self, i):
         nodes = []
