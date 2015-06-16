@@ -49,30 +49,50 @@ def distance(image, i, j):
     v2 = image[j]
     return sqrt((v1[0]-v2[0])**2+(v1[1]-v2[1])**2+(v1[2]-v2[2])**2)
 
+def drawSaliencyForVizu(tree,image):
+    adj4 = Adjacency2d4(image.embedding.size)
+    saliency=computeSaliencyMap(tree,adj4)
+    sal=drawSaliencyMap(image.embedding.size,saliency)
+    sal = rescaleGray(sal, 0, 1)
+    sal = imageMap(sal, lambda x:x**(0.3333))
+    sal = normalizeToByte(sal)
+    return sal
+    
+    
 def demoBPT():
     print("reading image...")
-    image = readImage('../samples/remotesensing1.png', False)
-    #image = crop2d(image,0,100,0,100)
+    image = readImage('../samples/monsters.png', False)
     image = convertRGBtoLAB(image)
     
     print("constructing gradient graph...")
     adj4 = Adjacency2d4(image.embedding.size)
-    image.adjacency = AdjacencyEdgeWeightedGraph.createAdjacency(adj4, lambda i,j: distance(image,i,j) )
+    adjacency=image.adjacency = AdjacencyEdgeWeightedGraph.createAdjacency(adj4, lambda i,j: distance(image,i,j) )
     
     print("constructing BPT...")
-    bpt = constructAltitudeBPT(image, True)
+    bpt = constructAltitudeBPT(adjacency)
+    print("drawing saliency BPT...")
+    salBpt = drawSaliencyForVizu(bpt,image)
+    saveImage(salBpt, "Results/BPT Saliency map.png")
     
-    print("Computing saliency...")
-    saliency=computeSaliencyMap(bpt,adj4)
+    print("constructing Component Tree...")
+    comptTree=transformAltitudeBPTtoComponentTree(bpt)
+    print("drawing saliency Comp Tree...")
+    salCt = drawSaliencyForVizu(comptTree,image)
+    saveImage(salCt, "Results/CompTree Saliency map.png")
     
-    print("Drawing saliency...")
-    sal=drawSaliencyMap(image.embedding.size,saliency)
-    
-    print("Saving result")
-    sal = rescaleGray(sal, 0, 1)
-    sal = imageMap(sal, lambda x:x**(0.3333))
-    sal = normalizeToByte(sal)
-    saveImage(sal, "Results/BPT Saliency map.png")
+    print("constructing watershed hierarchy by altitude...")
+    wsh=transformAltitudeBPTtoWatershedHierarchy(bpt)
+    print("drawing saliency watershed hierarchy by altitude...")
+    salWSh = drawSaliencyForVizu(wsh,image)
+    saveImage(salWSh, "Results/Watershed by Altitude Saliency map.png")
+
+    print("constructing watershed hierarchy by area...")
+    addAttributeArea(wsh)
+    wsha= transformBPTtoAttributeHierarchy(wsh,"area")
+    print("drawing saliency watershed hierarchy by area...")
+    salWSha = drawSaliencyForVizu(wsha,image)
+    saveImage(salWSha, "Results/Watershed by Area Saliency map.png")
+   
 
 def main():
     demoBPT()

@@ -369,7 +369,12 @@ class AdjacencyEdgeWeightedGraph(Adjacency):
                     
         return adj
     
-    
+    def copy(self):
+        adj = AdjacencyEdgeWeightedGraph(self.nbPoints)
+        for e in self.edges:
+            adj.createEdge(*e)
+        return adj
+        
     def getSuccesors(self, i):
         nodes = []
         e = self.out[i]
@@ -495,12 +500,12 @@ class Tree(Image):
     '''
     A tree is an image whose pixel values encode the parent relation
     '''
-    def __init__(self, parent,levels,image):
+    def __init__(self, parent,levels,image=None):
         super(Tree,self).__init__(len(parent),None)
         self.setAll(parent)
-        self.leavesAdjacency = image.adjacency
-        self.leavesEmbedding = image.embedding
-        self.nbLeaves=len(image)
+        self.leavesAdjacency = image.adjacency if image!=None else None
+        self.leavesEmbedding = image.embedding if image!=None else None
+        self.nbLeaves=len(image) if image!=None else Tree.countLeaves(parent)
         self.level=Image(len(levels))
         self.level.setAll(levels)
         self.level.adjacency=AdjacencyTree(self)
@@ -620,10 +625,30 @@ class Tree(Image):
         Lowest common ancestor between nodes i and j
         Warning: Assume that the attribute depth is present !
         '''
+        depth=self.depth
         while i != j:
-            if self.depth[i] > self.depth[j]:
+            if depth[i] > depth[j]:
                 i = self[i]
             else:
                 j = self[j]
 
         return i
+    
+    @staticmethod
+    def countLeaves(parent):
+        '''
+        Count Leaves in a parent relation
+        '''
+        leaves=[True]*len(parent)
+        for i in range(len(parent)):
+            p = parent[i]
+            if p!=-1:
+                leaves[p]=False
+        
+        count=0
+        for i in range(len(parent)):
+            if leaves[i]:
+                count=count+1
+        
+        return count
+        

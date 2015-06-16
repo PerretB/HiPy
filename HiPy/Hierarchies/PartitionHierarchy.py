@@ -39,36 +39,42 @@ from HiPy.Structures import Tree, AdjacencyEdgeWeightedGraph, Embedding,\
 from HiPy.Hierarchies.ComponentTree import addAttributeChildren,\
     addAttributeDepth
 
-def constructAltitudeBPT(image, verbose=False):
+def constructAltitudeBPT(adjacency, verbose=False):
+    '''
+    Construct the binary partition tree by altitude of the given image.
     
+    It assumes that adjacency has weighted edges.
+    
+    The corresponding MST is stored in the attribute leavesAdjacency of the returned tree
+    '''
     if verbose:
         print("Sorting") 
-    edges = image.adjacency.edges
+    edges = adjacency.edges
+    nbPoints = adjacency.nbPoints
     edges = sorted(edges, key=lambda x:x[2])
     
     if verbose:
         print("Kruskaling") 
-    MST,parent=computeMSTBPT(image,edges)
+    MST,parent=computeMSTBPT(nbPoints,edges)
     
     if verbose:
         print("Stuffing")
-    levels=[-1]*len(image)
-    adjMST=AdjacencyEdgeWeightedGraph(len(image))
+    levels=[0]*nbPoints 
+    adjMST=AdjacencyEdgeWeightedGraph(nbPoints)
     for e in MST:
         levels.append(e[2])
         adjMST.createEdge(*e)
     
     if verbose:
         print("Finalizing")
-    tree = Tree(parent, levels, image)
+    tree = Tree(parent, levels)
     tree.leavesAdjacency=adjMST
     return tree
 
 def transformAltitudeBPTtoComponentTree(bpt):
     '''
-    Delete node n such that bpt.level[n]=bpt.level[bpt[n]] (and update the parent relation accordingly...
-    
-    Warning: this function returns nothing, the argument is modified!
+    Copy bpt and delete the nodes n such that bpt.level[n]=bpt.level[bpt[n]] 
+    (and update the parent relation accordingly...
     '''
     nbLeaves = bpt.nbLeaves
     nbNodes = len(bpt)
@@ -96,8 +102,8 @@ def transformAltitudeBPTtoComponentTree(bpt):
         dmap[i] = count - dmap[i]
     
     #new relations with correct size  
-    nparent = [0]*(nbNodes-count)
-    nlevel = [-1]*(nbNodes-count) 
+    nparent = [-1]*(nbNodes-count)
+    nlevel = [0]*(nbNodes-count) 
     
     count=0
     for i in range(0,nbNodes-1):
@@ -109,22 +115,29 @@ def transformAltitudeBPTtoComponentTree(bpt):
             count = count + 1
     nparent[count]=-1
     
-    del bpt[:]
-    del level[:]
-    for i in range(len(nparent)):
-        bpt.append(nparent[i])
-        level(nlevel[i])
+    ntree = Tree(nparent, nlevel)
+    ntree.leavesAdjacency=bpt.leavesAdjacency
+    
+    return ntree
 
-def computeMSTBPT(image,sortedEdgeList):
+def transformBPTtoAttributeHierarchy(bpt, attributeName):
+    adj=reweightMSTByAttribute(bpt, attributeName)
+    return constructAltitudeBPT(adj)
+
+def transformAltitudeBPTtoWatershedHierarchy(bpt):
+    nadj=extractWatershedEdges(bpt)
+    return constructAltitudeBPT(nadj)
+    
+def computeMSTBPT(nbPoints,sortedEdgeList):
     '''
     precondition: The edge list must be sorted
     '''
-    nbEdgeMST=len(image)-1
+    nbEdgeMST=nbPoints-1
     mst=[]
-    parent = [-1]*len(image)
-    ufParent = [i for i in range(len(image))]
-    ufRank = [0]*len(image)
-    root = [i for i in range(len(image))]
+    parent = [-1]*nbPoints
+    ufParent = [i for i in range(nbPoints)]
+    ufRank = [0]*nbPoints
+    root = [i for i in range(nbPoints)]
     nbEdgeFound=0
     i=0
     while nbEdgeFound<nbEdgeMST :
@@ -144,6 +157,70 @@ def computeMSTBPT(image,sortedEdgeList):
     
     return mst, parent
 
+def extractWatershedEdges(bpt):
+    '''
+    Return a copy of bpt.leavesAdjacency (ie the MST) where the weight of the non-watershed edges are set to 0
+    '''
+    nadj=bpt.leavesAdjacency.copy()
+    nedges=nadj.edges
+    nbLeaves=bpt.nbLeaves
+    nbNodes=len(bpt)
+    addAttributeChildren(bpt)
+    level=bpt.level
+    children=bpt.children
+    
+    minima=[0]*nbNodes
+    for i in bpt.iterateFromLeavesToRoot(False):
+        cl = children[i]
+        m1=minima[cl[0]]
+        m2=minima[cl[1]]
+        nb=m1+m2
+
+        if m1==0 or m2==0:
+            nedges[i-nbLeaves][2]=0
+       
+        if nb!=0:
+            minima[i]=nb
+        else:
+            p=bpt[i]
+            #if p==-1 there is a unique minima in the image
+            if p==-1 or level[i]!=level[p]:
+                minima[i]=1
+            #else minima[i]=0
+    return nadj
+
+
+def correctAttributeValueBPT(bpt,attributeName):
+    '''
+    Most attributes (@todo precision needed!!!) computed using fonctions in module HiPy.Component 
+    will be incorrect for the BPT. However their values can be corrected a posteriori
+    using this function !
+    ''' 
+    addAttributeChildren(bpt)
+    children=bpt.children        
+    attr=bpt.getAttribute(attributeName)
+    level=bpt.level
+    for i in bpt.iterateOnLeaves():
+        attr[i]=0
+    
+    for i in bpt.iterateFromLeavesToRoot(False):
+        p = bpt[i]
+        if p!=-1 and level[i]==level[p]:
+            vc1=attr[children[i][0]]
+            vc2=attr[children[i][1]]
+            attr[i]=max(vc1,vc2)
+
+def reweightMSTByAttribute(bpt, attributeName): 
+    nbLeaves=bpt.nbLeaves
+    nadj=bpt.leavesAdjacency.copy()
+    nedges=nadj.edges
+    addAttributeChildren(bpt)
+    children=bpt.children
+    attr=bpt.getAttribute(attributeName)
+    for i in bpt.iterateFromLeavesToRoot(False):
+        nedges[i-nbLeaves][2]=min(attr[children[i][0]],attr[children[i][1]])
+    return nadj
+
 def computeSaliencyMap(partitionTree,adjacency):
     '''
     Compute the saliency values of the edges of the given adjacency w.r.t the given partition tree.
@@ -153,7 +230,19 @@ def computeSaliencyMap(partitionTree,adjacency):
     addAttributeDepth(partitionTree)
     level=partitionTree.level
     lca=partitionTree.lca
-    return AdjacencyEdgeWeightedGraph.createAdjacency(adjacency, lambda i,j:level[lca(i,j)])
+    
+    # could be shortened to
+    # AdjacencyEdgeWeightedGraph.createAdjacency(adjacency, lambda i,j:level[lca(i,j)])
+    # but doubles the cost due to symmetric weights
+    adj=AdjacencyEdgeWeightedGraph(adjacency.nbPoints)
+    for i in range(adj.nbPoints):
+        for j in adjacency.getSuccesors(i):
+            if j>i:
+                w=level[lca(i,j)]
+                adj.createEdge(i, j, w)
+                adj.createEdge(j, i, w)
+    
+    return adj 
 
 def drawSaliencyMap(size,saliency):
     '''
