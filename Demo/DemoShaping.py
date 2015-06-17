@@ -39,6 +39,7 @@ from HiPy.IO import * #@UnusedWildImport
 from HiPy.Hierarchies.ComponentTree import * #@UnusedWildImport
 from HiPy.Hierarchies.TreeOfShape import * #@UnusedWildImport
 from HiPy.Util.Histogram import * #@UnusedWildImport
+from HiPy.Processing.Shaping import * #@UnusedWildImport
 from HiPy.Structures import Adjacency2d4
 
 
@@ -52,13 +53,13 @@ def dummyDemoShapping():
     image.adjacency = Adjacency2d4(image.embedding.size)
     
     print("Building tree...")
-    tree=constructTreeOfShapes(image,verbose=False)
+    tree=constructTreeOfShapes(image)
     addAttributeArea(tree)
     addAttributeChildren(tree)
 
     print("Building tree of tree on area")
     area=prepareForShapping(tree,tree.area)
-    tree2 = constructComponentTree(area,verbose=False)
+    tree2 = constructComponentTree(area)
 
     print("Filtering tree of tree on area based on level")
     tree2.filterDirect(lambda _,x:tree2.level[x]<5000)
@@ -66,7 +67,7 @@ def dummyDemoShapping():
     res = tree.reconstructImage("level",shapingCriterion(tree2))
     
     print("Filtering first tree based on area")
-    res2 = tree.reconstructImage("level", lambda x: tree.area[x]>=5000)
+    res2 = tree.reconstructImage("level", lambda x: tree.area[x]<5000)
     
     if res.equals(res2):
         print("Hurray: its the same")
@@ -96,7 +97,7 @@ def demoNonIncreasingFilter():
 
     print("Shaping first tree based on previous filter result...")
     tree2.filterDirect(lambda _,x: tree2.level[x]<0.6 or tree2.extrema[x]==False)
-    res = tree.reconstructImage("level",lambda x: (shapingCriterion(tree2)(x)))
+    res = tree.reconstructImage("level",shapingCriterion(tree2))
     
     print("Saving result...")
     saveImage(res, "Results/Shaping - high maxima of compactness.png")

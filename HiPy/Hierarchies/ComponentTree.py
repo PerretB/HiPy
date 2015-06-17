@@ -163,18 +163,6 @@ def regularizeSelectMaxTree(tree):
             keepBranch(i)
 
 
-def prepareForShapping(tree,attributeImage):
-    '''
-    Erase attribute values of the leaves with the one of their parents.
-    Leaves act then as duplicated nodes.
-    
-    A more fancy would be to delete the leaves, but then we loose direct indices matching.
-    '''
-    im = attributeImage.copy(True)
-    nbLeaves=tree.nbLeaves
-    for i in range(nbLeaves):
-        im[i]=im[tree[i]]
-    return im
 
 def updateAttributeAfterFiltering(tree, attributeName, defaultValue=0):
     '''
@@ -195,11 +183,6 @@ def updateAttributeAfterFiltering(tree, attributeName, defaultValue=0):
                 attr[i]=defaultValue
               
 
-def shapingCriterion(tree):
-    '''
-    Creates a filtering criterion that maps a filter applied to a shaping tree "tree" back to the orignal tree.
-    '''
-    return lambda x: not tree.deleted[tree[x]]
             
 def addAttributeRandomColor(tree, name="randomColor"):
     attr=tree.addAttribute(name)

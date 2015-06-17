@@ -35,7 +35,7 @@ Created on 3 juin 2015
 @author: perretb
 '''
 
-from HiPy.Structures import Image, Adjacency2d4
+from HiPy.Structures import  Adjacency2d4
 from HiPy.Util.Histogram import imageInverseGrayByte
 from HiPy.Util.Geometry2d import imagePadding, reduceKhalimsky, removeBorder
 from HiPy.Hierarchies.ComponentTree import addAttributeArea
@@ -102,7 +102,7 @@ def testAreaFilter():
     addAttributeArea(tree)
 
     print("Reconstruction")
-    reconstr = tree.reconstructImage("level",lambda x : tree.area[x]>100)
+    reconstr = tree.reconstructImage("level",lambda x : tree.area[x]<=1000)
     
     reconstr=reduceKhalimsky(reconstr)
     reconstr=removeBorder(reconstr)

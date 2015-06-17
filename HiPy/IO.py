@@ -78,14 +78,25 @@ def saveImage(image,filename):
     ensureDirectoryExists(filename)
     width=image.embedding.width;
     size=[width,image.embedding.height]
-    if isinstance(image[0], (list, tuple)):
+    if isinstance(image[0], tuple):
         im = PILimage.new("RGB", size, 0)
+        pix = im.load()
+    
+        for i in range(len(image)):
+            pix[i%width,i//width]=image[i]
+    elif  isinstance(image[0], list):
+        im = PILimage.new("RGB", size, 0)
+        pix = im.load()
+    
+        for i in range(len(image)):
+            pix[i%width,i//width]=tuple(image[i])
     else:
         im = PILimage.new("L", size, 0)
-    pix = im.load()
+        pix = im.load()
     
-    for i in range(len(image)):
-        pix[i%width,i//width]=image[i]
+        for i in range(len(image)):
+            pix[i%width,i//width]=image[i]
+    
     im.save(filename, "PNG")
     
     

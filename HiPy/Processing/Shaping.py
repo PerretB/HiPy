@@ -1,7 +1,6 @@
 # Copyright ESIEE (2015) 
 # 
 # benjamin.perret@esiee.fr
-# 
 #
 # This software is governed by the CeCILL license under French law and
 # abiding by the rules of distribution of free software.  You can  use, 
@@ -30,33 +29,28 @@
 # knowledge of the CeCILL license and that you accept its terms.
 
 '''
-Created on 9 juin 2015
+Created on 17 juin 2015
 
 @author: perretb
 '''
-from HiPy.IO import readImage, saveImage
-from HiPy.Structures import Adjacency2d4
-from HiPy.Hierarchies.ComponentTree import addAttributeArea, constructComponentTree, ComponentTreeType
 
 
-def testAreaFilter():
-    im = readImage('../samples/lennaGray256.png')
-    im.adjacency = Adjacency2d4([im.embedding.width,im.embedding.height])
+def prepareForShapping(tree,attributeImage):
+    '''
+    Erase attribute values of the leaves with the one of their parents.
+    Leaves act then as duplicated nodes.
     
-    tree= constructComponentTree(im,ComponentTreeType.MaxTree,True)
-    addAttributeArea(tree)
-
-    print("Reconstruction")
-    reconstr1 = tree.reconstructImage("level",lambda x : tree.area[x]<=10000)
-
-    resultName = 'Results/reconstructionAreaFilter_MaxTree.png'
-    print("Image save: " +  resultName)
-    saveImage(reconstr1, resultName)
+    A more fancy would be to delete the leaves, but then we loose direct indices matching.
+    '''
+    im = attributeImage.copy(True)
+    nbLeaves=tree.nbLeaves
+    for i in range(nbLeaves):
+        im[i]=im[tree[i]]
+    return im
 
 
-def main():
-    print("--- Grain filter on the max tree")
-    testAreaFilter()
-
-if __name__ == '__main__':
-    main()
+def shapingCriterion(tree):
+    '''
+    Creates a filtering criterion that maps a filter applied to a shaping tree "tree" back to the orignal tree.
+    '''
+    return lambda x: tree.deleted[tree[x]]

@@ -34,7 +34,7 @@ Created on 15 juin 2015
 '''
 
 import HiPy.Util.UnionFind as UnionFind
-from HiPy.Structures import Tree, AdjacencyEdgeWeightedGraph, Embedding,\
+from HiPy.Structures import Tree, AdjacencyEdgeWeightedGraph, \
     Adjacency2d4, Embedding2dGrid, Image
 from HiPy.Hierarchies.ComponentTree import addAttributeChildren,\
     addAttributeDepth
@@ -114,6 +114,7 @@ def transformAltitudeBPTtoComponentTree(bpt):
             nlevel[count]=level[i]
             count = count + 1
     nparent[count]=-1
+    nlevel[count]=level[-1]
     
     ntree = Tree(nparent, nlevel)
     ntree.leavesAdjacency=bpt.leavesAdjacency

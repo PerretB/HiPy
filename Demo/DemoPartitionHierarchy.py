@@ -8,8 +8,6 @@
 # modify and/ or redistribute the software under the terms of the CeCILL
 # license as circulated by CEA, CNRS and INRIA at the following URL
 # "http://www.cecill.info". 
-from HiPy.Util.Color import convertRGBtoLAB
-from HiPy.Util.Geometry2d import crop2d
 
 # As a counterpart to the access to the source code and  rights to copy,
 # modify and redistribute granted by the license, users are provided only
@@ -42,6 +40,7 @@ from HiPy.IO import * #@UnusedWildImport
 from HiPy.Hierarchies.ComponentTree import * #@UnusedWildImport
 from HiPy.Hierarchies.PartitionHierarchy import * #@UnusedWildImport
 from HiPy.Util.Histogram import * #@UnusedWildImport
+from HiPy.Util.Color import convertRGBtoLAB
 
 
 def distance(image, i, j):
@@ -79,6 +78,11 @@ def demoBPT():
     print("drawing saliency Comp Tree...")
     salCt = drawSaliencyForVizu(comptTree,image)
     saveImage(salCt, "Results/CompTree Saliency map.png")
+    
+    if salBpt.equals(salCt):
+        print("Good news BPT and Compt Tree have the same saliency !")
+    else:
+        print("Yearkk! BPT and Compt Tree don't have the same saliency !")
     
     print("constructing watershed hierarchy by altitude...")
     wsh=transformAltitudeBPTtoWatershedHierarchy(bpt)

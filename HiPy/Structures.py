@@ -122,7 +122,34 @@ class Image(list):
         return True
     
     def iterateOnPixels(self):
+        '''
+        Iterator on all pixels
+        '''
         return range(len(self))
+    
+    def addAttribute(self,name,defaultValue=None,resetIfExist=False):
+        '''
+        Return the new attribute image if it did not exist or was reseted and None otherwise
+        '''
+        if(not name in self.__dict__ or resetIfExist):
+            im=Image(len(self),defaultValue,AdjacencyTree(self))
+            self.__dict__[name]=im
+            return im
+    
+        return None
+    
+    def deleteAttribute(self,name):
+        '''
+        Remove the attribute "name"
+        '''
+        del self.__dict__[name]
+        
+    def getAttribute(self,name):
+        '''
+        Return the attribute "name"
+        '''
+        return self.__dict__[name]
+
 
 class Embedding(object):
     '''
@@ -517,21 +544,6 @@ class Tree(Image):
         '''
         return self[i]
         
-    def addAttribute(self,name,defaultValue=None):
-        '''
-        Return the new attribute image if it did not exist and None otherwise
-        '''
-        if(not name in self.__dict__):
-            im=Image(len(self),defaultValue,AdjacencyTree(self))
-            self.__dict__[name]=im
-            return im
-        return None
-            
-    def getAttribute(self,name):
-        '''
-        Return the attribute "name"
-        '''
-        return self.__dict__[name]
 
     # apply a given selection criterion f on the tree
     # the selection criterion is a function that associates the value true or false to a node
@@ -572,7 +584,7 @@ class Tree(Image):
         The final pixel value is given by the value of its closest selected (see below) parent.
         
         If a criterion is provided (a function that associates True or False to each node), 
-        then a node x is selected if criterion(x)==True
+        then a node x is selected if criterion(x)==False
         
         If no criterion is provided and the attribute "deleted" is defined, a node x is selected if deleted[x]==False 
         
@@ -582,10 +594,10 @@ class Tree(Image):
             if "deleted" in self.__dict__:
                 criterion = (lambda x:not self.deleted[x])
             else:
-                criterion = (lambda _:True)
+                criterion = (lambda _:False)
         root= len(self)-1
         for i in self.iterateFromRootToLeaves(True):
-            if i>=self.nbLeaves and (i==root or  criterion(i)) :
+            if i>=self.nbLeaves and (i==root or  not criterion(i)) :
                 self.reconstructedValue[i]=self.__dict__[attributeName][i]
             else:
                 self.reconstructedValue[i]=self.reconstructedValue[self[i]]

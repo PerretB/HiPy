@@ -40,6 +40,9 @@ def add(image, number, inPlace=False):
         res[i]=[x+number for x in image[i]]
     return res
 
+def sub(image, number, inPlace=False):
+    return add(image, -number, inPlace)
+
 def mult(image, number, inPlace=False):
     res = image.copy(False) if (not inPlace) else image
     for i in image.iterateOnPixels():
@@ -52,6 +55,52 @@ def divide(image, number, inPlace=False):
         res[i]=[x/number for x in image[i]]
     return res
 
+def getMinMax(image, band=None):
+    '''
+    Get min and max value over all band (if band==None) or a particular band
+    '''
+    if band==None:
+        vmin=image[0][0]
+        vmax=image[0][0]
+        for i in range(len(image)):
+            v=image[i]
+            for vv  in v:
+                if vv<vmin:
+                    vmin=vv
+                elif vv>vmax:
+                    vmax=vv
+        return vmin, vmax
+        
+    else:
+        vmin=image[0][band]
+        vmax=image[0][band]
+        
+        for i in range(len(image)):
+            v=image[i][band]
+            if v<vmin:
+                vmin=v
+            elif v>vmax:
+                vmax=v
+                
+        return vmin, vmax
+
+def rescaleColor(image, minValue=0, maxValue=1, inPlace=False):
+    vmin, vmax=getMinMax(image)
+    res=sub(image, vmin,inPlace)
+    add(mult(divide(res,vmax-vmin,True),maxValue-minValue,True),minValue,True)
+    return res
+    
+def toIntColor(image, inPlace=False):
+    res = image.copy(False) if (not inPlace) else image
+    for i in image.iterateOnPixels():
+        res[i]=[int(round(x)) for x in image[i]]
+    return res
+    
+
+def normalizeToByteColor(image):
+    im=rescaleColor(image, 0, 255) 
+    im=toIntColor(im)
+    return im    
 
 def convertRGBtoLAB(image):
     '''
