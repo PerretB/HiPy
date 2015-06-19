@@ -60,11 +60,13 @@ def simuDirect():
     class3 = MultivariateGaussian([0.0,0.2,0.7],[[0.2,0.0,0.0],[0.0,0.1,0.0],[0.0,0.0,0.1]])
     classes=[class1,class2,class3]
     model = MarkovModel(initialProb,transitionProb,classes)
-   
-    
 
     print('Simulating direct model...')
     simulateDirectModel(model, maxTree)
+    
+    gmmEstimate(maxTree.observation[maxTree.nbPixels:len(maxTree)+1], 3)
+    
+  
     
     print('Generating images...')
     imLabel=maxTree.reconstructImage("label")

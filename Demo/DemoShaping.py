@@ -39,6 +39,7 @@ from HiPy.IO import * #@UnusedWildImport
 from HiPy.Hierarchies.ComponentTree import * #@UnusedWildImport
 from HiPy.Hierarchies.TreeOfShape import * #@UnusedWildImport
 from HiPy.Util.Histogram import * #@UnusedWildImport
+from HiPy.Processing.Attributes import * #@UnusedWildImport
 from HiPy.Processing.Shaping import * #@UnusedWildImport
 from HiPy.Structures import Adjacency2d4
 
@@ -87,7 +88,7 @@ def demoNonIncreasingFilter():
     addAttributeCompactness(tree)
     
     #prefiltering
-    tree.filterDirect(lambda _,x:(tree.area[x]<200 or tree.area[x]>tree.nbLeaves*0.6))
+    tree.filterDirect(lambda _,x:(tree.area[x]<200 or tree.area[x]>tree.nbPixels*0.6))
     updateAttributeAfterFiltering(tree, "compactness")
 
     print("Building tree of tree on Compactness...")

@@ -126,9 +126,9 @@ def drawGraphVizAttr(name, dccTree, attributes=[], leaves=False):
     #n = len(parent)
     G = pydot.Dot(graph_type='graph')
 
-    nbLeaves = dccTree.nbLeaves
+    nbLeaves = dccTree.nbPixels
     
-    for i in dccTree.iterateFromLeavesToRoot():
+    for i in dccTree.iteratorFromPixelsToRoot():
         if(i>=nbLeaves or leaves):
             node = pydot.Node(i)
             if(i < nbLeaves):
@@ -140,7 +140,7 @@ def drawGraphVizAttr(name, dccTree, attributes=[], leaves=False):
             node.set_label(label)
             G.add_node(node)
        
-    for i in dccTree.iterateFromLeavesToRoot():
+    for i in dccTree.iteratorFromPixelsToRoot():
         if(i>=nbLeaves or leaves):
             par = dccTree[i]
             if(par != -1):

@@ -37,7 +37,7 @@ Created on 10 juin 2015
 from HiPy.IO import * #@UnusedWildImport
 from HiPy.Hierarchies.ComponentTree import * #@UnusedWildImport
 from HiPy.Hierarchies.DirectedComponentHierarchy import * #@UnusedWildImport
-
+from HiPy.Processing.Attributes import * #@UnusedWildImport
 
 # Create an edge weighted symmetric directed graph.
 # The graph nodes are thee image pixels.

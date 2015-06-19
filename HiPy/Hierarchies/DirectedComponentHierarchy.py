@@ -28,11 +28,11 @@
 # The fact that you are presently reading this means that you have had
 # knowledge of the CeCILL license and that you accept its terms.
 
-from HiPy.Structures  import Tree, AdjacencyEdgeWeightedGraph, Image
+from HiPy.Structures  import Tree, AdjacencyEdgeWeightedGraph, Image, TreeType
 
 
 from HiPy.Util.UnionFind import *
-from HiPy.Hierarchies.ComponentTree import addAttributeChildren, addAttributeArea, addAttributeElongationOrientation2d, addAttributeSimpleMoments2d, addAttributeInertia2d
+from HiPy.Processing.Attributes import addAttributeChildren, addAttributeArea, addAttributeElongationOrientation2d, addAttributeSimpleMoments2d, addAttributeInertia2d
 from math import * #@UnusedWildImport
 
 
@@ -672,7 +672,7 @@ def ensureTree(parent, Lvls=[]):
 
 # Construct a more usable structure from the result of the algorithm directedComponentHierarchyXXXXXX
 def buildFinalDCCTree(nbPoints, parent, completeGraphEdges, Lvls, image, nbOut=[] ):
-    tree = Tree(parent,Lvls,image)
+    tree = Tree(TreeType.ComponentTree,parent,Lvls,image)
     tree.addAttribute("sucs", [])
     tree.addAttribute("preds", [])
     tree.addAttribute("nbOut", -1)
@@ -732,7 +732,7 @@ def computeAttributeDirectedComponent(dccTree, attributeName, baseAttributeName,
                 tmp=accumulator(tmp,computeRec(j,ref))
         return tmp
     
-    for i in dccTree.iterateFromLeavesToRoot():
+    for i in dccTree.iteratorFromPixelsToRoot():
         attr[i]=computeRec(i,i)
             
 # Compute the area (number of nodes) of each SCC (attribute "area") and each DCC (attribute "area_directed")                   
@@ -760,7 +760,7 @@ def addAttributeElongationOrientationDirectedComponent(dccTree):
 
 # Compute the attribute value "attributeName_directed" on the graph.
 # For each node, the attribute is set to true if the directed connected 
-# component rooted int it contains a node having its attribute "attributeName" set to true.
+# component rooted in it contains a node having its attribute "attributeName" set to true.
 # see function addAttributeMarker
 def addAttributeMarkerDirectedComponent(dccTree,attributeName):
     attributeNameDirected = attributeName +"_directed"
@@ -777,7 +777,7 @@ def addAttributeMarkerDirectedComponent(dccTree,attributeName):
                 attrDirected[p]=True
                 propagateSemiPred(p)
                          
-    for i in dccTree.iterateFromLeavesToRoot(): 
+    for i in dccTree.iteratorFromPixelsToRoot(): 
         if attr[i] and not attrDirected[i]:
             attrDirected[i]=True
             propagateSemiPred(i)
@@ -792,7 +792,7 @@ def regularizeSelectMax(dccTree):
             if deleted[c]:
                 keepDCC(c)
 
-    for i in dccTree.iterateFromLeavesToRoot():
+    for i in dccTree.iteratorFromPixelsToRoot():
         if not deleted[i]:   
             keepDCC(i)
 
@@ -808,6 +808,6 @@ def regularizeDiscardMin(dccTree):
         for c in succesors[i]:
             removeDCC(c)
 
-    for i in dccTree.iterateFromLeavesToRoot():
+    for i in dccTree.iteratorFromPixelsToRoot():
         if deleted[i]:   
             removeDCC(i)

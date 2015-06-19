@@ -35,8 +35,8 @@ Created on 15 juin 2015
 
 import HiPy.Util.UnionFind as UnionFind
 from HiPy.Structures import Tree, AdjacencyEdgeWeightedGraph, \
-    Adjacency2d4, Embedding2dGrid, Image
-from HiPy.Hierarchies.ComponentTree import addAttributeChildren,\
+    Adjacency2d4, Embedding2dGrid, Image, TreeType
+from HiPy.Processing.Attributes import addAttributeChildren,\
     addAttributeDepth
 
 def constructAltitudeBPT(adjacency, verbose=False):
@@ -67,7 +67,7 @@ def constructAltitudeBPT(adjacency, verbose=False):
     
     if verbose:
         print("Finalizing")
-    tree = Tree(parent, levels)
+    tree = Tree(TreeType.PartitionHierarchy,parent, levels)
     tree.leavesAdjacency=adjMST
     return tree
 
@@ -76,7 +76,7 @@ def transformAltitudeBPTtoComponentTree(bpt):
     Copy bpt and delete the nodes n such that bpt.level[n]=bpt.level[bpt[n]] 
     (and update the parent relation accordingly...
     '''
-    nbLeaves = bpt.nbLeaves
+    nbLeaves = bpt.nbPixels
     nbNodes = len(bpt)
     addAttributeChildren(bpt)
     children=bpt.children
@@ -98,7 +98,7 @@ def transformAltitudeBPTtoComponentTree(bpt):
         dmap[i] = count
     
     #correct the mapping 
-    for i in bpt.iterateFromLeavesToRoot(False):
+    for i in bpt.iteratorFromPixelsToRoot(False):
         dmap[i] = count - dmap[i]
     
     #new relations with correct size  
@@ -116,7 +116,7 @@ def transformAltitudeBPTtoComponentTree(bpt):
     nparent[count]=-1
     nlevel[count]=level[-1]
     
-    ntree = Tree(nparent, nlevel)
+    ntree = Tree(TreeType.PartitionHierarchy,nparent, nlevel)
     ntree.leavesAdjacency=bpt.leavesAdjacency
     
     return ntree
@@ -164,14 +164,14 @@ def extractWatershedEdges(bpt):
     '''
     nadj=bpt.leavesAdjacency.copy()
     nedges=nadj.edges
-    nbLeaves=bpt.nbLeaves
+    nbLeaves=bpt.nbPixels
     nbNodes=len(bpt)
     addAttributeChildren(bpt)
     level=bpt.level
     children=bpt.children
     
     minima=[0]*nbNodes
-    for i in bpt.iterateFromLeavesToRoot(False):
+    for i in bpt.iteratorFromPixelsToRoot(False):
         cl = children[i]
         m1=minima[cl[0]]
         m2=minima[cl[1]]
@@ -204,7 +204,7 @@ def correctAttributeValueBPT(bpt,attributeName):
     for i in bpt.iterateOnLeaves():
         attr[i]=0
     
-    for i in bpt.iterateFromLeavesToRoot(False):
+    for i in bpt.iteratorFromPixelsToRoot(False):
         p = bpt[i]
         if p!=-1 and level[i]==level[p]:
             vc1=attr[children[i][0]]
@@ -212,13 +212,13 @@ def correctAttributeValueBPT(bpt,attributeName):
             attr[i]=max(vc1,vc2)
 
 def reweightMSTByAttribute(bpt, attributeName): 
-    nbLeaves=bpt.nbLeaves
+    nbLeaves=bpt.nbPixels
     nadj=bpt.leavesAdjacency.copy()
     nedges=nadj.edges
     addAttributeChildren(bpt)
     children=bpt.children
     attr=bpt.getAttribute(attributeName)
-    for i in bpt.iterateFromLeavesToRoot(False):
+    for i in bpt.iteratorFromPixelsToRoot(False):
         nedges[i-nbLeaves][2]=min(attr[children[i][0]],attr[children[i][1]])
     return nadj
 

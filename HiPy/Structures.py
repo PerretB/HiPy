@@ -35,6 +35,8 @@ Created on 3 juin 2015
 @author: perretb
 '''
 import copy
+import HiPy.Processing.Attributes as Attributes
+
 
 def enum(**enums):
     return type('Enum', (), enums)
@@ -132,7 +134,7 @@ class Image(list):
         Return the new attribute image if it did not exist or was reseted and None otherwise
         '''
         if(not name in self.__dict__ or resetIfExist):
-            im=Image(len(self),defaultValue,AdjacencyTree(self))
+            im=Image(len(self),defaultValue,self.adjacency,self.embedding)
             self.__dict__[name]=im
             return im
     
@@ -521,22 +523,24 @@ class AdjacencyEdgeWeightedGraph(Adjacency):
         return g
 
 
-
+TreeType  = enum(ComponentTree = 1, PartitionHierarchy = 2)
 
 class Tree(Image):
     '''
     A tree is an image whose pixel values encode the parent relation
     '''
-    def __init__(self, parent,levels,image=None):
+    def __init__(self, treeType,parent,levels,image=None):
         super(Tree,self).__init__(len(parent),None)
+        self.treeType = treeType
+        self.adjacency=AdjacencyTree(self)
         self.setAll(parent)
         self.leavesAdjacency = image.adjacency if image!=None else None
         self.leavesEmbedding = image.embedding if image!=None else None
-        self.nbLeaves=len(image) if image!=None else Tree.countLeaves(parent)
-        self.level=Image(len(levels))
+        self.nbPixels=len(image) if image!=None else Tree._countLeaves(parent)
+        self.addAttribute("level")
         self.level.setAll(levels)
-        self.level.adjacency=AdjacencyTree(self)
         self.addAttribute('reconstructedValue')
+        Attributes.addAttributeChildren(self)
             
     def getParent(self,i):
         '''
@@ -545,16 +549,17 @@ class Tree(Image):
         return self[i]
         
 
-    # apply a given selection criterion f on the tree
-    # the selection criterion is a function that associates the value true or false to a node
-    def filterDirect(self, f):
-        attr=self.addAttribute("deleted",False)
-        if attr==None:
-            for i in self.iterateFromLeavesToRoot():
-                self.deleted[i] = False
-    
-        for i in self.iterateFromLeavesToRoot():
-            self.deleted[i] = f(self,i)
+
+    def filterDirect(self, filteringCriterion):
+        '''
+        Apply a given filtering criterion f on the tree.
+        A filtering criterion is a function that associates the value true or false to a tree and a node.
+        
+        For each node n the attribute deleted is set to the value of filteringCriterion(self,n)
+        '''
+        self.addAttribute("deleted",False)  
+        for i in self.iteratorFromPixelsToRoot():
+            self.deleted[i] = filteringCriterion(self,i)
 
     def extractBranch(self,node,attributeName=None):
         '''
@@ -592,45 +597,63 @@ class Tree(Image):
         '''
         if criterion==None:
             if "deleted" in self.__dict__:
-                criterion = (lambda x:not self.deleted[x])
+                criterion = (lambda x: self.deleted[x])
             else:
                 criterion = (lambda _:False)
         root= len(self)-1
-        for i in self.iterateFromRootToLeaves(True):
-            if i>=self.nbLeaves and (i==root or  not criterion(i)) :
+        for i in self.iteratorFromRootToPixels():
+            if i>=self.nbPixels and (i==root or  not criterion(i)) :
                 self.reconstructedValue[i]=self.__dict__[attributeName][i]
             else:
-                self.reconstructedValue[i]=self.reconstructedValue[self[i]]
+                self.reconstructedValue[i]=self.reconstructedValue[self[i]]      
                     
-        im = Image(self.nbLeaves,0,self.leavesAdjacency,self.leavesEmbedding)
+        im = Image(self.nbPixels,0,self.leavesAdjacency,self.leavesEmbedding)
         for i in range(len(im)):
             im[i]=self.reconstructedValue[i]
+            
         return im
     
-    def iterateFromLeavesToRoot(self,includePixels=True):
+    def iteratorFromLeavesToRoot(self,includeLeaves=True, includeRoot=True):
         '''
         Provides an iterator on the nodes of the tree going from the leaves to the root.
-        
-        Leaves (pixels) can be included or not
+    
         '''
-        if includePixels:
-            return range(len(self))
-        else:
-            return range(self.nbLeaves,len(self),1)
+        return TreeIterator(self,True,False,includeLeaves,includeRoot)
         
-    def iterateFromRootToLeaves(self,includePixels=True):
+    def iteratorFromRootToLeaves(self,includeLeaves=True, includeRoot=True):
         '''
         Provides an iterator on the nodes of the tree going from the root to the leaves.
-        
-        Leaves (pixels) can be included or not
         '''
-        if includePixels:
-            return range(len(self)-1,-1,-1)
-        else:
-            return range(len(self)-1,self.nbLeaves-1,-1)
+        return TreeIterator(self,True,True,includeLeaves,includeRoot)
+
+    def iteratorFromPixelsToRoot(self,includeLeaves=True, includeRoot=True):
+        '''
+        Provides an iterator on the nodes of the tree going from the leaves to the root.
+    
+        '''
+        return TreeIterator(self,False,False,includeLeaves,includeRoot)
         
-    def iterateOnLeaves(self):
-        return range(self.nbLeaves)
+    def iteratorFromRootToPixels(self,includeLeaves=True, includeRoot=True):
+        '''
+        Provides an iterator on the nodes of the tree going from the root to the leaves.
+        '''
+        return TreeIterator(self,False,True,includeLeaves,includeRoot)
+    
+    def iteratorOnPixels(self):
+        return range(self.nbPixels)
+    
+    def iteratorOnLeaves(self):
+        Attributes.addAttributeIsLeaf(self)
+        isLeaf=self.isLeaf
+        i = 0
+        n = len(self)
+        while i < n:
+            while i<n and not isLeaf[i]:
+                i+=1
+            self.curVal += self.step
+            if i < n:
+                yield i
+            i += 1
         
     def lca(self,i,j):
         '''
@@ -647,7 +670,7 @@ class Tree(Image):
         return i
     
     @staticmethod
-    def countLeaves(parent):
+    def _countLeaves(parent):
         '''
         Count Leaves in a parent relation
         '''
@@ -663,4 +686,57 @@ class Tree(Image):
                 count=count+1
         
         return count
+
+class TreeIterator(object):
+    
+    def __init__(self,tree,logical=True,reverseOrder=False,includeLeaves=True,includeRoot=True):  
+        self.tree = tree
         
+        specialLogic=tree.treeType==TreeType.ComponentTree and logical
+        if specialLogic and not includeLeaves:
+            Attributes.addAttributeIsLeaf(tree)
+            self.__next__=self.nextLogical
+            
+        if specialLogic or not includeLeaves:
+            bmin = tree.nbPixels 
+        else:
+            bmin = 0
+        
+        bmax = len(tree)
+        if not includeRoot:
+            bmax = bmax-1
+            
+        if not reverseOrder:
+            self.curVal = bmin
+            self.limit = bmax
+            self.step = 1
+        else:
+            self.curVal = bmax-1
+            self.limit = bmin-1
+            self.step = -1
+
+        
+            
+            
+    def __iter__(self):
+        return self 
+    
+    def nextLogical(self):
+        tree=self.tree
+        while tree.isLeaf[self.curVal] and self.curVal!=self.limit:
+            self.curVal += self.step
+            
+        if self.curVal!=self.limit:
+            i = self.curVal
+            self.curVal += self.step
+            return i
+        else:
+            raise StopIteration()
+    
+    def __next__(self):
+        if self.curVal!=self.limit:
+            i = self.curVal
+            self.curVal += self.step
+            return i
+        else:
+            raise StopIteration()

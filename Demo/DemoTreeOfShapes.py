@@ -38,7 +38,7 @@ Created on 3 juin 2015
 from HiPy.Structures import  Adjacency2d4
 from HiPy.Util.Histogram import imageInverseGrayByte
 from HiPy.Util.Geometry2d import imagePadding, reduceKhalimsky, removeBorder
-from HiPy.Hierarchies.ComponentTree import addAttributeArea
+from HiPy.Processing.Attributes import addAttributeArea
 from HiPy.Hierarchies.TreeOfShape import constructTreeOfShapes
 from HiPy.IO import readImage, saveImage
 
@@ -47,7 +47,7 @@ def testTreeIsomorphism(tree1,tree2):
     '''
     Test if tree1 and tree2 are isomorph assuming that leaves are ordered
     '''
-    if(len(tree1)!=len(tree2) or tree1.nbLeaves!=tree2.nbLeaves):
+    if(len(tree1)!=len(tree2) or tree1.nbPixels!=tree2.nbPixels):
         return False
     
     #both tree have same size so we need to find an injection m from the nodes of t1 to the nodes of t2 such that 
@@ -57,7 +57,7 @@ def testTreeIsomorphism(tree1,tree2):
     
     for i in range(len(mapT1T2)-1): #root is root !
         #pixel mapping is constant
-        if i<tree1.nbLeaves:
+        if i<tree1.nbPixels:
             mapT1T2[i]=i
         #parent(n)
         pT1=tree1[i]

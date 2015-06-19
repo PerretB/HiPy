@@ -35,7 +35,7 @@ Created on 3 juin 2015
 @author: perretb
 '''
 
-from HiPy.Structures import Image, Tree
+from HiPy.Structures import Image, Tree, TreeType
 from HiPy.Hierarchies.ComponentTree import preTreeConstruction, canonizeTree, expandCanonizedParentRelation
 from HiPy.Util.Geometry2d import interpolateX2, interpolatePlainMapKhalimsky
 
@@ -75,7 +75,7 @@ def constructTreeOfShapes(image,interpolation=max,verbose=False):
     # encapsulated tree for ease of manipulation
     if verbose:
         print("Tree finalization")
-    return Tree(parent,levels,image2)
+    return Tree(TreeType.ComponentTree,parent,levels,image2)
 
 class PriorityQueue:
     def __init__(self, levels):

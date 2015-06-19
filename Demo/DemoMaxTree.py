@@ -34,10 +34,10 @@ Created on 9 juin 2015
 
 @author: perretb
 '''
-from HiPy.IO import readImage, saveImage
-from HiPy.Structures import Adjacency2d4
-from HiPy.Hierarchies.ComponentTree import addAttributeArea, constructComponentTree, ComponentTreeType
-
+from HiPy.IO import * #@UnusedWildImport
+from HiPy.Structures import * #@UnusedWildImport
+from HiPy.Hierarchies.ComponentTree import * #@UnusedWildImport
+from HiPy.Processing.Attributes import * #@UnusedWildImport
 
 def testAreaFilter():
     im = readImage('../samples/lennaGray256.png')
@@ -45,7 +45,7 @@ def testAreaFilter():
     
     tree= constructComponentTree(im,ComponentTreeType.MaxTree,True)
     addAttributeArea(tree)
-
+    
     print("Reconstruction")
     reconstr1 = tree.reconstructImage("level",lambda x : tree.area[x]<=10000)
 
