@@ -39,8 +39,9 @@ Created on 17 juin 2015
 import sys
 import random
 import copy
-import numpy as np
+
 from sklearn import mixture
+
 from scipy.stats import multivariate_normal
 # system dependant epsilon: why not !
 epsilon = sys.float_info.epsilon*10.0
@@ -262,6 +263,43 @@ def forwardPass(markovModel, tree):
                 raise Exception("Numerical problem during forward pass, check your data and number of classes")
 
 
+def getJointPost(markovModel,tree,n,p,i,j):
+    '''
+    P(x_s,x_s- |y)
+    the joint posterior distribution of the label of s and its parent s- knowing all the observation y
+    @param markovModel Current model
+    @param tree 
+    @param n node xs
+    @param p node xs-
+    @param i class of xs 
+    @param j class of xs-
+    @return
+    '''
+    s=0
+    transitionProb = markovModel.transitionProb
+    nbClasses = markovModel.numLabels
+    
+    prior=tree.prior
+    pForward = tree.pForward
+    pBackward = tree.pBackward
+    
+    if prior[n][i]<epsilon: #@FIXME is this really what should be done !
+        return 0.0
+    
+    for k in range(nbClasses):
+        if prior[n][k]>epsilon:
+            pTransitionInverse=getInverseTransitionProb(markovModel, prior[p],j, prior[n],k)
+            s+=pTransitionInverse*pForward[i][k]
+    
+    if s<epsilon: #@FIXME is this really what should be done !
+        return 0.0
+    
+    pj = transitionProb[j][i]*prior[p][j]*pForward[n][i]*pBackward[p][j]/prior[n][i]
+    return pj/s
+    
+  
+   
+
 def backwardPass(markovModel, tree):
     '''
     Computes p(x_s=i|y) for all label i
@@ -274,35 +312,19 @@ def backwardPass(markovModel, tree):
     pBackward[-1]=copy.copy(pForward[-1])
     
     for n in tree.iterateFromRootToLeaves(False,False):
-        
-/**
-     * Computes p(x_s=i|y) for all label i
-     * the marginal posterior distribution of the label x of s conditonnaly to the whole observation y
-     * @param m
-     * @param tree
-     */
-    private static void backwardPass(Model m, ComponentTree<double []> tree)
-    {
-        double [] initialProb =m.initialProb;
-        int nClasses=initialProb.length;
-        for( ComponentNode<double []> n: tree.iterateFromRootToLeaf())
-        {
-            MarkovHelper mh=n.getAttributeValue(AttributeMarkovEstimation.class);
-            if(n==tree.root)
-            {
-                mh.pbackward=mh.pforward.clone();
-            }else{
-                for(int i=0;i<nClasses;i++)
-                {
-                    double p=0.0;
-                    
-                    MarkovHelper mhp=n.parent.getAttributeValue(AttributeMarkovEstimation.class);
-                    for(int j=0;j<nClasses;j++)
-                    {
-                        p+=getJointPost(m,tree,i,j,mh,mhp);    
-                    }
-                    mh.pbackward[i]=p;
-                }
-            }
-        }
-    }
+        par=tree[n]
+        for i in range(nbClasses):
+            p=0.0
+            for j in range(nbClasses):
+                p+=getJointPost(markovModel,tree,n,par,i,j)
+
+            pBackward[n][i]=p
+
+
+def browseTree(markovModel,tree):
+    '''
+    browse forward and then backward
+    '''
+    forwardPass(markovModel, tree)
+    backwardPass(markovModel, tree)
+
