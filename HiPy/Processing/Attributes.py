@@ -10,6 +10,7 @@
 # license as circulated by CEA, CNRS and INRIA at the following URL
 # "http://www.cecill.info". 
 
+
 # As a counterpart to the access to the source code and  rights to copy,
 # modify and redistribute granted by the license, users are provided only
 # with a limited warranty  and the software's author,  the holder of the
@@ -89,7 +90,20 @@ def addAttributeChildren(tree, name="children"):
         if(par!=-1):
             attr[par].append(i)
     
-
+def addAttributeChildrenLogical(tree, name="childrenLogical"):
+    attr=tree.addAttribute(name,[])
+    if attr==None:
+        return
+    if tree.treeType==HiPy.Structures.TreeType.ComponentTree:
+        for i in tree.iteratorFromLeavesToRoot():
+            par = tree[i]
+            if(par!=-1):
+                attr[par].append(i)
+        
+    else:
+        addAttributeChildren(tree,name)
+        
+   
         
 def addAttributeVolume(tree, name="volume"):
     addAttributeArea(tree)
@@ -369,8 +383,10 @@ def addAttributeIsLeaf(tree, name="isLeaf"):
     if tree.treeType==HiPy.Structures.TreeType.PartitionHierarchy:
         for i in tree.iteratorFromPixelsToRoot(False):
             attr[i]=False
-    elif tree.treeType==HiPy.Structures.TreeType.ComponentTree:       
-        for i in tree.iteratorFromPixelsToRoot(False):
+    elif tree.treeType==HiPy.Structures.TreeType.ComponentTree: 
+        for i in range(tree.nbPixels) :
+            attr[i]=False     
+        for i in range(tree.nbPixels,len(tree)):
             par=tree[i]
             if par!=-1:
                 attr[par]=False

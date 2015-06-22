@@ -12,6 +12,7 @@
 from HiPy.Hierarchies.ComponentTree import constructComponentTree,\
     ComponentTreeType
 from HiPy.Structures import Adjacency2d4
+from HiPy.Util.Geometry2d import crop2d
 
 # As a counterpart to the access to the source code and  rights to copy,
 # modify and redistribute granted by the license, users are provided only
@@ -47,10 +48,11 @@ from HiPy.Util.Color import * #@UnusedWildImport
 def simuDirect():
     print('Reading image...')
     image = readImage("../samples/blobs-ndg.png", True)
+    #image=crop2d(image, 0, 50, 0, 50)
     image.adjacency = Adjacency2d4(image.embedding.size)
     
     print('Constructing tree...')
-    maxTree = constructComponentTree(image, ComponentTreeType.MaxTree)
+    tree = constructComponentTree(image, ComponentTreeType.MaxTree)
     
     print('Defining direct model...')
     initialProb= [0.2,0.2,0.6]
@@ -62,19 +64,25 @@ def simuDirect():
     model = MarkovModel(initialProb,transitionProb,classes)
 
     print('Simulating direct model...')
-    simulateDirectModel(model, maxTree)
+    simulateDirectModel(model, tree)
     
-    gmmEstimate(maxTree.observation[maxTree.nbPixels:len(maxTree)+1], 3)
-    
-  
-    
-    print('Generating images...')
-    imLabel=maxTree.reconstructImage("label")
-    imObservation=maxTree.reconstructImage("observation")
+    print('Generating simulated images...')
+    imLabel=tree.reconstructImage("label")
+    imObservation=tree.reconstructImage("observation")
     
 
     saveImage(normalizeToByte(imLabel), "Results/Markov simulation labels.png")
     saveImage(normalizeToByteColor(imObservation), "Results/Markov simulation observations.png")
+    
+    print('Markov model initialization...')
+    markovModel=getInitialGuess(tree, 3)
+    MPMSegmentTree(markovModel,tree,maxIteration=10,verbose=True)
+    
+    print('Reconstructing estimated label image...')
+    imLabelEstim=tree.reconstructImage("estimLabel")
+    saveImage(normalizeToByte(imLabelEstim), "Results/Markov simulation estimated labels.png")
+    
+    
     
     
 

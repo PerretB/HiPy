@@ -643,17 +643,19 @@ class Tree(Image):
         return range(self.nbPixels)
     
     def iteratorOnLeaves(self):
-        Attributes.addAttributeIsLeaf(self)
-        isLeaf=self.isLeaf
-        i = 0
-        n = len(self)
-        while i < n:
-            while i<n and not isLeaf[i]:
-                i+=1
-            self.curVal += self.step
-            if i < n:
-                yield i
-            i += 1
+        if self.treeType == TreeType.ComponentTree:
+            Attributes.addAttributeIsLeaf(self)
+            isLeaf=self.isLeaf
+            i = self.nbPixels
+            n = len(self)
+            while i < n:
+                while i<n and not isLeaf[i]:
+                    i+=1
+                if i < n:
+                    yield i
+                i += 1
+        else:
+            return range(self.nbPixels)
         
     def lca(self,i,j):
         '''
@@ -668,6 +670,20 @@ class Tree(Image):
                 j = self[j]
 
         return i
+    
+    def nbNodes(self):
+        '''
+        Count the number of logical nodes.
+        
+        For component trees, pixels that are not part of the logical structure must be substracted leading to len(tree)-tree.nbPixels
+        For partition hierarchies or others the result is equal to len(tree)
+        '''
+        if self.treeType==TreeType.ComponentTree:
+            return len(self)-self.nbPixels
+        else:
+            return len(self)
+
+    
     
     @staticmethod
     def _countLeaves(parent):
@@ -695,7 +711,9 @@ class TreeIterator(object):
         specialLogic=tree.treeType==TreeType.ComponentTree and logical
         if specialLogic and not includeLeaves:
             Attributes.addAttributeIsLeaf(tree)
-            self.__next__=self.nextLogical
+            self.nextMethod=self.nextLogical
+        else:
+            self.nextMethod=self.nextStructural
             
         if specialLogic or not includeLeaves:
             bmin = tree.nbPixels 
@@ -721,11 +739,12 @@ class TreeIterator(object):
     def __iter__(self):
         return self 
     
-    def nextLogical(self):
+    def nextLogical(self):   
         tree=self.tree
-        while tree.isLeaf[self.curVal] and self.curVal!=self.limit:
+        isLeaf=tree.isLeaf
+        while self.curVal!=self.limit and isLeaf[self.curVal]:
             self.curVal += self.step
-            
+        
         if self.curVal!=self.limit:
             i = self.curVal
             self.curVal += self.step
@@ -733,10 +752,15 @@ class TreeIterator(object):
         else:
             raise StopIteration()
     
-    def __next__(self):
+    def nextStructural(self):
         if self.curVal!=self.limit:
             i = self.curVal
             self.curVal += self.step
             return i
         else:
             raise StopIteration()
+        
+    def __next__(self):
+        return self.nextMethod()
+        
+        
