@@ -57,9 +57,9 @@ def simuDirect():
     print('Defining direct model...')
     initialProb= [0.2,0.2,0.6]
     transitionProb=[[0.9,0.08,0.02],[0.01,0.95,0.04],[0.05,0.05,0.9]]
-    class1 = MultivariateGaussian([0.9,0.2,0.1],[[0.2,0.001,0.0],[0.001,0.1,0.0],[0.0,0.0,0.1]])
     class2 = MultivariateGaussian([0.3,0.7,0.3],[[0.1,0.0,0.02],[0.0,0.1,0.0],[0.02,0.0,0.2]])
-    class3 = MultivariateGaussian([0.0,0.2,0.7],[[0.2,0.0,0.0],[0.0,0.1,0.0],[0.0,0.0,0.1]])
+    class3 = MultivariateGaussian([0.9,0.2,0.1],[[0.2,0.001,0.0],[0.001,0.1,0.0],[0.0,0.0,0.1]])
+    class1 = MultivariateGaussian([0.0,0.2,0.7],[[0.2,0.0,0.0],[0.0,0.1,0.0],[0.0,0.0,0.1]])
     classes=[class1,class2,class3]
     model = MarkovModel(initialProb,transitionProb,classes)
 
@@ -76,14 +76,24 @@ def simuDirect():
     
     print('Markov model initialization...')
     markovModel=getInitialGuess(tree, 3)
-    MPMSegmentTree(markovModel,tree,maxIteration=10,verbose=True)
+    markovModel=MPMSegmentTree(markovModel,tree,maxIteration=10,verbose=True)
+    
+    reOrderLabels(markovModel, tree)
     
     print('Reconstructing estimated label image...')
     imLabelEstim=tree.reconstructImage("estimLabel")
     saveImage(normalizeToByte(imLabelEstim), "Results/Markov simulation estimated labels.png")
     
+    nbError=0
+    nbNodes=0
+    estimLabel=tree.estimLabel
+    label=tree.label
+    for n in tree.iteratorFromLeavesToRoot():
+        nbNodes+=1
+        if estimLabel[n]!=label[n]:
+            nbError+=1
     
-    
+    print("Number of nodes: " +str(nbNodes) + "\tError Rate: " + str(nbError/nbNodes*100) + "%")
     
 
 def main():

@@ -41,6 +41,8 @@ import random
 import copy
 import time 
 from HiPy.Processing.Attributes import addAttributeChildrenLogical
+from math import * #@UnusedWildImport
+
 
 def timeMili():
     return time.time()*1000.0
@@ -561,3 +563,36 @@ def getInitialGuess(tree, nbClasses, maxSamples=40000):
     data=tree.observation[lenTree-nbNodes:lenTree+1]
     classes=gmmEstimate(data,nbClasses)
     return MarkovModel(initialProb, transitionProb, classes)
+
+def norm(vec):
+    s=0
+    for i in vec:
+        s+=i**2
+    return sqrt(s)
+
+def reOrderLabels(markovModel, tree, rankingFunction=None):
+    '''
+    Reorder labels according to a ranking function.
+    
+    If no ranking function is provided
+    '''
+    estimLabel = tree.estimLabel
+    if rankingFunction==None:
+        rankingFunction=lambda x:norm(x.mean)
+        
+    classes = markovModel.classes
+    nbClasses = markovModel.numLabels
+    
+    labels = [i for i in range(nbClasses)]
+    ranks = [rankingFunction(classes[i]) for i in range(nbClasses)]
+    labels=sorted(labels, key=lambda x:ranks[x])
+    inverse = [0]*nbClasses
+    for i in range(nbClasses):
+        inverse[labels[i]]=i
+    for n in tree.iteratorFromLeavesToRoot():
+        estimLabel[n]=inverse[estimLabel[n]]
+        
+    nClasses=[]
+    for i in range(nbClasses):
+        nClasses.append(classes[labels[i]])
+    markovModel.classes=nClasses
