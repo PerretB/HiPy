@@ -148,7 +148,7 @@ def addAttributeMarker(tree, markerImage, markerValue, attributeName):
 
 def addAttributeSimpleMoments2d(tree, name="moments"):
     '''
-    Compute the moments [M00 M10 M01 M11 M20 M02] of each component
+    Compute the "raw" moments [M00 M10 M01 M11 M20 M02 M21 M12 M30 M03]  of each component
     '''
     attr=tree.addAttribute(name)
     if attr==None:
@@ -161,9 +161,11 @@ def addAttributeSimpleMoments2d(tree, name="moments"):
             c=embedding.fromLinearCoordinate(i)
             x = c[0]
             y = c[1]
-            attr[i]=[1, x, y, x * y, x * x, y * y]
+            xx=x*x
+            yy=y*y
+            attr[i]=[1, x, y, x * y, xx, yy, xx*y, x*yy, x*xx, y*yy]
         else:
-            attr[i]=[0, 0, 0, 0, 0, 0]
+            attr[i]=[0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     
     for i in tree.iteratorFromPixelsToRoot():
         par=tree[i]
@@ -173,8 +175,54 @@ def addAttributeSimpleMoments2d(tree, name="moments"):
             for j in range(len(m)):
                 mp[j] += m[j]
 
+def computeCentralMoments2d(rawMoment):
+    '''                           0   1   2   3   4   5   6   7   8   9
+    Compute the central moments [u00 u10 u01 u11 u20 u02 u21 u12 u30 u03]  from the raw moments
+    '''
+    m = rawMoment
+    mx = m[1]/m[0]
+    my = m[2]/m[0]
+    u00 = m[0]
+    u01 = u10 = 0
+    u11 = m[3]-mx*m[2]
+    u20 = m[4]-mx*m[1]
+    u02 = m[5]-my*m[2]
+    u21 = m[6]-2*mx*m[3]-my*m[4]+2*mx*mx*m[2]
+    u12 = m[7]-2*my*m[3]-mx*m[5]+2*my*my*m[1]
+    u30 = m[8]-3*mx*m[4]+2*mx*mx*m[1]
+    u03 = m[9]-3*my*m[5]+2*my*my*m[2]
+    return [u00, u10, u01, u11, u20, u02, u21, u12, u30, u03]
 
+def computeScaleInvarariantMoments2d(centralMoment):
+    '''                             3+    0   1   2   3   4   5   6   
+    Compute the scale invariant moments [n11 n20 n02 n21 n12 n30 n03]  from the central moments
+    '''  
+    u00 = centralMoment[0]
+    def sc(u,i,j):
+        return u/u00**(1+(i+j)/2)
+    
+    n11 = sc(centralMoment[3],1,1)
+    n20 = sc(centralMoment[4],2,0)
+    n02 = sc(centralMoment[5],0,2)
+    n21 = sc(centralMoment[6],2,1)
+    n12 = sc(centralMoment[7],1,2)
+    n30 = sc(centralMoment[8],3,0)
+    n03 = sc(centralMoment[9],0,3)
+    return [n11, n20, n02, n21, n12, n30, n03]
 
+def computeHuInvariant(scaleInvarariantMoments):
+    n=scaleInvarariantMoments
+    #  0   1   2   3   4   5   6
+    #[n11 n20 n02 n21 n12 n30 n03]
+    I1 = n[1] + n[2]
+    I2 = I1**2 + 4*n[0]**2
+    I3 = (n[5]-3*n[4])**2 + (3*n[3]-n[6])**2
+    I4 = (n[5]+n[4])**2 + (n[3]+n[6])**2
+    I5 = (n[5]-3*n[4])*(n[5]+n[4])*((n[5]+n[4])**2-3*(n[3]+n[6])) + (3*n[3]-n[6])*(n[3]+n[6])*(3*(n[5]+n[4])**2-(n[3]+n[6])**2)
+    I6 = (n[1]-n[2])*((n[5]+n[4])**2-(n[3]+n[6])**2) + 4*n[0]*(n[5]+n[4])*(n[3]+n[6])
+    I7 = (3*n[3]-n[6])*(n[5]+n[4])*((n[5]+n[4])**2-3*(n[3]+n[6])) - (n[5]-3*n[4])*(n[3]+n[6])*(3*(n[5]+n[4])**2-(n[3]+n[6])**2)
+    return [I1, I2, I3, I4, I5, I6, I7] 
+    
 def addAttributeInertia2d(tree,name="inertia",momentAttributeName="moments"):
     '''
     Compute the moment of inertia of each component 
@@ -245,6 +293,7 @@ def addAttributeElongationOrientation2d(tree,nameElongation="elongation",nameOri
 
 
 
+
 def addAttributeDepth(tree, name="depth"):
     attr=tree.addAttribute(name,0)
     if attr==None:
@@ -271,6 +320,18 @@ def addAttributeHighest(tree, name="highest"):
                 if(attr[c]>maxv):
                     maxv=attr[c]
             attr[i]=maxv
+
+def addAttributeHeight(tree, name="height"):
+    attr=tree.addAttribute(name,0)
+    if attr==None:
+        return
+    addAttributeHighest(tree)
+    highest = tree.highest
+    level = tree.level
+    attr[-1]=highest[-1]
+    for i in tree.iteratorFromPixelsToRoot(includeRoot=False):
+        attr[i] =highest[i] - level[tree[i]]
+        
             
 def addAttributeLowest(tree, name="lowest"):
     attr=tree.addAttribute(name,None)

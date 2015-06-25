@@ -9,10 +9,6 @@
 # modify and/ or redistribute the software under the terms of the CeCILL
 # license as circulated by CEA, CNRS and INRIA at the following URL
 # "http://www.cecill.info". 
-from HiPy.Hierarchies.ComponentTree import constructComponentTree,\
-    ComponentTreeType
-from HiPy.Structures import Adjacency2d4
-from HiPy.Util.Geometry2d import crop2d
 
 # As a counterpart to the access to the source code and  rights to copy,
 # modify and redistribute granted by the license, users are provided only
@@ -39,6 +35,11 @@ Created on 17 juin 2015
 
 @author: perretb
 '''
+
+from HiPy.Hierarchies.ComponentTree import constructComponentTree,\
+    ComponentTreeType
+from HiPy.Structures import Adjacency2d4
+
 from HiPy.IO import * #@UnusedWildImport
 from HiPy.Hierarchies import * #@UnusedWildImport
 from HiPy.Processing.Markov import * #@UnusedWildImport
@@ -48,7 +49,6 @@ from HiPy.Util.Color import * #@UnusedWildImport
 def simuDirect():
     print('Reading image...')
     image = readImage("../samples/blobs-ndg.png", True)
-    #image=crop2d(image, 0, 50, 0, 50)
     image.adjacency = Adjacency2d4(image.embedding.size)
     
     print('Constructing tree...')
