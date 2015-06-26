@@ -38,6 +38,7 @@ from HiPy.Structures import Tree, AdjacencyEdgeWeightedGraph, \
     Adjacency2d4, Embedding2dGrid, Image, TreeType
 from HiPy.Processing.Attributes import addAttributeChildren,\
     addAttributeDepth
+from HiPy.Util.Histogram import imageMap, rescaleGray, normalizeToByte
 
 def constructAltitudeBPT(adjacency, verbose=False):
     '''
@@ -211,15 +212,30 @@ def correctAttributeValueBPT(bpt,attributeName):
             vc2=attr[children[i][1]]
             attr[i]=max(vc1,vc2)
 
-def reweightMSTByAttribute(bpt, attributeName): 
+def reweightMSTByAttribute(bpt, attributeName, extinctionValue=True): 
+    '''
+    Reweights the MST associated to a binary partition tree according to a given attribute.
+    
+    If the attribute represents an extinctionValue, then the new weight of an edge is the 
+    minimum of the attribute values of the two regions separated by this edge.
+    
+    Otherwise the new value of the edge is simply the attribut value of the node associated
+    to this edge.
+    
+    The function returns a new weighted adjacency containing with the same edges as the MST but different weights.
+    '''
     nbLeaves=bpt.nbPixels
     nadj=bpt.leavesAdjacency.copy()
     nedges=nadj.edges
     addAttributeChildren(bpt)
     children=bpt.children
     attr=bpt.getAttribute(attributeName)
-    for i in bpt.iteratorFromPixelsToRoot(False):
-        nedges[i-nbLeaves][2]=min(attr[children[i][0]],attr[children[i][1]])
+    if extinctionValue:
+        for i in bpt.iteratorFromPixelsToRoot(False):
+            nedges[i-nbLeaves][2]=min(attr[children[i][0]],attr[children[i][1]])
+    else:
+        for i in bpt.iteratorFromPixelsToRoot(False):
+            nedges[i-nbLeaves][2]=attr[i]
     return nadj
 
 def computeSaliencyMap(partitionTree,adjacency):
@@ -278,3 +294,20 @@ def drawSaliencyMap(size,saliency):
             res[p]=vmax
     
     return res
+
+
+def drawSaliencyForVizu(tree,image):
+    '''
+    Draw the saliency map associated to the given partition tree in an image.
+    
+    The tree is assumed to represent the given image.
+    
+    Only saliceny associated to a 4 adjacency can be drawn consistently.
+    '''
+    adj4 = Adjacency2d4(image.embedding.size)
+    saliency=computeSaliencyMap(tree,adj4)
+    sal=drawSaliencyMap(image.embedding.size,saliency)
+    sal = rescaleGray(sal, 0, 1)
+    sal = imageMap(sal, lambda x:x**(0.3333))
+    sal = normalizeToByte(sal)
+    return sal

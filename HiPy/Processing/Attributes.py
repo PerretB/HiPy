@@ -453,3 +453,5 @@ def addAttributeIsLeaf(tree, name="isLeaf"):
                 attr[par]=False
     else:
         raise Exception("addAttributeIsLeaf: unknown tree type.")
+    
+    

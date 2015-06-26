@@ -29,22 +29,23 @@
 # The fact that you are presently reading this means that you have had
 # knowledge of the CeCILL license and that you accept its terms.
 
-
 '''
-Created on 15 juin 2015
+Created on 26 juin 2015
 
 @author: perretb
 '''
+
 from math import * #@UnusedWildImport
 from HiPy.IO import * #@UnusedWildImport
 from HiPy.Hierarchies.ComponentTree import * #@UnusedWildImport
 from HiPy.Hierarchies.PartitionHierarchy import * #@UnusedWildImport
+from HiPy.Hierarchies.StochasticWatershed import * #@UnusedWildImport
 from HiPy.Processing.Attributes import * #@UnusedWildImport
 from HiPy.Util.Histogram import * #@UnusedWildImport
 from HiPy.Util.VMath import * #@UnusedWildImport
 from HiPy.Util.Color import convertRGBtoLAB
 
-def demoBPT():
+def demoSWS():
     print("reading image...")
     image = readImage('../samples/monsters.png', False)
     image = convertRGBtoLAB(image)
@@ -53,39 +54,22 @@ def demoBPT():
     adj4 = Adjacency2d4(image.embedding.size)
     adjacency=image.adjacency = AdjacencyEdgeWeightedGraph.createAdjacency(adj4, lambda i,j: euclideanDistance(image[i], image[j]))
     
-    print("constructing BPT...")
-    bpt = constructAltitudeBPT(adjacency)
-    print("drawing saliency BPT...")
-    salBpt = drawSaliencyForVizu(bpt,image)
-    saveImage(salBpt, "Results/BPT Saliency map.png")
+    print("constructing stochastic watershed...")
+    sws = constructExactRandomSeedsWatershed(adjacency, verbose=True)
+    print("drawing saliency...")
+    salSWS = drawSaliencyForVizu(sws,image)
+    saveImage(salSWS, "Results/Random seeds SWS Saliency map.png")
     
-    print("constructing Component Tree...")
-    comptTree=transformAltitudeBPTtoComponentTree(bpt)
-    print("drawing saliency Comp Tree...")
-    salCt = drawSaliencyForVizu(comptTree,image)
-    saveImage(salCt, "Results/CompTree Saliency map.png")
-    
-    if salBpt.equals(salCt):
-        print("Good news BPT and Compt Tree have the same saliency !")
-    else:
-        print("Yearkk! BPT and Compt Tree don't have the same saliency !")
-    
-    print("constructing watershed hierarchy by altitude...")
-    wsh=transformAltitudeBPTtoWatershedHierarchy(bpt)
-    print("drawing saliency watershed hierarchy by altitude...")
-    salWSh = drawSaliencyForVizu(wsh,image)
-    saveImage(salWSh, "Results/Watershed by Altitude Saliency map.png")
-
-    print("constructing watershed hierarchy by area...")
+    print("constructing area watershed...")
+    wsh = transformAltitudeBPTtoWatershedHierarchy(constructAltitudeBPT(adjacency))
     addAttributeArea(wsh)
     wsha= transformBPTtoAttributeHierarchy(wsh,"area")
-    print("drawing saliency watershed hierarchy by area...")
-    salWSha = drawSaliencyForVizu(wsha,image)
-    saveImage(salWSha, "Results/Watershed by Area Saliency map.png")
-   
+    print("Testing isomorphism...")
+    print(Tree.testTreeIsomorphism(sws, wsha))
+    
 
 def main():
-    demoBPT()
+    demoSWS()
     
 if __name__ == '__main__':
     main()

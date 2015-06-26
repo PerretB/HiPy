@@ -35,7 +35,7 @@ Created on 3 juin 2015
 @author: perretb
 '''
 
-from HiPy.Structures import  Adjacency2d4
+from HiPy.Structures import Adjacency2d4, Tree
 from HiPy.Util.Histogram import imageInverseGrayByte
 from HiPy.Util.Geometry2d import imagePadding, reduceKhalimsky, removeBorder
 from HiPy.Processing.Attributes import addAttributeArea
@@ -43,34 +43,7 @@ from HiPy.Hierarchies.TreeOfShape import constructTreeOfShapes
 from HiPy.IO import readImage, saveImage
 
 
-def testTreeIsomorphism(tree1,tree2):
-    '''
-    Test if tree1 and tree2 are isomorph assuming that leaves are ordered
-    '''
-    if(len(tree1)!=len(tree2) or tree1.nbPixels!=tree2.nbPixels):
-        return False
-    
-    #both tree have same size so we need to find an injection m from the nodes of t1 to the nodes of t2 such that 
-    # for any node n of t1 m(parent(n))=parent(m(n))
-    mapT1T2 = [-1]*len(tree1)
-    
-    
-    for i in range(len(mapT1T2)-1): #root is root !
-        #pixel mapping is constant
-        if i<tree1.nbPixels:
-            mapT1T2[i]=i
-        #parent(n)
-        pT1=tree1[i]
 
-        #parent(m(n))
-        pT2=tree2[mapT1T2[i]]
-        if mapT1T2[pT1]==-1:
-            mapT1T2[pT1]=pT2
-        elif mapT1T2[pT1]!=pT2:
-            return False
-        
-        
-    return True
 
 
 
@@ -87,7 +60,7 @@ def testSelfDuality():
         tree1 =constructTreeOfShapes(im,None,False)
         tree2 =constructTreeOfShapes(imInv,None,False)
            
-        if testTreeIsomorphism(tree1, tree2):
+        if Tree.testTreeIsomorphism(tree1, tree2):
             print("Self duality verified")
         else:
             print("Arg: self duality broken")
