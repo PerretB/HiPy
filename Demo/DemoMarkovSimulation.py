@@ -44,7 +44,7 @@ from HiPy.IO import * #@UnusedWildImport
 from HiPy.Hierarchies import * #@UnusedWildImport
 from HiPy.Processing.Markov import * #@UnusedWildImport
 from HiPy.Util.Histogram import * #@UnusedWildImport
-from HiPy.Util.Color import * #@UnusedWildImport
+
 
 def simuDirect():
     print('Reading image...')
@@ -72,7 +72,7 @@ def simuDirect():
     
 
     saveImage(normalizeToByte(imLabel), "Results/Markov simulation labels.png")
-    saveImage(normalizeToByteColor(imObservation), "Results/Markov simulation observations.png")
+    saveImage(normalizeToByte(imObservation), "Results/Markov simulation observations.png")
     
     print('Markov model initialization...')
     markovModel=getInitialGuess(tree, 3)
