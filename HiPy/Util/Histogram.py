@@ -28,7 +28,7 @@
 # The fact that you are presently reading this means that you have had
 # knowledge of the CeCILL license and that you accept its terms.
 
-
+from HiPy.Util.VMath import medianV
 '''
 Created on 9 juin 2015
 
@@ -134,8 +134,33 @@ def getMinMax(image, band=None):
                 
         return vmin, vmax
 
+def combineBands(*args):
+    '''
+    Takes several images and combine them in a single multiband images.
+    All the input images must have the same dimension.
     
+    If args = [image1, image2, ..., imageN)
+    The result is, for all pixel i, res[i]=[image1[i], image2[i], ..., imageN[i]]
+    '''  
+    res = args[0].copy(copyData=False)
+    
+    for i in res.iterateOnPixels():
+        res[i]=[im[i] for im in args]
+        
+    return res
 
+def median(*args):
+    '''
+    Compute the median of several scalar images.
+    All the input images must have the same dimension.
+    
+    If args = [image1, image2, ..., imageN)
+    The result is, for all pixel i, res[i]=median(image1[i], image2[i], ..., imageN[i])
+    '''  
+    res = args[0].copy(copyData=False)
+    for i in res.iterateOnPixels():
+        res[i]=medianV([im[i] for im in args])
+    return res
     
 
 

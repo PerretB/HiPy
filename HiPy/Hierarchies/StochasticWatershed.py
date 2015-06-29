@@ -44,9 +44,6 @@ def constructExactRandomSeedsWatershed(adjacency, computeAttributeFunction=addAt
         print("Constructing Watershed hierarchy...")
     bpt = transformAltitudeBPTtoWatershedHierarchy(constructAltitudeBPT(adjacency))
     if verbose:
-        print("Constructing BPT...")
-    bpt = constructAltitudeBPT(adjacency)
-    if verbose:
         print("Computing attribute...")
     computeAttributeFunction(bpt)
     if verbose:

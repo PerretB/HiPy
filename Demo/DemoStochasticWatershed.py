@@ -9,6 +9,7 @@
 # license as circulated by CEA, CNRS and INRIA at the following URL
 # "http://www.cecill.info". 
 
+
 # As a counterpart to the access to the source code and  rights to copy,
 # modify and redistribute granted by the license, users are provided only
 # with a limited warranty  and the software's author,  the holder of the
@@ -45,6 +46,13 @@ from HiPy.Util.Histogram import * #@UnusedWildImport
 from HiPy.Util.VMath import * #@UnusedWildImport
 from HiPy.Util.Color import convertRGBtoLAB
 
+
+
+# determinist random generator
+rnd = random.Random() 
+rnd.seed(1)
+
+
 def demoSWS():
     print("reading image...")
     image = readImage('../samples/monsters.png', False)
@@ -67,9 +75,56 @@ def demoSWS():
     print("Testing isomorphism...")
     print(Tree.testTreeIsomorphism(sws, wsha))
     
-
+def demoNoiseWS(iteration=21):
+    print("reading image...")
+    image = readImage('../samples/lenna512.png', False)
+    adj4 = Adjacency2d4(image.embedding.size)
+    image = rescaleGray(image,0,1)
+    res=[]
+    sal0=None
+    for i in range(iteration):
+        print("-> Iteration " + str(i))
+        print("Adding noise...")
+        im2 = imageMap(image, lambda x: x+rnd.uniform(-0.001, 0.001), marginal=True)
+        im2 = rescaleGray(im2,0,1)
+        im2 = convertRGBtoLAB(im2)
+        print("Constructing gradient graph...")
+        adjacency= AdjacencyEdgeWeightedGraph.createAdjacency(adj4, lambda i,j: euclideanDistance(im2[i], im2[j]))
+        print("Constructing area watershed...")
+        wsh = transformAltitudeBPTtoWatershedHierarchy(constructAltitudeBPT(adjacency))
+        addAttributeArea(wsh)
+        wsha= transformBPTtoAttributeHierarchy(wsh,"area")
+        sal=computeSaliencyMap(wsha, adj4)
+        print("Drawing saliency...")
+        #salWSHA = drawSaliencyForVizu(wsha,image)
+        if sal0==None:
+            sal0=sal
+        else:
+            for i in range(len(sal0.edges)):
+                sal0.edges[i].append(sal.edges[i][2])
+    print("Merging results...")
+    #imFinale=median(*res)
+    
+    
+    for i in range(len(sal0.edges)):
+        w=medianV(sal0.edges[i][2:iteration+2])
+        sal0.edges[i]=[sal0.edges[i][0],sal0.edges[i][1],w]
+    
+    res[:]=[]
+    
+    print("Ultra metric opening...")
+    bpt = transformAltitudeBPTtoWatershedHierarchy(constructAltitudeBPT(sal0))
+    saveImage(drawSaliencyForVizu(bpt,image), "Results/Random noise WS bpt.png")
+    
+    print("Area watershed...")
+    addAttributeArea(bpt)
+    wsa= transformBPTtoAttributeHierarchy(bpt,"area")
+    saveImage(drawSaliencyForVizu(wsa,image), "Results/Random noise WSH.png")
+        
+        
 def main():
-    demoSWS()
+    #demoSWS()
+    demoNoiseWS()
     
 if __name__ == '__main__':
     main()

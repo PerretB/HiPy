@@ -60,3 +60,12 @@ def norm(v):
 
 def euclideanDistance(v1,v2):
     return norm(diffV(v1,v2))
+
+def medianV(v):
+    s=sorted(v)
+    nbE = len(s)
+    nbEd2 = nbE//2
+    if nbE%2==1:
+        return s[nbEd2]
+    else:
+        return (s[nbEd2]+s[nbEd2+1])/2

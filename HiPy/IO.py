@@ -61,14 +61,21 @@ def readImage(filename, grayScale=True):
     coord = lambda x: (x % size[0], x // size[0])
     pixdata = image.load()
     im = Image(size[0]*size[1])
-    if grayScale and isinstance(pixdata[(0,0)], (list, tuple)):
-        if len(pixdata[(0,0)])>3:
+    bands=1
+    if isinstance(pixdata[(0,0)], (list, tuple)):
+        bands=len(pixdata[(0,0)])
+    if grayScale and bands>1:
+        if bands>3:
             print("Warning: Image.Read, image has more than 3 channels (alpha component?), one or more channels will be ignored during the grayscale conversion.")
         for i in range(size[0]*size[1]):
             im[i]=sum(pixdata[coord(i)][0:3])//3
     else:
-        for i in range(size[0]*size[1]):
-            im[i]=(pixdata[coord(i)])
+        if bands==1:
+            for i in range(size[0]*size[1]):
+                im[i]=pixdata[coord(i)]
+        else:
+            for i in range(size[0]*size[1]):
+                im[i]=list(pixdata[coord(i)])
     im.embedding = Embedding2dGrid(size[0],size[1])
     return im
 
