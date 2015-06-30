@@ -34,8 +34,7 @@ Created on 15 juin 2015
 '''
 
 import HiPy.Util.UnionFind as UnionFind
-from HiPy.Structures import Tree, AdjacencyEdgeWeightedGraph, \
-    Adjacency2d4, Embedding2dGrid, Image, TreeType
+from HiPy.Structures import Tree, Adjacency2d4, Embedding2dGrid, Image, TreeType, WeightedAdjacency
 from HiPy.Processing.Attributes import addAttributeChildren,\
     addAttributeDepth
 from HiPy.Util.Histogram import imageMap, rescaleGray, normalizeToByte
@@ -50,10 +49,10 @@ def constructAltitudeBPT(adjacency, verbose=False):
     '''
     if verbose:
         print("Sorting") 
-    edges = adjacency.edges
-    nbPoints = adjacency.nbPoints
-    edges = sorted(edges, key=lambda x:x[2])
     
+    nbPoints = adjacency.nbPoints
+    edgesI = sorted(range(len(adjacency)), key=lambda x:adjacency[x])
+    edges = [[adjacency.source[i], adjacency.target[i], adjacency[i]]  for i in edgesI]
     if verbose:
         print("Kruskaling") 
     MST,parent=computeMSTBPT(nbPoints,edges)
@@ -61,11 +60,12 @@ def constructAltitudeBPT(adjacency, verbose=False):
     if verbose:
         print("Stuffing")
     levels=[0]*nbPoints 
-    adjMST=AdjacencyEdgeWeightedGraph(nbPoints)
+    adjMST=WeightedAdjacency(nbPoints)
+
     for e in MST:
         levels.append(e[2])
         adjMST.createEdge(*e)
-    
+
     if verbose:
         print("Finalizing")
     tree = Tree(TreeType.PartitionHierarchy,parent, levels)
@@ -127,7 +127,7 @@ def transformBPTtoAttributeHierarchy(bpt, attributeName):
     return constructAltitudeBPT(adj)
 
 def transformAltitudeBPTtoWatershedHierarchy(bpt):
-    nadj=extractWatershedEdges(bpt)
+    nadj=extractWatershedEdges(bpt) 
     return constructAltitudeBPT(nadj)
     
 def computeMSTBPT(nbPoints,sortedEdgeList):
@@ -135,6 +135,7 @@ def computeMSTBPT(nbPoints,sortedEdgeList):
     precondition: The edge list must be sorted
     '''
     nbEdgeMST=nbPoints-1
+    
     mst=[]
     parent = [-1]*nbPoints
     ufParent = [i for i in range(nbPoints)]
@@ -163,8 +164,8 @@ def extractWatershedEdges(bpt):
     '''
     Return a copy of bpt.leavesAdjacency (ie the MST) where the weight of the non-watershed edges are set to 0
     '''
+    
     nadj=bpt.leavesAdjacency.copy()
-    nedges=nadj.edges
     nbLeaves=bpt.nbPixels
     nbNodes=len(bpt)
     addAttributeChildren(bpt)
@@ -179,7 +180,7 @@ def extractWatershedEdges(bpt):
         nb=m1+m2
 
         if m1==0 or m2==0:
-            nedges[i-nbLeaves][2]=0
+            nadj[i-nbLeaves]=0
        
         if nb!=0:
             minima[i]=nb
@@ -189,6 +190,7 @@ def extractWatershedEdges(bpt):
             if p==-1 or level[i]!=level[p]:
                 minima[i]=1
             #else minima[i]=0
+    
     return nadj
 
 
@@ -226,40 +228,41 @@ def reweightMSTByAttribute(bpt, attributeName, extinctionValue=True):
     '''
     nbLeaves=bpt.nbPixels
     nadj=bpt.leavesAdjacency.copy()
-    nedges=nadj.edges
     addAttributeChildren(bpt)
     children=bpt.children
     attr=bpt.getAttribute(attributeName)
     if extinctionValue:
         for i in bpt.iteratorFromPixelsToRoot(False):
-            nedges[i-nbLeaves][2]=min(attr[children[i][0]],attr[children[i][1]])
+            nadj[i-nbLeaves]=min(attr[children[i][0]],attr[children[i][1]])
     else:
         for i in bpt.iteratorFromPixelsToRoot(False):
-            nedges[i-nbLeaves][2]=attr[i]
+            nadj[i-nbLeaves]=attr[i]
     return nadj
 
-def computeSaliencyMap(partitionTree,adjacency):
+def computeSaliencyMap(partitionTree,adjacency, attribute="level"):
     '''
     Compute the saliency values of the edges of the given adjacency w.r.t the given partition tree.
     
     A new adjacency is created during the process.
     '''
     addAttributeDepth(partitionTree)
-    level=partitionTree.level
+    attr=partitionTree.getAttribute(attribute)
     lca=partitionTree.lca
     
     # could be shortened to
-    # AdjacencyEdgeWeightedGraph.createAdjacency(adjacency, lambda i,j:level[lca(i,j)])
+    # WeightedAdjacency.createAdjacency(adjacency, lambda i,j:level[lca(i,j)])
     # but doubles the cost due to symmetric weights
-    adj=AdjacencyEdgeWeightedGraph(adjacency.nbPoints)
-    for i in range(adj.nbPoints):
-        for j in adjacency.getSuccesors(i):
-            if j>i:
-                w=level[lca(i,j)]
-                adj.createEdge(i, j, w)
-                adj.createEdge(j, i, w)
-    
-    return adj 
+#     adj=WeightedAdjacency(adjacency.nbPoints)
+#     for i in range(adj.nbPoints):
+#         for j in adjacency.getSuccesors(i):
+#             if j>i:
+#                 w=attr[lca(i,j)]
+#                 adj.createEdge(i, j, w)
+#                 #adj.createEdge(j, i, w)
+#      
+#     return adj 
+
+    return WeightedAdjacency.createAdjacency(adjacency, lambda i,j:attr[lca(i,j)])
 
 def drawSaliencyMap(size,saliency):
     '''

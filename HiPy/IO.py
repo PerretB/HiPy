@@ -36,7 +36,7 @@ Created on 3 juin 2015
 '''
 
 
-from HiPy.Structures import Image, Embedding2dGrid, AdjacencyEdgeWeightedGraph
+from HiPy.Structures import Image, Embedding2dGrid, DirectedWeightedAdjacency
 import os
 
 PILAvailable=False
@@ -111,7 +111,7 @@ def saveImage(image,filename):
 
 def readGraph(filename):
     '''
-    Read a graph (AdjacencyEdgeWeightedGraph) from ascii file.
+    Read a graph (DirectedWeightedAdjacency) from ascii file.
     format (weights are optionnale, vertices are numbered from 0 to numberOfVertices-1):
     numberOfVertices numberOfEdges
     sourceVertexOfEdge_1 destinationVertexOfEdge_1 weightOfEdge_1
@@ -126,7 +126,7 @@ def readGraph(filename):
     nbPoints = int(line.split()[0])
     lines = infile.readlines()
     infile.close()
-    graph=AdjacencyEdgeWeightedGraph(nbPoints)
+    graph=DirectedWeightedAdjacency(nbPoints)
     
     
     for line in lines:
@@ -140,7 +140,7 @@ def readGraph(filename):
 
 def saveGraph(graph, filename):
     '''
-    Save a graph (AdjacencyEdgeWeightedGraph) in a file as plain text
+    Save a graph (DirectedWeightedAdjacency) in a file as plain text
     '''
     out = open(filename, "w")
     out.write(str(graph["nbPoints"]) + " " + str(len(graph["edges"])) + "\n")

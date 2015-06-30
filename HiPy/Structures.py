@@ -218,7 +218,7 @@ class Adjacency(object):
     
     def getOutEdges(self,i):
         ''' 
-        return list of out edges of the form [i,j,*] such that i->j (* can be any auxilary data, usually weights)
+        return list of outHead edges of the form [i,j,*] such that i->j (* can be any auxilary data, usually weights)
         '''
         raise Exception("Unsuported method" + " getOutEdges")
         
@@ -360,22 +360,163 @@ class AdjacencyTree(Adjacency):
                 
         return nl
 
-
-class AdjacencyEdgeWeightedGraph(Adjacency):
+class AbstractWeightedAdjacency(Adjacency, Image):
     '''
-    Generic adjacency represented using link lists of out edges
+    An abstract edge weighted adjacency.
+   
+    A weighted adjacency is an image of weights with two attributes: source and target.
+    Each pixel i of the image I represent an edge from source[i] to target[i] weighted by I[i].
+    
+     Known concrete implementations are 
+      - WeightedAdjacency
+      - DirectedWeightedAdjacency
+    '''
+    def __init__(self,size):
+        '''
+         Create a new empty adjacency on a set of size elements
+        '''
+        Adjacency.__init__(self,size)
+        Image.__init__(self, 0)
+        self.addAttribute('source')
+        self.addAttribute('target')
+       
+    
+    
+    
+class WeightedAdjacency(AbstractWeightedAdjacency):
+    '''
+    Non directed adjacency represented with list of edges.
+    
+    Note:
+      - methods getSuccesors, getPredecessors, and getNeighbours are equivalent 
+      - methods getEdges, getOutEdges, and getInEdges are equivalent
     '''
     
     def __init__(self,size):
-        super(AdjacencyEdgeWeightedGraph,self).__init__(size)
         '''
-         Create a new adjacency on a set of size elements
+         Create a new empty adjacency on a set of size elements
         '''
-        self.nbPoints=size
-        self.out=[-1]*size
+        AbstractWeightedAdjacency.__init__(self, size)
+        self.edgeList=[]
+        for _ in range(size):
+            self.edgeList.append([])
+    
+    def createEdge(self, source, target, weight=1):
+        '''
+        Create a new edge in the graph, linking node source to node dest.
+        
+        As teh graph is undirected, by convention, the method will ensure that source < target
+        
+        Warning: does not verify is the edge already exists
+        '''
+        i=len(self)
+        if source > target:
+            source, target = target, source
+        self.append(weight)
+        self.source.append(source)
+        self.target.append(target)
+        
+        self.edgeList[source].append(i)
+        self.edgeList[target].append(i)
+        
+
+    @staticmethod
+    def createAdjacency(baseAdjacency,weightingFunction=None):
+        '''
+        Create a new adjacency equivalent to the given adjacency but with a different weighting function.
+        
+        Warning: the base adjacency is assumed to be symmetric!
+        
+        Typical use is to transform an implicit k-adjacency into an explicit weighted adjacency.
+        '''
+        adj=WeightedAdjacency(baseAdjacency.nbPoints)
+        if weightingFunction!=None:
+            for i in range(adj.nbPoints):
+                for j in baseAdjacency.getSuccesors(i):
+                    if j>i:
+                        adj.createEdge(i, j, weightingFunction(i,j))
+        else:
+            for i in range(adj.nbPoints):
+                for j in baseAdjacency.getSuccesors(i):
+                    if j>i:
+                        adj.createEdge(i, j)
+                    
+        return adj
+    
+    def copy(self):
+        '''
+        Returns a copy of the current adjacency.
+        Garanties that edges indices are consistant between the copy and the current object (ie copy[i]==original[i] for all i)
+        '''
+        adj = WeightedAdjacency(self.nbPoints)
+        for i in range(len(self)):
+            adj.createEdge(self.source[i], self.target[i],self[i])
+        return adj
+    
+    
+    def getSuccesors(self, i):
+        '''
+        return list of points j such that i->j
+        '''
+        # ugly hack to symmetrise the adjacency on the fly
+        return [ self.source[e] + self.target[e] - i for e in self.edgeList[i]] 
+    
+    def getPredecessors(self, i):
+        '''
+        return list of points j such that j->i
+        '''
+        return self.getSuccesors(i)
+    
+    def getNeighbours(self, i):
+        ''' 
+        return list of points j such that j->i or i->j (Succesors U Predecessors)
+        '''
+        return self.getSuccesors(i)
+    
+    def getEdges(self,i):
+        ''' 
+        return list of in  edges of the form [j,i,*] or [i,j,*] such that j->i or i->j(* can be any auxilary data, usually weights)
+        '''
+        return [ [self.source[e], self.target[e], self[e]] for e in self.edgeList[i]] 
+    
+    def getOutEdges(self,i):
+        ''' 
+        return list of outHead edges of the form [i,j,*] such that i->j (* can be any auxilary data, usually weights)
+        '''
+        return self.getEdges(i)
+        
+    def getInEdges(self,i):
+        ''' 
+        return list of in  edges of the form [j,i,*] such that j->i (* can be any auxilary data, usually weights)
+        '''
+        return self.getEdges(i)
+    
+    
+        
+class DirectedWeightedAdjacency(AbstractWeightedAdjacency):
+    '''
+    Directed adjacency represented using doubly linked lists of out edges.
+    
+    The following operations are done in O(1) constant time:
+      - Edge insertion
+      - Edge deletion
+      - Fusion of edge lists
+      - Getting the list of out edges for a given source node
+      
+    The following operations are not supported (their implementation would be very innefficient):
+      - getPredecessors
+      - getNeighbours
+    However, the method getTranspose which will transpose the current graph gives an easy solution to get
+    those functions if needed.
+    '''
+    
+    def __init__(self,size):
+        AbstractWeightedAdjacency.__init__(self, size)
+        '''
+         Create a new empty adjacency on a set of size elements
+        '''
+        self.outHead=[-1]*size
         self.outTail=[-1]*size
-        # an edge is an array of two elements [source,destination] so this is kind of a hybrid graph representation
-        self.edges=[]
         self.prevEdge=[]
         self.nextEdge=[]
 
@@ -386,7 +527,7 @@ class AdjacencyEdgeWeightedGraph(Adjacency):
         
         Typical use is to transform an implicit k-adjacency into an explicit weighted adjacency.
         '''
-        adj=AdjacencyEdgeWeightedGraph(baseAdjacency.nbPoints)
+        adj=DirectedWeightedAdjacency(baseAdjacency.nbPoints)
         if weightingFunction!=None:
             for i in range(adj.nbPoints):
                 for j in baseAdjacency.getSuccesors(i):
@@ -399,17 +540,17 @@ class AdjacencyEdgeWeightedGraph(Adjacency):
         return adj
     
     def copy(self):
-        adj = AdjacencyEdgeWeightedGraph(self.nbPoints)
-        for e in self.edges:
-            adj.createEdge(*e)
+        adj = DirectedWeightedAdjacency(self.nbPoints)
+        for i in range(len(self)):
+            adj.createEdge(self.source[i], self.target[i], self[i])
         return adj
         
     def getSuccesors(self, i):
         nodes = []
-        e = self.out[i]
+        e = self.outHead[i]
         while(e != -1):
             # dest is the adjancent vertex
-            nodes.append(self.edges[e][1])
+            nodes.append(self.target[e])
             # next edge in the edge list
             e = self.nextEdge[e]
         return nodes
@@ -422,10 +563,10 @@ class AdjacencyEdgeWeightedGraph(Adjacency):
     
     def getOutEdges(self,i):
         edges = []
-        e = self.out[i]
+        e = self.outHead[i]
         while(e != -1):
             # dest is the adjancent vertex
-            edges.append(self.edges[e])
+            edges.append([self.source[e],self.target[e],self[e]])
             # next edge in the edge list
             e = self.nextEdge[e]
         return edges
@@ -433,50 +574,49 @@ class AdjacencyEdgeWeightedGraph(Adjacency):
     def getInEdges(self,i):
         raise Exception("Unsuported method" + " getInEdges")
     
-    def createEdge(self, source, dest, weight=None):
+    def createEdge(self, source, target, weight=1):
         '''
         Create a new edge in the graph, linking node source to node dest.
         '''
-        i=len(self.prevEdge)
-        if weight!=None:
-            self.edges.append([source,dest,weight])
-        else:
-            self.edges.append([source,dest])
+        i=len(self)
+        self.append(weight)
+        self.source.append(source)
+        self.target.append(target)
         self.prevEdge.append(-1)
         self.nextEdge.append(-1)
-        self.setEdge(source, dest, i)
+        self.setEdge(source, target, i)
 
     def setEdge(self, source, dest, i):
         '''
-        Set the edge i of the graph, the edge is put at the head of the out linked list of the source vertex
+        Set the edge i of the graph, the edge is put at the head of the outHead linked list of the source vertex
         '''
         n1 = source
-        if self.out[n1] == -1:
+        if self.outHead[n1] == -1:
             self.outTail[n1] = i
         else:
-            e1 = self.out[n1]
+            e1 = self.outHead[n1]
             self.prevEdge[e1] = i
             self.nextEdge[i] = e1
-        self.out[n1] = i
+        self.outHead[n1] = i
 
     def concatEdgeOut(self, n1, n2):
         '''
-        Concatenate edge lists, out edges of vertex n2 are added to vertex n1
+        Concatenate edge lists, outHead edges of vertex n2 are added to vertex n1
         '''
         if self.outTail[n1] != -1:
-            self.nextEdge[self.outTail[n1]] = self.out[n2]
-        if self.out[n2] != -1:    
-            self.prevEdge[self.out[n2]] = self.outTail[n1]
+            self.nextEdge[self.outTail[n1]] = self.outHead[n2]
+        if self.outHead[n2] != -1:    
+            self.prevEdge[self.outHead[n2]] = self.outTail[n1]
         if self.outTail[n2] != -1:
             self.outTail[n1] = self.outTail[n2]
-        self.out[n2] = self.outTail[n2] = -1
+        self.outHead[n2] = self.outTail[n2] = -1
 
     def removeEdgeOut(self, n, e):
         '''
-        Remove the edge e of the list of out edges of vertex n
+        Remove the edge e of the list of outHead edges of vertex n
         '''
-        if self.out[n] == e:
-            self.out[n] = self.nextEdge[e]
+        if self.outHead[n] == e:
+            self.outHead[n] = self.nextEdge[e]
         if self.outTail[n] == e:
             self.outTail[n] = self.prevEdge[e]
         if self.nextEdge[e] != -1:
@@ -490,7 +630,7 @@ class AdjacencyEdgeWeightedGraph(Adjacency):
         '''
         Symmetrize the graph with the max strategy: whenever an edge (p,q) is found the edge (q,p) is added to the graph
         '''
-        g = AdjacencyEdgeWeightedGraph(self.nbPoints)
+        g = DirectedWeightedAdjacency(self.nbPoints)
         for i in range(self.nbPoints):
             for j in self.getSuccesors(i):
                 if not j in g.getSuccesors(i):
@@ -503,7 +643,7 @@ class AdjacencyEdgeWeightedGraph(Adjacency):
         '''
         Symmetrize the graph with the min strategy: an edge (p,q) is preserved only if the edge (q,p) is also in the graph
         '''
-        g = AdjacencyEdgeWeightedGraph(self.nbPoints)
+        g = DirectedWeightedAdjacency(self.nbPoints)
         for i in range(self.nbPoints):
             for j in self.getSuccesors(i):
                 if j>i and i in self.getSuccesors(j):
@@ -516,7 +656,7 @@ class AdjacencyEdgeWeightedGraph(Adjacency):
         '''
         Transpose the graph: each edge (p,q) is transformed into the edge (q,p)
         '''
-        g = AdjacencyEdgeWeightedGraph(self.nbPoints)
+        g = DirectedWeightedAdjacency(self.nbPoints)
         for i in range(self.nbPoints):
             for j in self.getSuccesors(i):
                 g.createEdge(j,i)

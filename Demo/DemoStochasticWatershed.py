@@ -8,6 +8,7 @@
 # modify and/ or redistribute the software under the terms of the CeCILL
 # license as circulated by CEA, CNRS and INRIA at the following URL
 # "http://www.cecill.info". 
+from HiPy.Structures import WeightedAdjacency
 
 
 # As a counterpart to the access to the source code and  rights to copy,
@@ -60,7 +61,7 @@ def demoSWS():
     
     print("constructing gradient graph...")
     adj4 = Adjacency2d4(image.embedding.size)
-    adjacency=image.adjacency = AdjacencyEdgeWeightedGraph.createAdjacency(adj4, lambda i,j: euclideanDistance(image[i], image[j]))
+    adjacency=image.adjacency = WeightedAdjacency.createAdjacency(adj4, lambda i,j: euclideanDistance(image[i], image[j]))
     
     print("constructing stochastic watershed...")
     sws = constructExactRandomSeedsWatershed(adjacency, verbose=True)
@@ -75,7 +76,7 @@ def demoSWS():
     print("Testing isomorphism...")
     print(Tree.testTreeIsomorphism(sws, wsha))
     
-def demoNoiseWS(iteration=21):
+def demoNoiseWS(iteration=11):
     print("reading image...")
     image = readImage('../samples/lenna512.png', False)
     adj4 = Adjacency2d4(image.embedding.size)
@@ -89,7 +90,7 @@ def demoNoiseWS(iteration=21):
         im2 = rescaleGray(im2,0,1)
         im2 = convertRGBtoLAB(im2)
         print("Constructing gradient graph...")
-        adjacency= AdjacencyEdgeWeightedGraph.createAdjacency(adj4, lambda i,j: euclideanDistance(im2[i], im2[j]))
+        adjacency= WeightedAdjacency.createAdjacency(adj4, lambda i,j: euclideanDistance(im2[i], im2[j]))
         print("Constructing area watershed...")
         wsh = transformAltitudeBPTtoWatershedHierarchy(constructAltitudeBPT(adjacency))
         addAttributeArea(wsh)
@@ -99,18 +100,19 @@ def demoNoiseWS(iteration=21):
         #salWSHA = drawSaliencyForVizu(wsha,image)
         if sal0==None:
             sal0=sal
+            for i in range(len(sal0)):
+                sal0[i]=[sal0[i]]
         else:
-            for i in range(len(sal0.edges)):
-                sal0.edges[i].append(sal.edges[i][2])
+            for i in range(len(sal0)):
+                sal0[i].append(sal[i])
     print("Merging results...")
     #imFinale=median(*res)
     
     
-    for i in range(len(sal0.edges)):
-        w=medianV(sal0.edges[i][2:iteration+2])
-        sal0.edges[i]=[sal0.edges[i][0],sal0.edges[i][1],w]
+    for i in range(len(sal0)):
+        sal0[i]=medianV(sal0[i])
     
-    res[:]=[]
+
     
     print("Ultra metric opening...")
     bpt = transformAltitudeBPTtoWatershedHierarchy(constructAltitudeBPT(sal0))

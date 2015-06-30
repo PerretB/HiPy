@@ -41,7 +41,7 @@ from HiPy.Hierarchies.DirectedComponentHierarchy import * #@UnusedWildImport
 # Create the graph for the neurite application.
 # Image is the vesselness image.
 def createSemanticGraphNeurite(image,size, tube=1,bulbe=2):
-    graph =  AdjacencyEdgeWeightedGraph(size[0]*size[1])
+    graph = DirectedWeightedAdjacency(size[0]*size[1])
     width=size[0]
     height=size[1]
     coordLinTo2D = lambda x: (x % width, x // width)

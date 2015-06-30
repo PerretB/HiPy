@@ -47,7 +47,7 @@ from HiPy.Processing.Attributes import * #@UnusedWildImport
 # (the grey level value of the origin of the arc and the one of its destination)
 
 def createHeartGradientGraph(image, size, weightFunction, connectivity=8):
-    graph =  AdjacencyEdgeWeightedGraph(size[0]*size[1])
+    graph =  DirectedWeightedAdjacency(size[0]*size[1])
     width=size[0]
     height=size[1]
     coordLinTo2D = lambda x: (x % width, x // width)

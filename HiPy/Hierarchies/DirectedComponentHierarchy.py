@@ -28,7 +28,7 @@
 # The fact that you are presently reading this means that you have had
 # knowledge of the CeCILL license and that you accept its terms.
 
-from HiPy.Structures  import Tree, AdjacencyEdgeWeightedGraph, Image, TreeType
+from HiPy.Structures  import Tree, DirectedWeightedAdjacency, Image, TreeType
 
 
 from HiPy.Util.UnionFind import *
@@ -96,7 +96,7 @@ def builgGraph(graph, image, level):
     # create a graph with dim vertices
     # some vertices will certainly be unused.
     # using this trick we are sure that a same vertice get the same index in all levels
-    g=AdjacencyEdgeWeightedGraph(dim) 
+    g=DirectedWeightedAdjacency(dim) 
     g.enabled=[False]*dim
     
     for i in range(dim):
@@ -104,7 +104,7 @@ def builgGraph(graph, image, level):
         if image[i]>=level:
             # mark vertice as used
             g.enabled[i]=True
-            # get through all edges going out from vertice i in graph
+            # get through all edges going outHead from vertice i in graph
             for j in graph.getSuccesors(i):
                 if image[j]>=level:
                     g.createEdge(i,j)
@@ -134,7 +134,7 @@ def strongComponentLabelings(graph, firstLabel=0):
     # recursive sub-procedure of tarjan strong comp construction              
     def strongConnectComp(base):
         nonlocal ind, curLabel
-        derecStack.append([base,graph.out[base]])
+        derecStack.append([base,graph.outHead[base]])
         Index[base] = ind
         LowLink[base] = ind
         ind = ind + 1
@@ -143,10 +143,10 @@ def strongComponentLabelings(graph, firstLabel=0):
         while len(derecStack)!=0:
             [i,curAdj]=derecStack.pop() 
             while curAdj!=-1:
-                vc = graph.edges[curAdj][1]
+                vc = graph.target[curAdj]
                 if Index[vc]==-1 : 
                     derecStack.append([i,curAdj])
-                    derecStack.append([vc,graph.out[vc]])
+                    derecStack.append([vc,graph.outHead[vc]])
                     Index[vc] = ind
                     LowLink[vc] = ind
                     ind = ind + 1
@@ -248,10 +248,10 @@ def directedComponentHierarchyStackFast(stack, completeGraph=True):
     IsInStack = [False] * nbPoints
     # list of canonical vertices in union find
     activeVertices = []  # nodes
-    edges = stack.edges
+    #edges = stack.edges
     i = 0
     c = 0
-    while i < len(edges):
+    while i < len(stack):
         lvl = stack.lvlInsertionSequence[c]
         # add nodes at lvl c
         newnodes = stack.pointInsertionSequence[c]
@@ -261,9 +261,9 @@ def directedComponentHierarchyStackFast(stack, completeGraph=True):
         activeVertices.extend(newnodes)
     
         # add all edges at level lvl (assuming edges are sorted)              
-        while i < len(edges) and edges[i][2] == lvl:
-            u = edges[i][0]
-            v = edges[i][1]
+        while i < len(stack) and stack[i] == lvl:
+            u = stack.source[i]
+            v = stack.target[i]
             uc = findTarjan(u, Par)
             vc = findTarjan(v, Par)
             if(uc!=vc):
@@ -290,7 +290,7 @@ def strongConnectDerecFast(graph, activeVertices, Par, Rank, Root, parent, Index
     # recursive sub-procedure of tarjan strong comp construction              
     def strongConnectComp(base):
         nonlocal ind, completeGraph
-        derecStack.append([base,graph.out[base]])
+        derecStack.append([base,graph.outHead[base]])
 
         Index[base] = ind
         LowLink[base] = ind
@@ -302,10 +302,10 @@ def strongConnectDerecFast(graph, activeVertices, Par, Rank, Root, parent, Index
             [i,curAdj]=derecStack.pop()
 
             while curAdj != -1:
-                vc = findTarjan(graph.edges[curAdj][1], Par)
+                vc = findTarjan(graph.target[curAdj], Par)
                 if Index[vc]==-1: # first touch for this adjacent vertex
                     derecStack.append([i,curAdj])
-                    derecStack.append([vc,graph.out[vc]])
+                    derecStack.append([vc,graph.outHead[vc]])
                     Index[vc] = ind
                     LowLink[vc] = ind
                     ind = ind + 1
@@ -318,10 +318,10 @@ def strongConnectDerecFast(graph, activeVertices, Par, Rank, Root, parent, Index
                 curAdj=graph.nextEdge[curAdj]
     
             if curAdj==-1: # all adjacent nodes have been processed
-                e = graph.out[i]
+                e = graph.outHead[i]
                 # compute lowlink
                 while e != -1:
-                    vc = findTarjan(graph.edges[e][1], Par)
+                    vc = findTarjan(graph.target[e], Par)
                     # adjacent node that were not already processed during first pass and that have not been added in another scc
                     if Index[vc] > Index[i] and IsInStack[vc]: 
                         LowLink[i] = min(LowLink[i], LowLink[vc])
@@ -359,12 +359,12 @@ def strongConnectDerecFast(graph, activeVertices, Par, Rank, Root, parent, Index
 
 
 
-# remove reflexive and redundant out edges from vertice i                     
+# remove reflexive and redundant outHead edges from vertice i                     
 def cleanOutEdges(graph, i, Par):
-    e = graph.out[i]
+    e = graph.outHead[i]
     while e != -1:
         nexte = graph.nextEdge[e]
-        vc = findTarjan(graph.edges[e][1], Par)
+        vc = findTarjan(graph.target[e], Par)
         if vc == i or graph.flags[vc] == i:
             graph.removeEdgeOut(i, e)
         else:
@@ -376,9 +376,9 @@ def cleanOutEdges(graph, i, Par):
 def saveCompleteGraphEdges(graph, activeVertices, Par, Root, completeGraphEdges):
     for i in activeVertices:
         source = Root[i]
-        e = graph.out[i]
+        e = graph.outHead[i]
         while e != -1:
-            vc = findTarjan(graph.edges[e][1], Par)
+            vc = findTarjan(graph.target[e], Par)
             dest = Root[vc]
             completeGraphEdges.append([source, dest])
             e = graph.nextEdge[e]
@@ -405,7 +405,7 @@ def saveCompleteGraphEdges(graph, activeVertices, Par, Root, completeGraphEdges)
 # Returns :
 #    - the parent relation between the strong connected components of the different upper level sets of the graph
 #    - the adjacency relation between the strong connected components of each upper level sets of the graph
-#    - the number of arcs going out of each strong connected component
+#    - the number of arcs going outHead of each strong connected component
 
 def directedComponentHierarchyStack(stack):
     nbPoints = stack.nbPoints
@@ -422,11 +422,11 @@ def directedComponentHierarchyStack(stack):
 
     dagEdges =[]
     
-    edges = stack.edges
+    #edges = stack.edges
     i = 0
     c = 0
 
-    while i < len(edges):
+    while i < len(stack):
         lvl = stack.lvlInsertionSequence[c]
         # add nodes at lvl c
         newnodes = stack.pointInsertionSequence[c]
@@ -437,9 +437,9 @@ def directedComponentHierarchyStack(stack):
 
         # add all edges at level lvl (assuming edges are sorted)
               
-        while i < len(edges) and edges[i][2] == lvl:
-            u = edges[i][0]
-            v = edges[i][1]
+        while i < len(stack) and stack[i] == lvl:
+            u = stack.source[i]
+            v = stack.target[i]
             stack.setEdge( u, v, i)
             i = i + 1
         
@@ -467,7 +467,7 @@ def strongConnectDerec(graph,activeVertices, Index, LowLink, IsInStack, strongCo
                  
     def strongConnectComp(base):
         nonlocal ind
-        derecStack.append([base,graph.out[base]])
+        derecStack.append([base,graph.outHead[base]])
 
         Index[base] = ind
         LowLink[base] = ind
@@ -476,9 +476,9 @@ def strongConnectDerec(graph,activeVertices, Index, LowLink, IsInStack, strongCo
         ind = ind + 1
 
         def addOutEdges(lst, n):
-            oe = graph.out[n]
+            oe = graph.outHead[n]
             while oe != -1:
-                v = graph.edges[oe][1]
+                v = graph.target[oe]
                 lst.append(v)
                 oe = graph.nextEdge[oe]
         
@@ -502,10 +502,10 @@ def strongConnectDerec(graph,activeVertices, Index, LowLink, IsInStack, strongCo
 
                      
             while curAdj != -1:
-                vc = graph.edges[curAdj][1]
+                vc = graph.target[curAdj]
                 if Index[vc]==-1: # first touch for this adjacent vertex
                     derecStack.append([i,curAdj])
-                    derecStack.append([vc,graph.out[vc]])
+                    derecStack.append([vc,graph.outHead[vc]])
                     Index[vc] = ind
                     LowLink[vc] = ind
                     ind = ind + 1
@@ -519,10 +519,10 @@ def strongConnectDerec(graph,activeVertices, Index, LowLink, IsInStack, strongCo
 
             if curAdj==-1: # all adjacent nodes have been processed
 
-                e = graph.out[i]
+                e = graph.outHead[i]
                 # compute lowlink
                 while e != -1:
-                    vc = graph.edges[e][1]
+                    vc = graph.target[e]
                     # adjacent node that were not already processed during first pass and that have not been added in another scc
                     if Index[vc] > Index[i] and IsInStack[vc]: 
                         LowLink[i] = min(LowLink[i], LowLink[vc])
@@ -560,42 +560,53 @@ def strongConnectDerec(graph,activeVertices, Index, LowLink, IsInStack, strongCo
 # Create a stack from the edge weighted graph 
 def createGraphStackFromEdgeWeightedGraph(graph):
     dim=graph.nbPoints
-    stack = AdjacencyEdgeWeightedGraph(dim)
-    edges = graph.edges
-    nbe = len(edges)
+    stack = DirectedWeightedAdjacency(dim)
+    #edges = graph.edges
+    nbe = len(graph)
     #stack["edges"].extend(edges)
     
-    el = [i for i in range(nbe)]
-    el.sort(key=lambda x:edges[x][2])
+    #el = [i for i in range(nbe)]
+    #el.sort(key=lambda x:edges[x][2])
+    el = sorted(range(nbe),key=lambda x:graph[x] )
+    
     
     added = [False]*dim
     addedNodes = []
     addedLvls =[]
     stack.pointInsertionSequence = addedNodes
     stack.lvlInsertionSequence = addedLvls
-    stackEdges = stack.edges
+    
+    #stack.edges=[]
+    #stackEdges = stack.edges
     
     c=0
     
-    while c<len(edges):
-        e=edges[el[c]]
-        lvl=e[2]
+    while c<len(graph):
+
+        #e=edges[el[c]]
+        lvl=graph[el[c]]#e[2]
         addedLvls.append(lvl)
         nnodes = []
-        while(c<len(edges) and edges[el[c]][2]==lvl):
-            e=edges[el[c]]
-            stackEdges.append(e)
-            if not added[e[0]]:
-                nnodes.append(e[0])
-                added[e[0]]=True
-            if not added[e[1]]:
-                nnodes.append(e[1])
-                added[e[1]]=True
+        while(c<len(graph) and graph[el[c]]==lvl):
+            lvl=graph[el[c]]
+            src=graph.source[el[c]]
+            target=graph.target[el[c]]
+            stack.append(lvl)
+            stack.source.append(src)
+            stack.target.append(target)
+            #e=edges[el[c]]
+            #stackEdges.append(e)
+            if not added[src]:
+                nnodes.append(src)
+                added[src]=True
+            if not added[target]:
+                nnodes.append(target)
+                added[target]=True
             c = c + 1
         addedNodes.append(nnodes)
     
-    stack.nextEdge = [-1] * len(edges)
-    stack.prevEdge = [-1] * len(edges)
+    stack.nextEdge = [-1] * len(graph)
+    stack.prevEdge = [-1] * len(graph)
     stack.flags = [-1] * dim
     return stack
 
@@ -603,7 +614,7 @@ def createGraphStackFromEdgeWeightedGraph(graph):
 # Weights are given by the image.
 def createGraphStackFromVertexWeightedGraph(graph,image):
     dim = len(image)
-    stack = AdjacencyEdgeWeightedGraph(dim)
+    stack = DirectedWeightedAdjacency(dim)
     
     pix = [i for i in range(dim)]
  
@@ -613,11 +624,11 @@ def createGraphStackFromVertexWeightedGraph(graph,image):
     addedLvls =[]
     stack.pointInsertionSequence = addedNodes
     stack.lvlInsertionSequence = addedLvls
-    edges = stack.edges
-   
-    for e in graph.edges:
-        x=e[0]
-        y=e[1]
+    #edges = stack.edges
+    edges=[]
+    for e in range(len(graph)):
+        x=graph.source[e]
+        y=graph.target[e]           
         edges.append([x, y, min(image[x],image[y])])
         
 
@@ -635,6 +646,11 @@ def createGraphStackFromVertexWeightedGraph(graph,image):
         addedNodes.append(nnodes)
 
     edges.sort(key=lambda x:-x[2])  # lambda x,y: cmp(x[2],y[2]) )
+
+    for e in edges:
+        stack.source.append(e[0])
+        stack.target.append(e[1])
+        stack.append(e[2])
 
     stack.nextEdge = [-1] * len(edges)
     stack.prevEdge = [-1] * len(edges)

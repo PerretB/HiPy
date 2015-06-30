@@ -47,7 +47,7 @@ from HiPy.Hierarchies.DirectedComponentHierarchy import * #@UnusedWildImport
 #  - k: number of neighbors to select
 #  - maxD: nearest neighbors are selected in a window of size (2*maxD+1)x(2*maxD+1)
 def createKNNNeighbourhoodGraph(image,size,similarityFunc,k,maxD):
-    graph =  AdjacencyEdgeWeightedGraph(size[0]*size[1])
+    graph =  DirectedWeightedAdjacency(size[0]*size[1])
     width=size[0]
     height=size[1]
     coordLinTo2D = lambda x: (x % width, x // width)
@@ -76,7 +76,7 @@ def createKNNNeighbourhoodGraph(image,size,similarityFunc,k,maxD):
 # If "graph" equals None a new graph is created, otherwise the edges are added to the existing graph.
 def createSimpleNeighbourhoodGraph(size,k=4, graph=None):
     if graph==None:
-        graph =  AdjacencyEdgeWeightedGraph(size[0]*size[1])
+        graph =  DirectedWeightedAdjacency(size[0]*size[1])
     width=size[0]
     height=size[1]
     coordLinTo2D = lambda x: (x % width, x // width)

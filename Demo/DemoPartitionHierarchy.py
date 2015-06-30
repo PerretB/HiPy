@@ -51,7 +51,7 @@ def demoBPT():
     
     print("constructing gradient graph...")
     adj4 = Adjacency2d4(image.embedding.size)
-    adjacency=image.adjacency = AdjacencyEdgeWeightedGraph.createAdjacency(adj4, lambda i,j: euclideanDistance(image[i], image[j]))
+    adjacency=image.adjacency = WeightedAdjacency.createAdjacency(adj4, lambda i,j: euclideanDistance(image[i], image[j]))
     
     print("constructing BPT...")
     bpt = constructAltitudeBPT(adjacency)
