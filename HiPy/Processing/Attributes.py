@@ -453,5 +453,20 @@ def addAttributeIsLeaf(tree, name="isLeaf"):
                 attr[par]=False
     else:
         raise Exception("addAttributeIsLeaf: unknown tree type.")
+
+def addAttributeRank(tree,measure="level",name="rank"):    
+    '''
+    Indicates the merging order. Leaves have rank 0.
+
+    Target: Binary Partition Tree 
+    '''
+    attr=tree.addAttribute(name,0)
+    if attr==None:
+        return
+    nbPixels = tree.nbPixels
+    for i in tree.iteratorFromPixelsToRoot(False):
+        attr[i]=i-nbPixels+1
+        
+    
     
     

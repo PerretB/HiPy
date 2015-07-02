@@ -36,7 +36,7 @@ Created on 15 juin 2015
 import HiPy.Util.UnionFind as UnionFind
 from HiPy.Structures import Tree, Adjacency2d4, Embedding2dGrid, Image, TreeType, WeightedAdjacency
 from HiPy.Processing.Attributes import addAttributeChildren,\
-    addAttributeDepth
+    addAttributeDepth, addAttributeRank
 from HiPy.Util.Histogram import imageMap, rescaleGray, normalizeToByte
 
 def constructAltitudeBPT(adjacency, verbose=False):
@@ -299,7 +299,7 @@ def drawSaliencyMap(size,saliency):
     return res
 
 
-def drawSaliencyForVizu(tree,image):
+def drawSaliencyForVizu(tree,image, attr="level", gammaFactor=0.33333):
     '''
     Draw the saliency map associated to the given partition tree in an image.
     
@@ -308,9 +308,11 @@ def drawSaliencyForVizu(tree,image):
     Only saliceny associated to a 4 adjacency can be drawn consistently.
     '''
     adj4 = Adjacency2d4(image.embedding.size)
-    saliency=computeSaliencyMap(tree,adj4)
+    addAttributeRank(tree)
+    saliency=computeSaliencyMap(tree,adj4,attr)
     sal=drawSaliencyMap(image.embedding.size,saliency)
+    
     sal = rescaleGray(sal, 0, 1)
-    sal = imageMap(sal, lambda x:x**(0.3333))
+    sal = imageMap(sal, lambda x:x**gammaFactor)
     sal = normalizeToByte(sal)
     return sal
