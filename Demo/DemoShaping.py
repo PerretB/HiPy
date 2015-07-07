@@ -41,7 +41,7 @@ from HiPy.Hierarchies.TreeOfShape import * #@UnusedWildImport
 from HiPy.Util.Histogram import * #@UnusedWildImport
 from HiPy.Processing.Attributes import * #@UnusedWildImport
 from HiPy.Processing.Shaping import * #@UnusedWildImport
-from HiPy.Structures import Adjacency2d4
+from HiPy.Structures import * #@UnusedWildImport
 
 
 def dummyDemoShapping():
@@ -51,7 +51,7 @@ def dummyDemoShapping():
     '''
     print("Reading image...")
     image = readImage("../samples/blood1.png")
-    image.adjacency = Adjacency2d4(image.embedding.size)
+    image.adjacency = AdjacencyNdRegular.getAdjacency2d4(image.embedding.size)
     
     print("Building tree...")
     tree=constructTreeOfShapes(image)
@@ -81,7 +81,7 @@ def demoNonIncreasingFilter():
     '''
     print("Reading image...")
     image = readImage("../samples/blood1.png")
-    image.adjacency = Adjacency2d4(image.embedding.size)
+    image.adjacency = AdjacencyNdRegular.getAdjacency2d4(image.embedding.size)
     
     print("Building tree...")
     tree=constructTreeOfShapes(image)

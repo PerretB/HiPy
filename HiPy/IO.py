@@ -50,7 +50,7 @@ except ImportError:
     
 def ensureDirectoryExists(f):
     d = os.path.dirname(f)
-    if not os.path.exists(d):
+    if d!="" and not os.path.exists(d):
         os.makedirs(d)    
 
 def readImage(filename, grayScale=True): 

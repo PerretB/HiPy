@@ -8,8 +8,6 @@
 # modify and/ or redistribute the software under the terms of the CeCILL
 # license as circulated by CEA, CNRS and INRIA at the following URL
 # "http://www.cecill.info". 
-from HiPy.Structures import WeightedAdjacency
-
 
 # As a counterpart to the access to the source code and  rights to copy,
 # modify and redistribute granted by the license, users are provided only
@@ -46,7 +44,7 @@ from HiPy.Processing.Attributes import * #@UnusedWildImport
 from HiPy.Util.Histogram import * #@UnusedWildImport
 from HiPy.Util.VMath import * #@UnusedWildImport
 from HiPy.Util.Color import convertRGBtoLAB
-
+from HiPy.Structures import * #@UnusedWildImport
 
 
 # determinist random generator
@@ -60,7 +58,7 @@ def demoSWS():
     image = convertRGBtoLAB(image)
     
     print("constructing gradient graph...")
-    adj4 = Adjacency2d4(image.embedding.size)
+    adj4 = AdjacencyNdRegular.getAdjacency2d4(image.embedding.size)
     adjacency=image.adjacency = WeightedAdjacency.createAdjacency(adj4, lambda i,j: euclideanDistance(image[i], image[j]))
     
     print("constructing stochastic watershed...")
@@ -79,9 +77,9 @@ def demoSWS():
 def demoNoiseWS(iteration=11):
     print("reading image...")
     image = readImage('../samples/lenna512.png', False)
-    adj4 = Adjacency2d4(image.embedding.size)
+    adj4 = AdjacencyNdRegular.getAdjacency2d4(image.embedding.size)
     image = rescaleGray(image,0,1)
-    res=[]
+
     sal0=None
     for i in range(iteration):
         print("-> Iteration " + str(i))
@@ -97,7 +95,7 @@ def demoNoiseWS(iteration=11):
         wsha= transformBPTtoAttributeHierarchy(wsh,"area")
         sal=computeSaliencyMap(wsha, adj4)
         print("Drawing saliency...")
-        #salWSHA = drawSaliencyForVizu(wsha,image)
+
         if sal0==None:
             sal0=sal
             for i in range(len(sal0)):
@@ -106,7 +104,7 @@ def demoNoiseWS(iteration=11):
             for i in range(len(sal0)):
                 sal0[i].append(sal[i])
     print("Merging results...")
-    #imFinale=median(*res)
+
     
     
     for i in range(len(sal0)):

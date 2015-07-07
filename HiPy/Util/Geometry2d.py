@@ -34,7 +34,7 @@ Created on 3 juin 2015
 
 @author: perretb
 '''
-from HiPy.Structures import Image, Embedding2dGrid, Adjacency2d4
+from HiPy.Structures import Image, Embedding2dGrid, AdjacencyNdRegular
 
 def crop2d(image, xmin, xmax, ymin, ymax):
     '''
@@ -120,7 +120,7 @@ def interpolatePlainMapKhalimsky(image):
     sizeDest=[((sizeOri[0])*2+1),((sizeOri[1])*2+1)]
     imDest= Image(sizeDest[0]*sizeDest[1])
     imDest.embedding = Embedding2dGrid(*sizeDest)
-    imDest.adjacency=Adjacency2d4([sizeDest[0],sizeDest[1]])
+    imDest.adjacency=AdjacencyNdRegular.getAdjacency2d4(sizeDest)
     # 2 faces copy
     for y in range(1,sizeDest[1],2):
         for x in range(1,sizeDest[0],2):

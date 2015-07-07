@@ -38,7 +38,7 @@ Created on 17 juin 2015
 
 from HiPy.Hierarchies.ComponentTree import constructComponentTree,\
     ComponentTreeType
-from HiPy.Structures import Adjacency2d4
+from HiPy.Structures import AdjacencyNdRegular
 
 from HiPy.IO import * #@UnusedWildImport
 from HiPy.Hierarchies import * #@UnusedWildImport
@@ -50,7 +50,7 @@ from HiPy.Util.Color import * #@UnusedWildImport
 def testShapeClassif():
     print('Reading image...')
     image = readImage("../samples/squares and circles.png", True)
-    image.adjacency = Adjacency2d4(image.embedding.size)
+    image.adjacency = AdjacencyNdRegular.getAdjacency2d4(image.embedding.size)
     
     print('Pre-filtering image...')
     tree = constructComponentTree(image, ComponentTreeType.MaxTree)

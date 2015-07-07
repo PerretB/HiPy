@@ -34,7 +34,8 @@ Created on 15 juin 2015
 '''
 
 import HiPy.Util.UnionFind as UnionFind
-from HiPy.Structures import Tree, Adjacency2d4, Embedding2dGrid, Image, TreeType, WeightedAdjacency
+from HiPy.Structures import Tree, Embedding2dGrid, Image, TreeType, WeightedAdjacency,\
+    AdjacencyNdRegular
 from HiPy.Processing.Attributes import addAttributeChildren,\
     addAttributeDepth, addAttributeRank
 from HiPy.Util.Histogram import imageMap, rescaleGray, normalizeToByte
@@ -268,7 +269,7 @@ def drawSaliencyMap(size,saliency):
     '''
     Represent a saliency map as a contour image.
     Size is the size [width, height] of the image => result size [2*width-1,2*height-1].
-    Saliency must represent a 4 adjacency on the 2d grid (typically an Adjacency2d4), results are unpredictable otherwise
+    Saliency must represent a 4 adjacency on the 2d grid, results are unpredictable otherwise
     '''
     w=size[0]
     h=size[1]
@@ -277,7 +278,7 @@ def drawSaliencyMap(size,saliency):
     rh=h*2-1
     grid2 = Embedding2dGrid(rw,rh)
     
-    res = Image(rw*rh,0,Adjacency2d4([rw,rh]),grid2)
+    res = Image(rw*rh,0,AdjacencyNdRegular.getAdjacency2d4([rw,rh]),grid2)
     for y in range(h):
         for x in range(w):
             p=grid.getLinearCoordinate(x,y)
@@ -307,7 +308,7 @@ def drawSaliencyForVizu(tree,image, attr="level", gammaFactor=0.33333):
     
     Only saliceny associated to a 4 adjacency can be drawn consistently.
     '''
-    adj4 = Adjacency2d4(image.embedding.size)
+    adj4 = AdjacencyNdRegular.getAdjacency2d4(image.embedding.size)
     addAttributeRank(tree)
     saliency=computeSaliencyMap(tree,adj4,attr)
     sal=drawSaliencyMap(image.embedding.size,saliency)

@@ -40,10 +40,10 @@ from HiPy.Hierarchies.ComponentTree import * #@UnusedWildImport
 from HiPy.Processing.Attributes import * #@UnusedWildImport
 
 def testAreaFilter():
-    im = readImage('../samples/lennaGray256.png')
-    im.adjacency = Adjacency2d4([im.embedding.width,im.embedding.height])
+    image = readImage('../samples/lennaGray256.png')
+    image.adjacency = AdjacencyNdRegular.getAdjacency2d4(image.embedding.size)
     
-    tree= constructComponentTree(im,ComponentTreeType.MaxTree,True)
+    tree= constructComponentTree(image,ComponentTreeType.MaxTree,True)
     addAttributeArea(tree)
     
     print("Reconstruction")

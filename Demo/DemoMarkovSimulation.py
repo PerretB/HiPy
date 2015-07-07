@@ -38,7 +38,7 @@ Created on 17 juin 2015
 
 from HiPy.Hierarchies.ComponentTree import constructComponentTree,\
     ComponentTreeType
-from HiPy.Structures import Adjacency2d4
+from HiPy.Structures import AdjacencyNdRegular
 
 from HiPy.IO import * #@UnusedWildImport
 from HiPy.Hierarchies import * #@UnusedWildImport
@@ -49,7 +49,7 @@ from HiPy.Util.Histogram import * #@UnusedWildImport
 def simuDirect():
     print('Reading image...')
     image = readImage("../samples/blobs-ndg.png", True)
-    image.adjacency = Adjacency2d4(image.embedding.size)
+    image.adjacency = AdjacencyNdRegular.getAdjacency2d4(image.embedding.size)
     
     print('Constructing tree...')
     tree = constructComponentTree(image, ComponentTreeType.MaxTree)

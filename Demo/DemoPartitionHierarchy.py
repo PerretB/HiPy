@@ -8,6 +8,7 @@
 # modify and/ or redistribute the software under the terms of the CeCILL
 # license as circulated by CEA, CNRS and INRIA at the following URL
 # "http://www.cecill.info". 
+from HiPy.Structures import AdjacencyNdRegular
 
 # As a counterpart to the access to the source code and  rights to copy,
 # modify and redistribute granted by the license, users are provided only
@@ -50,7 +51,7 @@ def demoBPT():
     image = convertRGBtoLAB(image)
     
     print("constructing gradient graph...")
-    adj4 = Adjacency2d4(image.embedding.size)
+    adj4 = AdjacencyNdRegular.getAdjacency2d4(image.embedding.size)
     adjacency=image.adjacency = WeightedAdjacency.createAdjacency(adj4, lambda i,j: euclideanDistance(image[i], image[j]))
     
     print("constructing BPT...")

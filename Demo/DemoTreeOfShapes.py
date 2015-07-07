@@ -35,7 +35,7 @@ Created on 3 juin 2015
 @author: perretb
 '''
 
-from HiPy.Structures import Adjacency2d4, Tree
+from HiPy.Structures import AdjacencyNdRegular, Tree
 from HiPy.Util.Histogram import imageInverseGrayByte
 from HiPy.Util.Geometry2d import imagePadding, reduceKhalimsky, removeBorder
 from HiPy.Processing.Attributes import addAttributeArea
@@ -67,11 +67,11 @@ def testSelfDuality():
 
 
 def testAreaFilter():
-    im = readImage('../samples/lenna.png')
-    im = imagePadding(im, 0)
+    image = readImage('../samples/lenna.png')
+    image = imagePadding(image, 0)
     
-    im.adjacency = Adjacency2d4([im.embedding.width,im.embedding.height])
-    tree= constructTreeOfShapes(im,None)
+    image.adjacency = AdjacencyNdRegular.getAdjacency2d4(image.embedding.size)
+    tree= constructTreeOfShapes(image,None)
     addAttributeArea(tree)
 
     print("Reconstruction")

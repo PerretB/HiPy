@@ -58,6 +58,12 @@ def divV(v1,v2):
 def norm(v):
     return sqrt(sum(multV(v,v)))
 
+def mult(v):
+    res=1
+    for val in v:
+        res*=val
+    return res
+
 def euclideanDistance(v1,v2):
     return norm(diffV(v1,v2))
 

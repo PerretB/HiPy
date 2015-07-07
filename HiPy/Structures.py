@@ -7,6 +7,8 @@
 # modify and/ or redistribute the software under the terms of the CeCILL
 # license as circulated by CEA, CNRS and INRIA at the following URL
 # "http://www.cecill.info". 
+from HiPy.Util import VMath
+from heapq import heappop, heappush
 
 # As a counterpart to the access to the source code and  rights to copy,
 # modify and redistribute granted by the license, users are provided only
@@ -167,9 +169,21 @@ class Embedding(object):
     
     def fromLinearCoordinate(self, i):
         '''
-        Convert coordinates from the abstract linear Image space to the target sapce
+        Convert coordinates from the abstract linear Image space to the target space
         '''
         raise Exception("Unsuported method" + " fromLinearCoordinate")
+    
+    def isInBoundsWCS(self, *args):
+        '''
+        Test if the given point is in the bounds of the embedding
+        '''
+        raise Exception("Unsuported method" + " isInBoundsWCS")
+    
+    def isInBoundsLinear(self, i):
+        '''
+        Test if the given point (in abstract linear image space) is in the bounds of the embedding
+        '''
+        return self.isInBoundsWCS(self.fromLinearCoordinate(i))
 
 class Embedding2dGrid(Embedding):
     
@@ -183,6 +197,10 @@ class Embedding2dGrid(Embedding):
     
     def fromLinearCoordinate(self, i):
         return (i%self.width,i//self.width)
+    
+    def isInBoundsWCS(self, *args):
+        return args[0] >=0 and args[0] < self.width and args[1]>=0 and args[1] < self.height
+    
 
 class Adjacency(object):
     '''
@@ -228,35 +246,38 @@ class Adjacency(object):
         '''
         raise Exception("Unsuported method" + " getInEdges")
     
+class AdjacencyNdRegular(Adjacency):
+    '''
+    Implicit representation of a shift-invariant adjacency relation in the n dimensional regular grid
+    '''
+    
+    def __init__(self, embedding, neighbourList, weights=None):
+        '''
+        Defines the adjacency on the domain given by the embedding.
+        
+        The neighbouring relation is given by the neighbour list of the point 0.
+        EG. a 4-adjacency in 2d is given by the neighbour list [ (0,-1), (-1,0), (1,0), (0,1)]
+        
+        Weights should be a list of same length as neighbour list giving the weight of the corresponding edge.
+        If no weights are provided, all edges are assigned a wight of 1. 
+        '''
+        super(AdjacencyNdRegular,self).__init__(VMath.mult(embedding.size))
+        self.embedding=embedding
+        self.neighbourList = neighbourList
+        self.nbNeighbours = len(neighbourList)
+        self.weights=weights if weights!=None else [1]*self.nbNeighbours
 
-class Adjacency2d4(Adjacency):
-    '''
-    Represent a symmetric 4-neighbourhood in a regular 2D rectangular grid
-    '''
-    
-    def __init__(self,size):
-        super(Adjacency2d4,self).__init__(size[0]*size[1])
-        self.size=size
-    
-    def __getCoordsLin(self,x,y):
-        return y*self.size[0]+x
-    
-    def __getCoords2D(self,i):
-        return (i%self.size[0],i//self.size[0])
-    
     def getNeighbours(self, i):
-        (x,y)=self.__getCoords2D(i)
+        ci=self.embedding.fromLinearCoordinate(i)
         nl=[]
-        if x-1>=0:
-            nl.append(self.__getCoordsLin(x-1,y))
-        if y-1>=0:
-            nl.append(self.__getCoordsLin(x,y-1))
-        if x+1<self.size[0]:
-            nl.append(self.__getCoordsLin(x+1,y))
-        if y+1<self.size[1]:
-            nl.append(self.__getCoordsLin(x,y+1))
+        isInBounds = self.embedding.isInBoundsWCS
+        linear = self.embedding.getLinearCoordinate
+        for n in self.neighbourList:
+            cn = VMath.addV(ci, n)
+            if isInBounds(*cn):
+                nl.append(linear(*cn))
         return nl
-    
+
     def getPredecessors(self, i):
         return self.getNeighbours(i)
     
@@ -264,31 +285,40 @@ class Adjacency2d4(Adjacency):
         return self.getNeighbours(i)
 
     def getOutEdges(self,i):
-        (x,y)=self.getCoords2D(i)
+        ci=self.embedding.fromLinearCoordinate(i)
         nl=[]
-        if x-1>=0:
-            nl.append([i,self.__getCoordsLin(x-1,y)])
-        if y-1>=0:
-            nl.append([i,self.__getCoordsLin(x,y-1)])
-        if x+1<self.size[0]:
-            nl.append([i,self.__getCoordsLin(x+1,y)])
-        if y+1<self.size[1]:
-            nl.append([i,self.__getCoordsLin(x,y+1)])
+        isInBounds = self.embedding.isInBoundsWCS
+        linear = self.embedding.getLinearCoordinate
+        weights=self.weights
+        for i in range(self.nbNeighbours):
+            n=self.neighbourList[i]
+            cn = VMath.addV(ci, n)
+            if isInBounds(*cn):
+                nl.append([n,linear(*cn),weights[i]])
         return nl
     
     def getInEdges(self,i):
-        (x,y)=self.__getCoords2D(i)
+        ci=self.embedding.fromLinearCoordinate(i)
         nl=[]
-        if x-1>=0:
-            nl.append([self.__getCoordsLin(x-1,y),i])
-        if y-1>=0:
-            nl.append([self.__getCoordsLin(x,y-1),i])
-        if x+1<self.size[0]:
-            nl.append([self.__getCoordsLin(x+1,y),i])
-        if y+1<self.size[1]:
-            nl.append([self.__getCoordsLin(x,y+1),i])
+        isInBounds = self.embedding.isInBoundsWCS
+        linear = self.embedding.getLinearCoordinate
+        weights=self.weights
+        for i in range(self.nbNeighbours):
+            n=self.neighbourList[i]
+            cn = VMath.addV(ci, n)
+            if isInBounds(*cn):
+                nl.append([linear(*cn),n,weights[i]])
         return nl
+
+    @staticmethod
+    def getAdjacency2d4(size):
+        return AdjacencyNdRegular(Embedding2dGrid(size[0], size[1]),[ (0,-1), (-1,0), (1,0), (0,1)])
     
+    @staticmethod
+    def getAdjacency2d8(size):
+        return AdjacencyNdRegular(Embedding2dGrid(size[0], size[1]),[ (-1,-1), (0,-1), (1,-1), (-1,0), (1,0), (-1,1), (0,1), (1,1)])
+    
+   
 
 class AdjacencyTree(Adjacency):
     '''
@@ -419,30 +449,6 @@ class WeightedAdjacency(AbstractWeightedAdjacency):
         self.edgeList[source].append(i)
         self.edgeList[target].append(i)
         
-
-    @staticmethod
-    def createAdjacency(baseAdjacency,weightingFunction=None):
-        '''
-        Create a new adjacency equivalent to the given adjacency but with a different weighting function.
-        
-        Warning: the base adjacency is assumed to be symmetric!
-        
-        Typical use is to transform an implicit k-adjacency into an explicit weighted adjacency.
-        '''
-        adj=WeightedAdjacency(baseAdjacency.nbPoints)
-        if weightingFunction!=None:
-            for i in range(adj.nbPoints):
-                for j in baseAdjacency.getSuccesors(i):
-                    if j>i:
-                        adj.createEdge(i, j, weightingFunction(i,j))
-        else:
-            for i in range(adj.nbPoints):
-                for j in baseAdjacency.getSuccesors(i):
-                    if j>i:
-                        adj.createEdge(i, j)
-                    
-        return adj
-    
     def copy(self):
         '''
         Returns a copy of the current adjacency.
@@ -483,16 +489,71 @@ class WeightedAdjacency(AbstractWeightedAdjacency):
         ''' 
         return list of outHead edges of the form [i,j,*] such that i->j (* can be any auxilary data, usually weights)
         '''
-        return self.getEdges(i)
+        return [ [i , self.source[e]+self.target[e]-i, self[e]] for e in self.edgeList[i]] 
         
     def getInEdges(self,i):
         ''' 
         return list of in  edges of the form [j,i,*] such that j->i (* can be any auxilary data, usually weights)
         '''
-        return self.getEdges(i)
+        return [ [self.source[e]+self.target[e]-i ,i , self[e]] for e in self.edgeList[i]] 
     
-    
+    @staticmethod
+    def createAdjacency(baseAdjacency,weightingFunction=None):
+        '''
+        Create a new adjacency equivalent to the given adjacency but with a different weighting function.
         
+        Warning: the base adjacency is assumed to be symmetric!
+        
+        Typical use is to transform an implicit k-adjacency into an explicit weighted adjacency.
+        '''
+        adj=WeightedAdjacency(baseAdjacency.nbPoints)
+        if weightingFunction!=None:
+            for i in range(adj.nbPoints):
+                for j in baseAdjacency.getSuccesors(i):
+                    if j>i:
+                        adj.createEdge(i, j, weightingFunction(i,j))
+        else:
+            for i in range(adj.nbPoints):
+                for j in baseAdjacency.getSuccesors(i):
+                    if j>i:
+                        adj.createEdge(i, j)
+                    
+        return adj
+    
+    
+    @staticmethod
+    def createKHopAjacency(baseAdjacency,K,weightingFunction=lambda i, j, n:n):
+        '''
+        Construct an explicit non directed K-hop adjacency from a base (non directed adjacency).
+        
+        A weighting function f may be provided (given two nodes i, j , f(i,j,k) will be the weight of the edge linking i to j in k hops).
+        
+        '''
+        nbPoints=baseAdjacency.nbPoints
+        newAdj = WeightedAdjacency(nbPoints)
+        flags=[None]*nbPoints
+              
+        for i in range(nbPoints):
+            heap = []
+            heappush(heap,(0,i))
+            flags[i]=i
+            while heap!=[]:
+                (k,n)=heappop(heap)
+                if n>i:
+                    newAdj.createEdge(i, n, weightingFunction(i,n,k))
+    
+                if k<K:
+                    k+=1
+                    for j in baseAdjacency.getSuccesors(n):
+                        if flags[j] != i:
+                            heappush(heap,(k,j))
+                            flags[j]=i
+        
+        return newAdj
+
+
+
+       
 class DirectedWeightedAdjacency(AbstractWeightedAdjacency):
     '''
     Directed adjacency represented using doubly linked lists of out edges.
