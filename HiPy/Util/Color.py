@@ -41,7 +41,7 @@ def convertRGBtoLAB(image):
     RGB in [0,255] -> LAB in [0,1]
     '''
     res = image.copy(False)
-    if (not isinstance(image[0], list)) and len(image[0])!=3:
+    if (not isinstance(image[0], list)) or len(image[0])!=3:
         raise Exception("RGBtoLAB: input must be an image with 3 bands")
     
     for i in image.iterateOnPixels():

@@ -265,11 +265,14 @@ def computeSaliencyMap(partitionTree,adjacency, attribute="level"):
 
     return WeightedAdjacency.createAdjacency(adjacency, lambda i,j:attr[lca(i,j)])
 
-def drawSaliencyMap(size,saliency):
+def drawSaliencyMap(size,saliency, interpolationFunction=max):
     '''
     Represent a saliency map as a contour image.
     Size is the size [width, height] of the image => result size [2*width-1,2*height-1].
     Saliency must represent a 4 adjacency on the 2d grid, results are unpredictable otherwise
+    
+    InterpolationFunction is used to interpolate values on the 0-faces of the Kahlimski grid. 
+    Its argument is a list containig the value of the neighbours 1-faces
     '''
     w=size[0]
     h=size[1]
@@ -290,12 +293,10 @@ def drawSaliencyMap(size,saliency):
     for y in range(1,rh-1,2):
         for x in range(1,rw-1,2):
             p=grid2.getLinearCoordinate(x,y)
-            vmax=-999999
+            vals=[]
             for n in res.getNeighbours(p):
-                vn=res[n]
-                if vn>vmax:
-                    vmax=vn
-            res[p]=vmax
+                vals.append(res[n])
+            res[p]=interpolationFunction(vals)
     
     return res
 

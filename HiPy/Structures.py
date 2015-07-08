@@ -65,10 +65,10 @@ class Image(list):
     
     def setAll(self,image):
         '''
-        Copy values of image into current image
+        Copy (deep copy) values of image into current image
         '''
         for i in range(len(image)):
-            self[i]=image[i]
+            self[i]=copy.deepcopy(image[i])
             
     def copy(self,copyData=False):
         '''
@@ -204,11 +204,22 @@ class Embedding2dGrid(Embedding):
 
 class Adjacency(object):
     '''
-    Abstract directed adjacency relation
+    Abstract adjacency relation
     '''
     
     def __init__(self,nbPoints):
         self.nbPoints=nbPoints
+        
+    def countEdges(self):
+        '''
+        Count the number of edges in the adjacency relation.
+        
+        Not that in a non-directed adjacency the edge (i,j) and the edge (j,i) are equivalent and count for one edge. 
+        '''
+        c=0
+        for i in range(self.nbPoints):
+            c+=len(self.getSuccesors(i))
+        return c 
     
     def getSuccesors(self, i):
         '''
@@ -266,7 +277,21 @@ class AdjacencyNdRegular(Adjacency):
         self.neighbourList = neighbourList
         self.nbNeighbours = len(neighbourList)
         self.weights=weights if weights!=None else [1]*self.nbNeighbours
-
+    
+    def countEdges(self):
+        c=0
+        isInBounds = self.embedding.isInBoundsWCS
+        linear = self.embedding.getLinearCoordinate
+        for i in range(self.nbPoints):
+            ci=self.embedding.fromLinearCoordinate(i)
+           
+            for n in self.neighbourList:
+                cn = VMath.addV(ci, n)
+                ln = linear(*cn)
+                if ln>=i and isInBounds(*cn):
+                    c+=1    
+        return c 
+    
     def getNeighbours(self, i):
         ci=self.embedding.fromLinearCoordinate(i)
         nl=[]
@@ -409,6 +434,9 @@ class AbstractWeightedAdjacency(Adjacency, Image):
         Image.__init__(self, 0)
         self.addAttribute('source')
         self.addAttribute('target')
+    
+    
+        
        
     
     
@@ -431,6 +459,9 @@ class WeightedAdjacency(AbstractWeightedAdjacency):
         for _ in range(size):
             self.edgeList.append([])
     
+    def countEdges(self):
+        return len(self)
+    
     def createEdge(self, source, target, weight=1):
         '''
         Create a new edge in the graph, linking node source to node dest.
@@ -447,16 +478,21 @@ class WeightedAdjacency(AbstractWeightedAdjacency):
         self.target.append(target)
         
         self.edgeList[source].append(i)
-        self.edgeList[target].append(i)
+        if source!=target:
+            self.edgeList[target].append(i)
         
-    def copy(self):
+    def copy(self,copyData=False):
         '''
         Returns a copy of the current adjacency.
         Garanties that edges indices are consistant between the copy and the current object (ie copy[i]==original[i] for all i)
         '''
         adj = WeightedAdjacency(self.nbPoints)
-        for i in range(len(self)):
-            adj.createEdge(self.source[i], self.target[i],self[i])
+        if copyData:
+            for i in range(len(self)):
+                adj.createEdge(self.source[i], self.target[i],self[i])
+        else:
+            for i in range(len(self)):
+                adj.createEdge(self.source[i], self.target[i])
         return adj
     
     
@@ -551,8 +587,48 @@ class WeightedAdjacency(AbstractWeightedAdjacency):
         
         return newAdj
 
-
-
+    @staticmethod
+    def createLineGraph(baseAdjacency,weightingFunction=lambda i, j:1):
+        '''
+        Create the line graph of the given non directed base adjacency 
+        ie. a new adjacency relation were the points are the edges of the base adjacency
+        and two points are adjacent is their correspind edges in the base adjacency share an extremity.
+        
+        The base adjacency must be  a WeightedAdjacency (Use WeightedAdjacency.createAdjacency in order to convert any non-directed adjacency to a WeightedAdjaceny)
+        The medthod insure the consistency between the edges indice in the base adjacency and the points in the new adjacency.
+        
+        The given weighting function computes the weight of the edge linking the edge i to the edge j (of the base adjacency).
+        '''
+        nbPoints = baseAdjacency.countEdges()
+        print(nbPoints)
+        newAdj = WeightedAdjacency(nbPoints)
+        source = baseAdjacency.source
+        target = baseAdjacency.target
+        baseEdgeList = baseAdjacency.edgeList
+        for i in range(nbPoints):
+            for v in [source[i],target[i]]:
+                for e in baseEdgeList[v]:
+                    if e>i:
+                        newAdj.createEdge(i, e, weightingFunction(i,e))
+        print(newAdj.countEdges())
+        return newAdj
+    
+    @staticmethod
+    def createReflexiveRelation(baseAdjacency,weightingFunction=lambda i:1):
+        '''
+        Create a new Weighted Adjacency equals to the reflexive closure of the given base adjacency.
+        
+        The given weighting function computes the weight of the reflexive edges and takes a single parameter: the element i where the edge (i,i) is created.
+        '''
+        newAdj=WeightedAdjacency(baseAdjacency.nbPoints)
+        for i in range(newAdj.nbPoints):
+                for e in baseAdjacency.getOutEdges(i):
+                    if e[1]>i:
+                        newAdj.createEdge(*e)
+                        
+                newAdj.createEdge(i,i,weightingFunction(i))
+        
+        return newAdj
        
 class DirectedWeightedAdjacency(AbstractWeightedAdjacency):
     '''
