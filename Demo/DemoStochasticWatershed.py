@@ -76,7 +76,7 @@ def demoSWS():
     print("Testing isomorphism...")
     print(Tree.testTreeIsomorphism(sws, wsha))
     
-def demoNoiseWS(iteration=11):
+def demoNoiseWS(iteration=21):
     print("reading image...")
     image = readImage('../samples/lenna512.png', False)
     adj4 = AdjacencyNdRegular.getAdjacency2d4(image.embedding.size)
@@ -99,10 +99,11 @@ def demoNoiseWS(iteration=11):
         
         
         print("Averaging and Drawing saliency...")
-        lineGraph=WeightedAdjacency.createLineGraph(sal)
-        adjLineGraps=WeightedAdjacency.createReflexiveRelation(lineGraph)
-        meanSal=spatialFilter(sal, adjLineGraps, BasicAccumulator.getMeanAccumulator())
-        saveImage(drawSaliencyMap(image.embedding.size,meanSal) , "Results/Random noise gradient "+ str(i) +".png")
+        #lineGraph=WeightedAdjacency.createLineGraph(sal)
+        #adjLineGraps=WeightedAdjacency.createReflexiveRelation(lineGraph)
+        #meanSal=spatialFilter(sal, adjLineGraps, BasicAccumulator.getMeanAccumulator())
+        meanSal=sal
+        saveImage(normalizeToByte(imageMap(rescaleGray(drawSaliencyMap(image.embedding.size,meanSal),0,1), lambda x:x**0.33333)) , "Results/Random noise gradient "+ str(i) +".png")
         if sal0==None:
             sal0=meanSal
             for i in range(len(sal0)):
@@ -115,19 +116,16 @@ def demoNoiseWS(iteration=11):
     
     
     for i in range(len(sal0)):
-        sal0[i]=sum(sal0[i])/len(sal0[i])
+        sal0[i]=medianV(sal0[i])
     
         
-    saveImage(drawSaliencyMap(image.embedding.size,sal0) , "Results/Random noise combined gradient.png")
+    saveImage(normalizeToByte(imageMap(rescaleGray(drawSaliencyMap(image.embedding.size,sal0),0,1), lambda x:x**0.33333)) , "Results/Random noise combined gradient.png")
     
     print("Ultra metric opening...")
     bpt = transformAltitudeBPTtoWatershedHierarchy(constructAltitudeBPT(sal0))
     saveImage(drawSaliencyForVizu(bpt,image), "Results/Random noise WS bpt.png")
     
-    print("Area watershed...")
-    addAttributeArea(bpt)
-    wsa= transformBPTtoAttributeHierarchy(bpt,"area")
-    saveImage(drawSaliencyForVizu(wsa,image), "Results/Random noise WSH.png")
+
  
 def testEdgeFilter():
     image = readImage('../samples/lennaGray256.png', False)
@@ -146,11 +144,11 @@ def testEdgeFilter():
     adjLineGraps=WeightedAdjacency.createReflexiveRelation(lineGraph)
     meanSal=spatialFilter(sal, adjLineGraps, BasicAccumulator.getMeanAccumulator())
     
-    imSal1=drawSaliencyMap(image.embedding.size,sal) 
-    imSal2=drawSaliencyMap(image.embedding.size,meanSal) 
-    
-    saveImage(imSal1, "./Result/lenna area sal map.png")
-    saveImage(imSal2, "./Result/lenna area mean sal map.png")
+    imSal1=normalizeToByte(imageMap(rescaleGray(drawSaliencyMap(image.embedding.size,sal),0,1) , lambda x:x**0.33333))
+    #imSal2=normalizeToByte(imageMap(rescaleGray(drawSaliencyMap(image.embedding.size,meanSal),0,1) , lambda x:x**0.33333))
+    imSal2=normalizeToByte(rescaleGray(drawSaliencyMap(image.embedding.size,meanSal),0,1))
+    saveImage(imSal1, "./Results/lenna area sal map.png")
+    saveImage(imSal2, "./Results/lenna area mean sal map.png")
     
 
     

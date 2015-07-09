@@ -249,7 +249,16 @@ def computeSaliencyMap(partitionTree,adjacency, attribute="level"):
     addAttributeDepth(partitionTree)
     attr=partitionTree.getAttribute(attribute)
     lca=partitionTree.lca
-    
+    deleted = partitionTree.getAttribute("deleted")
+    if deleted != None:
+        def fun(i,j):
+            z=lca(i,j)
+            while deleted[z]:
+                z=partitionTree[z]
+            return attr[z]
+        valFun=fun
+    else:
+        valFun=lambda i,j:attr[lca(i,j)]
     # could be shortened to
     # WeightedAdjacency.createAdjacency(adjacency, lambda i,j:level[lca(i,j)])
     # but doubles the cost due to symmetric weights
@@ -263,7 +272,7 @@ def computeSaliencyMap(partitionTree,adjacency, attribute="level"):
 #      
 #     return adj 
 
-    return WeightedAdjacency.createAdjacency(adjacency, lambda i,j:attr[lca(i,j)])
+    return WeightedAdjacency.createAdjacency(adjacency, valFun)
 
 def drawSaliencyMap(size,saliency, interpolationFunction=max):
     '''

@@ -146,13 +146,17 @@ class Image(list):
         '''
         Remove the attribute "name"
         '''
-        del self.__dict__[name]
+        if name in self.__dict__:
+            del self.__dict__[name]
         
     def getAttribute(self,name):
         '''
         Return the attribute "name"
         '''
-        return self.__dict__[name]
+        if name in self.__dict__:
+            return self.__dict__[name]
+        else:
+            return None
 
 
 class Embedding(object):
@@ -600,7 +604,6 @@ class WeightedAdjacency(AbstractWeightedAdjacency):
         The given weighting function computes the weight of the edge linking the edge i to the edge j (of the base adjacency).
         '''
         nbPoints = baseAdjacency.countEdges()
-        print(nbPoints)
         newAdj = WeightedAdjacency(nbPoints)
         source = baseAdjacency.source
         target = baseAdjacency.target
@@ -610,7 +613,6 @@ class WeightedAdjacency(AbstractWeightedAdjacency):
                 for e in baseEdgeList[v]:
                     if e>i:
                         newAdj.createEdge(i, e, weightingFunction(i,e))
-        print(newAdj.countEdges())
         return newAdj
     
     @staticmethod
