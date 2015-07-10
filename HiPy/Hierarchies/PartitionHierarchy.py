@@ -127,6 +127,12 @@ def transformBPTtoAttributeHierarchy(bpt, attributeName):
     adj=reweightMSTByAttribute(bpt, attributeName)
     return constructAltitudeBPT(adj)
 
+def filterBPTbyCriterion(bpt, filterCriterion):
+    print (bpt.leavesAdjacency)
+    adj=filterMSTByCriterion(bpt, filterCriterion)
+    print(adj)
+    return constructAltitudeBPT(adj)
+
 def transformAltitudeBPTtoWatershedHierarchy(bpt):
     nadj=extractWatershedEdges(bpt) 
     return constructAltitudeBPT(nadj)
@@ -166,7 +172,7 @@ def extractWatershedEdges(bpt):
     Return a copy of bpt.leavesAdjacency (ie the MST) where the weight of the non-watershed edges are set to 0
     '''
     
-    nadj=bpt.leavesAdjacency.copy()
+    nadj=bpt.leavesAdjacency.copy(True)
     nbLeaves=bpt.nbPixels
     nbNodes=len(bpt)
     addAttributeChildren(bpt)
@@ -240,6 +246,27 @@ def reweightMSTByAttribute(bpt, attributeName, extinctionValue=True):
             nadj[i-nbLeaves]=attr[i]
     return nadj
 
+def filterMSTByCriterion(bpt, filterCriterion): 
+    '''
+    Filter the MST associated to a binary partition tree according to a given criterion.
+    
+    The criterion is a function that associates True or False to any inner node of the binary partition tree
+    
+    Given an inner node i of the bpt:
+      - if filterCriterion(i)==True: the weight of the corresponding edge in the MST is set to 0
+      - otherwise the weight of the corresponding edge in the MST is left unchanged
+    '''
+    nbLeaves=bpt.nbPixels
+    nadj=bpt.leavesAdjacency.copy(True)
+    addAttributeChildren(bpt)
+    
+    for i in bpt.iteratorFromPixelsToRoot(False):
+        if filterCriterion(i):
+            nadj[i-nbLeaves]=0
+   
+    return nadj
+
+
 def computeSaliencyMap(partitionTree,adjacency, attribute="level"):
     '''
     Compute the saliency values of the edges of the given adjacency w.r.t the given partition tree.
@@ -249,29 +276,18 @@ def computeSaliencyMap(partitionTree,adjacency, attribute="level"):
     addAttributeDepth(partitionTree)
     attr=partitionTree.getAttribute(attribute)
     lca=partitionTree.lca
-    deleted = partitionTree.getAttribute("deleted")
-    if deleted != None:
-        def fun(i,j):
-            z=lca(i,j)
-            while deleted[z]:
-                z=partitionTree[z]
-            return attr[z]
-        valFun=fun
-    else:
-        valFun=lambda i,j:attr[lca(i,j)]
-    # could be shortened to
-    # WeightedAdjacency.createAdjacency(adjacency, lambda i,j:level[lca(i,j)])
-    # but doubles the cost due to symmetric weights
-#     adj=WeightedAdjacency(adjacency.nbPoints)
-#     for i in range(adj.nbPoints):
-#         for j in adjacency.getSuccesors(i):
-#             if j>i:
-#                 w=attr[lca(i,j)]
-#                 adj.createEdge(i, j, w)
-#                 #adj.createEdge(j, i, w)
-#      
-#     return adj 
-
+#     deleted = partitionTree.getAttribute("deleted")
+#     if deleted != None:
+#         def fun(i,j):
+#             z=lca(i,j)
+#             while deleted[z]:
+#                 z=partitionTree[z]
+#             return attr[z]
+#         valFun=fun
+#     else:
+#         valFun=lambda i,j:attr[lca(i,j)]
+   
+    valFun=lambda i,j:attr[lca(i,j)]
     return WeightedAdjacency.createAdjacency(adjacency, valFun)
 
 def drawSaliencyMap(size,saliency, interpolationFunction=max):
@@ -319,7 +335,7 @@ def drawSaliencyForVizu(tree,image, attr="level", gammaFactor=0.33333):
     Only saliceny associated to a 4 adjacency can be drawn consistently.
     '''
     adj4 = AdjacencyNdRegular.getAdjacency2d4(image.embedding.size)
-    addAttributeRank(tree)
+    
     saliency=computeSaliencyMap(tree,adj4,attr)
     sal=drawSaliencyMap(image.embedding.size,saliency)
     

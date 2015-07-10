@@ -76,9 +76,9 @@ def demoSWS():
     print("Testing isomorphism...")
     print(Tree.testTreeIsomorphism(sws, wsha))
     
-def demoNoiseWS(iteration=21):
+def demoNoiseWS(iteration=11):
     print("reading image...")
-    image = readImage('../samples/lenna512.png', False)
+    image = readImage('../samples/monsters.png', grayScale=True)
     adj4 = AdjacencyNdRegular.getAdjacency2d4(image.embedding.size)
     image = rescaleGray(image,0,1)
 
@@ -87,22 +87,22 @@ def demoNoiseWS(iteration=21):
         print("-> Iteration " + str(i))
         print("Adding noise...")
         im2 = imageMap(image, lambda x: x+rnd.uniform(-0.001, 0.001), marginal=True)
-        im2 = rescaleGray(im2,0,1)
-        im2 = convertRGBtoLAB(im2)
+
         print("Constructing gradient graph...")
-        adjacency= WeightedAdjacency.createAdjacency(adj4, lambda i,j: euclideanDistance(im2[i], im2[j]))
+        adjacency= WeightedAdjacency.createAdjacency(adj4, lambda i,j: abs(im2[i]- im2[j]))
         print("Constructing area watershed...")
-        wsh = transformAltitudeBPTtoWatershedHierarchy(constructAltitudeBPT(adjacency))
-        addAttributeArea(wsh)
-        wsha= transformBPTtoAttributeHierarchy(wsh,"area")
+        #wsh = transformAltitudeBPTtoWatershedHierarchy(constructAltitudeBPT(adjacency))
+        #addAttributeArea(wsh)
+        #wsha= transformBPTtoAttributeHierarchy(wsh,"area")
+        wsha = constructExactRandomSeedsWatershed(adjacency)
         sal=computeSaliencyMap(wsha, adj4)
         
         
         print("Averaging and Drawing saliency...")
-        #lineGraph=WeightedAdjacency.createLineGraph(sal)
-        #adjLineGraps=WeightedAdjacency.createReflexiveRelation(lineGraph)
-        #meanSal=spatialFilter(sal, adjLineGraps, BasicAccumulator.getMeanAccumulator())
-        meanSal=sal
+        lineGraph=WeightedAdjacency.createLineGraph(sal)
+        adjLineGraps=WeightedAdjacency.createReflexiveRelation(lineGraph)
+        meanSal=spatialFilter(sal, adjLineGraps, BasicAccumulator.getMeanAccumulator())
+        #meanSal=sal
         saveImage(normalizeToByte(imageMap(rescaleGray(drawSaliencyMap(image.embedding.size,meanSal),0,1), lambda x:x**0.33333)) , "Results/Random noise gradient "+ str(i) +".png")
         if sal0==None:
             sal0=meanSal
@@ -116,14 +116,18 @@ def demoNoiseWS(iteration=21):
     
     
     for i in range(len(sal0)):
-        sal0[i]=medianV(sal0[i])
+        sal0[i]=meanV(sal0[i])
     
         
     saveImage(normalizeToByte(imageMap(rescaleGray(drawSaliencyMap(image.embedding.size,sal0),0,1), lambda x:x**0.33333)) , "Results/Random noise combined gradient.png")
     
     print("Ultra metric opening...")
     bpt = transformAltitudeBPTtoWatershedHierarchy(constructAltitudeBPT(sal0))
+    addAttributeArea(bpt)
+   
+    nbpt = filterBPTbyCriterion(bpt, lambda i:min(bpt.area[bpt.children[i][0]],bpt.area[bpt.children[i][1]])<10)
     saveImage(drawSaliencyForVizu(bpt,image), "Results/Random noise WS bpt.png")
+    saveImage(drawSaliencyForVizu(nbpt,image), "Results/Random noise WS filteredbpt.png")
     
 
  
@@ -143,14 +147,23 @@ def testEdgeFilter():
     lineGraph=WeightedAdjacency.createLineGraph(sal)
     adjLineGraps=WeightedAdjacency.createReflexiveRelation(lineGraph)
     meanSal=spatialFilter(sal, adjLineGraps, BasicAccumulator.getMeanAccumulator())
+    bpt= transformAltitudeBPTtoWatershedHierarchy(constructAltitudeBPT(meanSal))
     
-    imSal1=normalizeToByte(imageMap(rescaleGray(drawSaliencyMap(image.embedding.size,sal),0,1) , lambda x:x**0.33333))
+    addAttributeArea(bpt)
+   
+    nbpt = filterBPTbyCriterion(bpt, lambda i:min(bpt.area[bpt.children[i][0]],bpt.area[bpt.children[i][1]])<5)
+    print(bpt)
+    print(nbpt)
+    
+    #imSal1=normalizeToByte(imageMap(rescaleGray(drawSaliencyMap(image.embedding.size,sal),0,1) , lambda x:x**0.33333))
     #imSal2=normalizeToByte(imageMap(rescaleGray(drawSaliencyMap(image.embedding.size,meanSal),0,1) , lambda x:x**0.33333))
-    imSal2=normalizeToByte(rescaleGray(drawSaliencyMap(image.embedding.size,meanSal),0,1))
-    saveImage(imSal1, "./Results/lenna area sal map.png")
-    saveImage(imSal2, "./Results/lenna area mean sal map.png")
-    
-
+    #imSal2=normalizeToByte(rescaleGray(drawSaliencyMap(image.embedding.size,meanSal),0,1))
+    #saveImage(imSal1, "./Results/lenna area sal map.png")
+    #saveImage(imSal2, "./Results/lenna area mean sal map.png")
+    addAttributeRank(bpt)
+    addAttributeRank(nbpt)
+    saveImage(drawSaliencyForVizu(bpt,image), "Results/lenna area mean sal bpt.png")#,"rank",1
+    saveImage(drawSaliencyForVizu(nbpt,image), "Results/lenna area mean sal bpt filtered.png")
     
     
 def main():

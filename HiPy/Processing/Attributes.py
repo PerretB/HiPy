@@ -464,9 +464,16 @@ def addAttributeRank(tree,measure="level",name="rank"):
     if attr==None:
         return
     nbPixels = tree.nbPixels
+    level = tree.level
+   
     for i in tree.iteratorFromPixelsToRoot(False):
         attr[i]=i-nbPixels+1
-        
+    
+    for i in tree.iteratorFromPixelsToRoot(False,False):
+        par=tree[i]
+        if(level[i]==level[par]):
+            attr[par]=attr[i]
+            
     
     
     

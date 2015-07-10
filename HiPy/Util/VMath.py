@@ -67,6 +67,11 @@ def mult(v):
 def euclideanDistance(v1,v2):
     return norm(diffV(v1,v2))
 
+
+
+def meanV(v):
+    return sum(v)/len(v)
+
 def medianV(v):
     s=sorted(v)
     nbE = len(s)
