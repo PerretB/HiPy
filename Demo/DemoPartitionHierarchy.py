@@ -8,7 +8,7 @@
 # modify and/ or redistribute the software under the terms of the CeCILL
 # license as circulated by CEA, CNRS and INRIA at the following URL
 # "http://www.cecill.info". 
-from HiPy.Structures import AdjacencyNdRegular
+
 
 # As a counterpart to the access to the source code and  rights to copy,
 # modify and redistribute granted by the license, users are provided only
@@ -44,6 +44,7 @@ from HiPy.Processing.Attributes import * #@UnusedWildImport
 from HiPy.Util.Histogram import * #@UnusedWildImport
 from HiPy.Util.VMath import * #@UnusedWildImport
 from HiPy.Util.Color import convertRGBtoLAB
+from HiPy.Structures import AdjacencyNdRegular
 
 def demoBPT():
     print("reading image...")

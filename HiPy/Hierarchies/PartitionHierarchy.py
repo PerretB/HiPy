@@ -1,17 +1,17 @@
-# Copyright ESIEE (2015) 
-# 
+# Copyright ESIEE (2015)
+#
 # benjamin.perret@esiee.fr
 #
 # This software is governed by the CeCILL license under French law and
-# abiding by the rules of distribution of free software.  You can  use, 
+# abiding by the rules of distribution of free software.  You can  use,
 # modify and/ or redistribute the software under the terms of the CeCILL
 # license as circulated by CEA, CNRS and INRIA at the following URL
-# "http://www.cecill.info". 
+# "http://www.cecill.info".
 # As a counterpart to the access to the source code and  rights to copy,
 # modify and redistribute granted by the license, users are provided only
 # with a limited warranty  and the software's author,  the holder of the
 # economic rights,  and the successive licensors  have only  limited
-# liability. 
+# liability.
 
 # In this respect, the user's attention is drawn to the risks associated
 # with loading,  using,  modifying and/or developing or reproducing the
@@ -20,9 +20,9 @@
 # therefore means  that it is reserved for developers  and  experienced
 # professionals having in-depth computer knowledge. Users are therefore
 # encouraged to load and test the software's suitability as regards their
-# requirements in conditions enabling the security of their systems and/or 
-# data to be ensured and,  more generally, to use and operate it in the 
-# same conditions as regards security. 
+# requirements in conditions enabling the security of their systems and/or
+# data to be ensured and,  more generally, to use and operate it in the
+# same conditions as regards security.
 
 # The fact that you are presently reading this means that you have had
 # knowledge of the CeCILL license and that you accept its terms.
@@ -35,247 +35,242 @@ Created on 15 juin 2015
 
 import HiPy.Util.UnionFind as UnionFind
 from HiPy.Structures import Tree, Embedding2dGrid, Image, TreeType, WeightedAdjacency,\
-    AdjacencyNdRegular
+    AdjacencyNdRegular, HiPyLogger
 from HiPy.Processing.Attributes import addAttributeChildren,\
-    addAttributeDepth, addAttributeRank
+    addAttributeDepth
 from HiPy.Util.Histogram import imageMap, rescaleGray, normalizeToByte
 
-def constructAltitudeBPT(adjacency, verbose=False):
+def constructAltitudeBPT(adjacency):
     '''
     Construct the binary partition tree by altitude of the given image.
-    
+
     It assumes that adjacency has weighted edges.
-    
+
     The corresponding MST is stored in the attribute leavesAdjacency of the returned tree
     '''
-    if verbose:
-        print("Sorting") 
-    
-    nbPoints = adjacency.nbPoints
-    edgesI = sorted(range(len(adjacency)), key=lambda x:adjacency[x])
-    edges = [[adjacency.source[i], adjacency.target[i], adjacency[i]]  for i in edgesI]
-    if verbose:
-        print("Kruskaling") 
-    MST,parent=computeMSTBPT(nbPoints,edges)
-    
-    if verbose:
-        print("Stuffing")
-    levels=[0]*nbPoints 
-    adjMST=WeightedAdjacency(nbPoints)
+    HiPyLogger.debug("call to: constructAltitudeBPT")
 
-    for e in MST:
+    nbPoints = adjacency.nbPoints
+    edgesI = sorted(range(len(adjacency)), key=lambda x: adjacency[x])
+    edges = [[adjacency.source[i], adjacency.target[i], adjacency[i]]  for i in edgesI]
+
+    mst, parent = computeMSTBPT(nbPoints, edges)
+
+    levels = [0]*nbPoints
+    adjMST = WeightedAdjacency(nbPoints)
+    for e in mst:
         levels.append(e[2])
         adjMST.createEdge(*e)
 
-    if verbose:
-        print("Finalizing")
-    tree = Tree(TreeType.PartitionHierarchy,parent, levels)
-    tree.leavesAdjacency=adjMST
+    tree = Tree(TreeType.PartitionHierarchy, parent, levels)
+    tree.leavesAdjacency = adjMST
     return tree
 
 def transformAltitudeBPTtoComponentTree(bpt):
     '''
-    Copy bpt and delete the nodes n such that bpt.level[n]=bpt.level[bpt[n]] 
+    Copy bpt and delete the nodes n such that bpt.level[n]=bpt.level[bpt[n]]
     (and update the parent relation accordingly...
     '''
     nbLeaves = bpt.nbPixels
     nbNodes = len(bpt)
     addAttributeChildren(bpt)
-    children=bpt.children
-    level=bpt.level
-    
-    count=0
-    deleted=[False]*nbNodes
-    dmap=[0]*nbNodes
-    
+    children = bpt.children
+    level = bpt.level
+
+    count = 0
+    deleted = [False]*nbNodes
+    dmap = [0]*nbNodes
+
     #from root to leaves, compute the new parent relation, don't care of the holes in the parent tab
-    for i in range(nbNodes-2,nbLeaves-1,-1):
-        p = bpt[i]
-        if level[i]==level[p]:
+    for i in range(nbNodes-2, nbLeaves-1, -1):
+        par = bpt[i]
+        if level[i] == level[par]:
             for c in children[i]:
-                bpt[c]=p
-            deleted[i]=True
-            count=count+1
+                bpt[c] = par
+            deleted[i] = True
+            count = count+1
         #inverse of what we want: number of deleted nodes after node i
         dmap[i] = count
-    
-    #correct the mapping 
+
+    #correct the mapping
     for i in bpt.iteratorFromPixelsToRoot(False):
         dmap[i] = count - dmap[i]
-    
-    #new relations with correct size  
+
+    #new relations with correct size
     nparent = [-1]*(nbNodes-count)
-    nlevel = [0]*(nbNodes-count) 
-    
-    count=0
-    for i in range(0,nbNodes-1):
+    nlevel = [0]*(nbNodes-count)
+
+    count = 0
+    for i in range(0, nbNodes-1):
         if not deleted[i]:
-            p = bpt[i]
-            np = p - dmap[p] 
-            nparent[count]=np
-            nlevel[count]=level[i]
+            par = bpt[i]
+            npar = par - dmap[par]
+            nparent[count] = npar
+            nlevel[count] = level[i]
             count = count + 1
-    nparent[count]=-1
-    nlevel[count]=level[-1]
-    
-    ntree = Tree(TreeType.PartitionHierarchy,nparent, nlevel)
-    ntree.leavesAdjacency=bpt.leavesAdjacency
-    
+    nparent[count] = -1
+    nlevel[count] = level[-1]
+
+    ntree = Tree(TreeType.PartitionHierarchy, nparent, nlevel)
+    ntree.leavesAdjacency = bpt.leavesAdjacency
+
     return ntree
 
 def transformBPTtoAttributeHierarchy(bpt, attributeName):
-    adj=reweightMSTByAttribute(bpt, attributeName)
+    adj = reweightMSTByAttribute(bpt, attributeName)
     return constructAltitudeBPT(adj)
 
 def filterBPTbyCriterion(bpt, filterCriterion):
-    print (bpt.leavesAdjacency)
-    adj=filterMSTByCriterion(bpt, filterCriterion)
-    print(adj)
+    adj = filterMSTByCriterion(bpt, filterCriterion)
     return constructAltitudeBPT(adj)
 
 def transformAltitudeBPTtoWatershedHierarchy(bpt):
-    nadj=extractWatershedEdges(bpt) 
+    nadj = extractWatershedEdges(bpt)
     return constructAltitudeBPT(nadj)
-    
-def computeMSTBPT(nbPoints,sortedEdgeList):
+
+def computeMSTBPT(nbPoints, sortedEdgeList):
     '''
     precondition: The edge list must be sorted
     '''
-    nbEdgeMST=nbPoints-1
-    
-    mst=[]
+    HiPyLogger.debug("call to: computeMSTBPT")
+    nbEdgeMST = nbPoints-1
+
+    mst = []
     parent = [-1]*nbPoints
     ufParent = [i for i in range(nbPoints)]
     ufRank = [0]*nbPoints
     root = [i for i in range(nbPoints)]
-    nbEdgeFound=0
-    i=0
-    while nbEdgeFound<nbEdgeMST :
+    nbEdgeFound = 0
+    i = 0
+    while nbEdgeFound < nbEdgeMST:
         e = sortedEdgeList[i]
-        c1 = UnionFind.findTarjan(e[0],ufParent)
-        c2 = UnionFind.findTarjan(e[1],ufParent)
-        if c1!=c2:
-            newParent=len(parent)
+        comp1 = UnionFind.findTarjan(e[0], ufParent)
+        comp2 = UnionFind.findTarjan(e[1], ufParent)
+        if comp1 != comp2:
+            newParent = len(parent)
             parent.append(-1)
-            parent[root[c1]]=newParent
-            parent[root[c2]]=newParent
-            nr,_ = UnionFind.unionTarjan(c1, c2, ufParent, ufRank)
-            root[nr]=newParent
+            parent[root[comp1]] = newParent
+            parent[root[comp2]] = newParent
+            newRoot, _ = UnionFind.unionTarjan(comp1, comp2, ufParent, ufRank)
+            root[newRoot] = newParent
             mst.append(e)
             nbEdgeFound = nbEdgeFound+1
-        i=i+1
-    
+        i = i+1
+
     return mst, parent
 
 def extractWatershedEdges(bpt):
     '''
-    Return a copy of bpt.leavesAdjacency (ie the MST) where the weight of the non-watershed edges are set to 0
+    Return a copy of bpt.leavesAdjacency (ie the MST) where the weight of the non-watershed edges
+    are set to 0
     '''
-    
-    nadj=bpt.leavesAdjacency.copy(True)
-    nbLeaves=bpt.nbPixels
-    nbNodes=len(bpt)
-    addAttributeChildren(bpt)
-    level=bpt.level
-    children=bpt.children
-    
-    minima=[0]*nbNodes
-    for i in bpt.iteratorFromPixelsToRoot(False):
-        cl = children[i]
-        m1=minima[cl[0]]
-        m2=minima[cl[1]]
-        nb=m1+m2
 
-        if m1==0 or m2==0:
-            nadj[i-nbLeaves]=0
-       
-        if nb!=0:
-            minima[i]=nb
+    nadj = bpt.leavesAdjacency.getCopy()
+    nbLeaves = bpt.nbPixels
+    nbNodes = len(bpt)
+    addAttributeChildren(bpt)
+    level = bpt.level
+    children = bpt.children
+
+    minima = [0]*nbNodes
+    for i in bpt.iteratorFromPixelsToRoot(False):
+        childList = children[i]
+        min1 = minima[childList[0]]
+        min2 = minima[childList[1]]
+        numMin = min1+min2
+
+        if min1 == 0 or min2 == 0:
+            nadj[i-nbLeaves] = 0
+
+        if numMin != 0:
+            minima[i] = numMin
         else:
-            p=bpt[i]
+            par = bpt[i]
             #if p==-1 there is a unique minima in the image
-            if p==-1 or level[i]!=level[p]:
-                minima[i]=1
+            if par == -1 or level[i] != level[par]:
+                minima[i] = 1
             #else minima[i]=0
-    
+
     return nadj
 
 
-def correctAttributeValueBPT(bpt,attributeName):
+def correctAttributeValueBPT(bpt, attributeName):
     '''
-    Most attributes (@todo precision needed!!!) computed using fonctions in module HiPy.Component 
+    Most attributes (@todo precision needed!!!) computed using fonctions in module HiPy.Component
     will be incorrect for the BPT. However their values can be corrected a posteriori
     using this function !
-    ''' 
+    '''
     addAttributeChildren(bpt)
-    children=bpt.children        
-    attr=bpt.getAttribute(attributeName)
-    level=bpt.level
+    children = bpt.children
+    attr = bpt.getAttribute(attributeName)
+    level = bpt.level
     for i in bpt.iterateOnLeaves():
-        attr[i]=0
-    
-    for i in bpt.iteratorFromPixelsToRoot(False):
-        p = bpt[i]
-        if p!=-1 and level[i]==level[p]:
-            vc1=attr[children[i][0]]
-            vc2=attr[children[i][1]]
-            attr[i]=max(vc1,vc2)
+        attr[i] = 0
 
-def reweightMSTByAttribute(bpt, attributeName, extinctionValue=True): 
+    for i in bpt.iteratorFromPixelsToRoot(False):
+        par = bpt[i]
+        if par != -1 and level[i] == level[par]:
+            vc1 = attr[children[i][0]]
+            vc2 = attr[children[i][1]]
+            attr[i] = max(vc1, vc2)
+
+def reweightMSTByAttribute(bpt, attributeName, extinctionValue=True):
     '''
     Reweights the MST associated to a binary partition tree according to a given attribute.
-    
-    If the attribute represents an extinctionValue, then the new weight of an edge is the 
+
+    If the attribute represents an extinctionValue, then the new weight of an edge is the
     minimum of the attribute values of the two regions separated by this edge.
-    
+
     Otherwise the new value of the edge is simply the attribut value of the node associated
     to this edge.
-    
-    The function returns a new weighted adjacency containing with the same edges as the MST but different weights.
+
+    The function returns a new weighted adjacency containing with the same edges as the MST but
+    different weights.
     '''
-    nbLeaves=bpt.nbPixels
-    nadj=bpt.leavesAdjacency.copy()
+    nbLeaves = bpt.nbPixels
+    nadj = bpt.leavesAdjacency.getCopy()
     addAttributeChildren(bpt)
-    children=bpt.children
-    attr=bpt.getAttribute(attributeName)
+    children = bpt.children
+    attr = bpt.getAttribute(attributeName)
     if extinctionValue:
         for i in bpt.iteratorFromPixelsToRoot(False):
-            nadj[i-nbLeaves]=min(attr[children[i][0]],attr[children[i][1]])
+            nadj[i-nbLeaves] = min(attr[children[i][0]], attr[children[i][1]])
     else:
         for i in bpt.iteratorFromPixelsToRoot(False):
-            nadj[i-nbLeaves]=attr[i]
+            nadj[i-nbLeaves] = attr[i]
     return nadj
 
-def filterMSTByCriterion(bpt, filterCriterion): 
+def filterMSTByCriterion(bpt, filterCriterion):
     '''
     Filter the MST associated to a binary partition tree according to a given criterion.
-    
-    The criterion is a function that associates True or False to any inner node of the binary partition tree
-    
+
+    The criterion is a function that associates True or False to any inner node of
+    the binary partition tree
+
     Given an inner node i of the bpt:
       - if filterCriterion(i)==True: the weight of the corresponding edge in the MST is set to 0
       - otherwise the weight of the corresponding edge in the MST is left unchanged
     '''
-    nbLeaves=bpt.nbPixels
-    nadj=bpt.leavesAdjacency.copy(True)
+    nbLeaves = bpt.nbPixels
+    nadj = bpt.leavesAdjacency.getCopy()
     addAttributeChildren(bpt)
-    
+
     for i in bpt.iteratorFromPixelsToRoot(False):
         if filterCriterion(i):
-            nadj[i-nbLeaves]=0
-   
+            nadj[i-nbLeaves] = 0
+
     return nadj
 
 
-def computeSaliencyMap(partitionTree,adjacency, attribute="level"):
+def computeSaliencyMap(partitionTree, adjacency, attribute="level"):
     '''
     Compute the saliency values of the edges of the given adjacency w.r.t the given partition tree.
-    
+
     A new adjacency is created during the process.
     '''
     addAttributeDepth(partitionTree)
-    attr=partitionTree.getAttribute(attribute)
-    lca=partitionTree.lca
+    attr = partitionTree.getAttribute(attribute)
+    lca = partitionTree.lca
 #     deleted = partitionTree.getAttribute("deleted")
 #     if deleted != None:
 #         def fun(i,j):
@@ -286,60 +281,61 @@ def computeSaliencyMap(partitionTree,adjacency, attribute="level"):
 #         valFun=fun
 #     else:
 #         valFun=lambda i,j:attr[lca(i,j)]
-   
-    valFun=lambda i,j:attr[lca(i,j)]
+
+    valFun = lambda i, j: attr[lca(i, j)]
     return WeightedAdjacency.createAdjacency(adjacency, valFun)
 
-def drawSaliencyMap(size,saliency, interpolationFunction=max):
+def drawSaliencyMap(size, saliency, interpolationFunction=max):
     '''
     Represent a saliency map as a contour image.
     Size is the size [width, height] of the image => result size [2*width-1,2*height-1].
     Saliency must represent a 4 adjacency on the 2d grid, results are unpredictable otherwise
-    
-    InterpolationFunction is used to interpolate values on the 0-faces of the Kahlimski grid. 
+
+    InterpolationFunction is used to interpolate values on the 0-faces of the Kahlimski grid.
     Its argument is a list containig the value of the neighbours 1-faces
     '''
-    w=size[0]
-    h=size[1]
-    grid = Embedding2dGrid(w,h)
-    rw=w*2-1
-    rh=h*2-1
-    grid2 = Embedding2dGrid(rw,rh)
-    
-    res = Image(rw*rh,0,AdjacencyNdRegular.getAdjacency2d4([rw,rh]),grid2)
-    for y in range(h):
-        for x in range(w):
-            p=grid.getLinearCoordinate(x,y)
-            for n in saliency.getOutEdges(p):
-                if n[1]>p:
-                    ng=grid.fromLinearCoordinate(n[1])
-                    res.setPixelWCS(n[2],x+ng[0],y+ng[1])
-    
-    for y in range(1,rh-1,2):
-        for x in range(1,rw-1,2):
-            p=grid2.getLinearCoordinate(x,y)
-            vals=[]
-            for n in res.getNeighbours(p):
+    width = size[0]
+    height = size[1]
+    grid = Embedding2dGrid(width, height)
+    resWidth = width*2-1
+    resHeight = height*2-1
+    grid2 = Embedding2dGrid(resWidth, resHeight)
+
+    res = Image(resWidth*resHeight, 0, AdjacencyNdRegular.getAdjacency2d4([resWidth, resHeight]), \
+        grid2)
+    for y in range(height):
+        for x in range(width):
+            pixLin = grid.getLinearCoordinate(x, y)
+            for n in saliency.getOutEdges(pixLin):
+                if n[1] > pixLin:
+                    neighbourhCoord = grid.fromLinearCoordinate(n[1])
+                    res.setPixelWCS(n[2], x+neighbourhCoord[0], y+neighbourhCoord[1])
+
+    for y in range(1, resHeight-1, 2):
+        for x in range(1, resWidth-1, 2):
+            pixLin = grid2.getLinearCoordinate(x, y)
+            vals = []
+            for n in res.getNeighbours(pixLin):
                 vals.append(res[n])
-            res[p]=interpolationFunction(vals)
-    
+            res[pixLin] = interpolationFunction(vals)
+
     return res
 
 
-def drawSaliencyForVizu(tree,image, attr="level", gammaFactor=0.33333):
+def drawSaliencyForVizu(tree, image, attr="level", gammaFactor=0.33333):
     '''
     Draw the saliency map associated to the given partition tree in an image.
-    
+
     The tree is assumed to represent the given image.
-    
+
     Only saliceny associated to a 4 adjacency can be drawn consistently.
     '''
     adj4 = AdjacencyNdRegular.getAdjacency2d4(image.embedding.size)
-    
-    saliency=computeSaliencyMap(tree,adj4,attr)
-    sal=drawSaliencyMap(image.embedding.size,saliency)
-    
+
+    saliency = computeSaliencyMap(tree, adj4, attr)
+    sal = drawSaliencyMap(image.embedding.size, saliency)
+
     sal = rescaleGray(sal, 0, 1)
-    sal = imageMap(sal, lambda x:x**gammaFactor)
+    sal = imageMap(sal, lambda x: x**gammaFactor)
     sal = normalizeToByte(sal)
     return sal

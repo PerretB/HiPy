@@ -35,21 +35,20 @@ Created on 3 juin 2015
 @author: perretb
 '''
 
-from HiPy.Structures import AdjacencyNdRegular, Tree
+from HiPy.Structures import AdjacencyNdRegular, Tree, HiPyLogger
 from HiPy.Util.Histogram import imageInverseGrayByte
 from HiPy.Util.Geometry2d import imagePadding, reduceKhalimsky, removeBorder
 from HiPy.Processing.Attributes import addAttributeArea
 from HiPy.Hierarchies.TreeOfShape import constructTreeOfShapes
 from HiPy.IO import readImage, saveImage
-
-
+import logging
 
 
 
 
 
 def testSelfDuality():
-    images =["monsters.png","macaws.png","mandrill.png","remotesensing1.png","stample.png","stample2.png","stample4.png","blobs-ndg.png","lennaGray256.png","blood1.png","detection_test.png","spot5.png"]
+    images =["monsters.png","macaws.png"]#,"mandrill.png","remotesensing1.png","stample.png","stample2.png","stample4.png","blobs-ndg.png","lennaGray256.png","blood1.png","detection_test.png","spot5.png"]
     for imName in images:
      
         im = readImage('../samples/' +imName)
@@ -57,8 +56,8 @@ def testSelfDuality():
         
         imInv = imageInverseGrayByte(im)
          
-        tree1 =constructTreeOfShapes(im,None,False)
-        tree2 =constructTreeOfShapes(imInv,None,False)
+        tree1 =constructTreeOfShapes(im,None)
+        tree2 =constructTreeOfShapes(imInv,None)
            
         if Tree.testTreeIsomorphism(tree1, tree2):
             print("Self duality verified")
@@ -86,6 +85,7 @@ def testAreaFilter():
 
 
 def main():
+    HiPyLogger.setLevel(logging.DEBUG)
     print("--- Grain filter on the tree of shapes")
     testAreaFilter()
     print("--- Experimental assesment of the self duality")

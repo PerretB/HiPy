@@ -226,8 +226,8 @@ def filterRetine(imageNumber,method=1):
 #    - files "DRIVE/XX_test_filtered.png" for XX from 00 to 20: the preprocessed image of the DRIVE database number <imageNumber>
 # Output:
 #    - filtering result saved in file "DRIVE/XX_test_filtered_result_method_<method>.png"  for XX from 00 to 20
-def testRetineAll(method):
-    for i in range(1,21):
+def testRetineAll(method, lastImage=21):
+    for i in range(1,lastImage):
         filterRetine(i, method)  
         
         
@@ -235,7 +235,7 @@ def testRetineAll(method):
     
 def main():
     for i in range(1,6):
-        testRetineAll(i) 
+        testRetineAll(i,2) 
     
 if __name__ == '__main__':
     main()
