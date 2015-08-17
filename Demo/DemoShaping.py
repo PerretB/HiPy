@@ -35,13 +35,12 @@ Created on 11 juin 2015
 @author: perretb
 '''
 
-from HiPy.IO import * #@UnusedWildImport
-from HiPy.Hierarchies.ComponentTree import * #@UnusedWildImport
-from HiPy.Hierarchies.TreeOfShape import * #@UnusedWildImport
-from HiPy.Util.Histogram import * #@UnusedWildImport
-from HiPy.Processing.Attributes import * #@UnusedWildImport
-from HiPy.Processing.Shaping import * #@UnusedWildImport
-from HiPy.Structures import * #@UnusedWildImport
+from HiPy.IO import *  # @UnusedWildImport
+from HiPy.Hierarchies.ComponentTree import *  # @UnusedWildImport
+from HiPy.Util.Histogram import *  # @UnusedWildImport
+from HiPy.Processing.Attributes import *  # @UnusedWildImport
+from HiPy.Processing.Shaping import *  # @UnusedWildImport
+from HiPy.Structures import *  # @UnusedWildImport
 
 
 def dummyDemoShapping():
@@ -52,61 +51,63 @@ def dummyDemoShapping():
     print("Reading image...")
     image = readImage("../samples/blood1.png")
     image.adjacency = AdjacencyNdRegular.getAdjacency2d4(image.embedding.size)
-    
+
     print("Building tree...")
-    tree=constructTreeOfShapes(image)
+    tree = constructComponentTree(image, ComponentTreeType.TreeOfShapes)
     addAttributeArea(tree)
     addAttributeChildren(tree)
 
     print("Building tree of tree on area")
-    area=prepareForShapping(tree,tree.area)
+    area = prepareForShapping(tree, tree.area)
     tree2 = constructComponentTree(area)
 
     print("Filtering tree of tree on area based on level")
-    tree2.filterDirect(lambda _,x:tree2.level[x]<5000)
+    tree2.filterDirect(lambda _, x: tree2.level[x] < 5000)
     print("Shaping first tree based on previous filter result")
-    res = tree.reconstructImage("level",shapingCriterion(tree2))
-    
+    res = tree.reconstructImage("level", shapingCriterion(tree2))
+
     print("Filtering first tree based on area")
-    res2 = tree.reconstructImage("level", lambda x: tree.area[x]<5000)
-    
+    res2 = tree.reconstructImage("level", lambda x: tree.area[x] < 5000)
+
     if res.equals(res2):
         print("Hurray: its the same")
     else:
         print("Yeark: does not work")
-    
-def demoNonIncreasingFilter(): 
+
+
+def demoNonIncreasingFilter():
     '''
     Demonstrate how to select attribute maxima of high value using a shaping
     '''
     print("Reading image...")
     image = readImage("../samples/blood1.png")
     image.adjacency = AdjacencyNdRegular.getAdjacency2d4(image.embedding.size)
-    
+
     print("Building tree...")
-    tree=constructTreeOfShapes(image)
+    tree = constructComponentTree(image, ComponentTreeType.TreeOfShapes)
     addAttributeCompactness(tree)
-    
-    #prefiltering
-    tree.filterDirect(lambda _,x:(tree.area[x]<200 or tree.area[x]>tree.nbPixels*0.6))
+
+    # prefiltering
+    tree.filterDirect(lambda _, x: (tree.area[x] < 200 or tree.area[x] > tree.nbPixels * 0.6))
     updateAttributeAfterFiltering(tree, "compactness")
 
     print("Building tree of tree on Compactness...")
-    compactness=prepareForShapping(tree,tree.compactness)
+    compactness = prepareForShapping(tree, tree.compactness)
     tree2 = constructComponentTree(compactness)
     addAttributeExtrema(tree2)
 
     print("Shaping first tree based on previous filter result...")
-    tree2.filterDirect(lambda _,x: tree2.level[x]<0.6 or tree2.extrema[x]==False)
-    res = tree.reconstructImage("level",shapingCriterion(tree2))
-    
+    tree2.filterDirect(lambda _, x: tree2.level[x] < 0.6 or tree2.extrema[x] == False)
+    res = tree.reconstructImage("level", shapingCriterion(tree2))
+
     print("Saving result...")
     saveImage(res, "Results/Shaping - high maxima of compactness.png")
 
-    
+
 def main():
     demoNonIncreasingFilter()
     dummyDemoShapping()
-    
+
+
 if __name__ == '__main__':
     main()

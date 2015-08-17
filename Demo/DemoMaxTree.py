@@ -29,34 +29,48 @@
 # The fact that you are presently reading this means that you have had
 # knowledge of the CeCILL license and that you accept its terms.
 
-'''
+"""
+Demonstration of a simple use of a Max Tree to perform an area filter.
+
 Created on 9 juin 2015
 
-@author: perretb
-'''
-from HiPy.IO import * #@UnusedWildImport
-from HiPy.Structures import * #@UnusedWildImport
-from HiPy.Hierarchies.ComponentTree import * #@UnusedWildImport
-from HiPy.Processing.Attributes import * #@UnusedWildImport
+@author: Benjamin Perret
+"""
+from HiPy.IO import *  # @UnusedWildImport
+from HiPy.Structures import *  # @UnusedWildImport
+from HiPy.Hierarchies.ComponentTree import *  # @UnusedWildImport
+from HiPy.Processing.Attributes import *  # @UnusedWildImport
+
 
 def testAreaFilter():
+    """
+    Performs a simple area filter on a sample image using a max tree.
+    """
+    print("Reading image")
     image = readImage('../samples/lennaGray256.png')
     image.adjacency = AdjacencyNdRegular.getAdjacency2d4(image.embedding.size)
-    
-    tree= constructComponentTree(image,ComponentTreeType.MaxTree,True)
+
+    print("Tree construction")
+    tree = constructComponentTree(image, ComponentTreeType.MaxTree)
     addAttributeArea(tree)
-    
-    print("Reconstruction")
-    reconstr1 = tree.reconstructImage("level",lambda x : tree.area[x]<=10000)
+
+    print("Filtering and reconstruction")
+    reconstruction = tree.reconstructImage("level", lambda x: tree.area[x] <= 10000)
 
     resultName = 'Results/reconstructionAreaFilter_MaxTree.png'
-    print("Image save: " +  resultName)
-    saveImage(reconstr1, resultName)
+    print("Saving result: " + resultName)
+    saveImage(reconstruction, resultName)
 
 
 def main():
-    print("--- Grain filter on the max tree")
+    """
+    Simple demo function launcher.
+    :return: void
+    """
+    HiPyLogger.setLevel(logging.DEBUG)
+    print("--- Area filter on the max tree")
     testAreaFilter()
+
 
 if __name__ == '__main__':
     main()

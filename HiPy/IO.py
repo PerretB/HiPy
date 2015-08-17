@@ -29,123 +29,161 @@
 # knowledge of the CeCILL license and that you accept its terms.
 
 
-'''
+"""
+This module is dedicated to input/output function.
+
+It allows to read/write images and graphs.
 Created on 3 juin 2015
 
-@author: perretb
-'''
-
+@author: Benjamin Perret
+"""
 
 from HiPy.Structures import Image, Embedding2dGrid, DirectedWeightedAdjacency
 import os
 
-PILAvailable=False
+PILAvailable = False
 # for image I/O
 try:
     from PIL import Image as PILimage
-    PILAvailable=True
-except ImportError:
-    print("Error: PIL library not available !")
-    
-    
-def ensureDirectoryExists(f):
-    d = os.path.dirname(f)
-    if d!="" and not os.path.exists(d):
-        os.makedirs(d)    
 
-def readImage(filename, grayScale=True): 
+    PILAvailable = True
+except ImportError:
+    PILimage = None
+    print("Error: PIL library not available !")
+
+
+def ensureDirectoryExists(directory):
+    """
+    Check if a directory exists and creates it if not.
+    :param directory: the directory path to check
+    :return: void
+    """
+    d = os.path.dirname(directory)
+    if d != "" and not os.path.exists(d):
+        os.makedirs(d)
+
+
+def readImage(filename, grayScale=True):
+    """
+    Reads an image from a file an returns the corresponding HiPy.Structures.Image object.
+
+    FIXME: handle alpha channel.
+
+    :param filename: path to the image file to read
+    :param grayScale: if True the result will be forced to be gray scale
+    :return: an instance of HiPy.Structures.Image
+    """
     if not PILAvailable:
         raise Exception("PIL needed to load image")
-    image= PILimage.open(filename)
+    image = PILimage.open(filename)
     size = image.size
     coord = lambda x: (x % size[0], x // size[0])
-    pixdata = image.load()
-    im = Image(size[0]*size[1])
-    bands=1
-    if isinstance(pixdata[(0,0)], (list, tuple)):
-        bands=len(pixdata[(0,0)])
-    if grayScale and bands>1:
-        if bands>3:
-            print("Warning: Image.Read, image has more than 3 channels (alpha component?), one or more channels will be ignored during the grayscale conversion.")
-        for i in range(size[0]*size[1]):
-            im[i]=sum(pixdata[coord(i)][0:3])//3
+    pixelData = image.load()
+    im = Image(size[0] * size[1])
+    bands = 1
+    if isinstance(pixelData[(0, 0)], (list, tuple)):
+        bands = len(pixelData[(0, 0)])
+    if grayScale and bands > 1:
+        if bands > 3:
+            print(
+                "Warning: Image.Read, image has more than 3 channels (alpha component?), one or more channels will "
+                "be ignored during the grayscale conversion.")
+        for i in range(size[0] * size[1]):
+            im[i] = sum(pixelData[coord(i)][0:3]) // 3
     else:
-        if bands==1:
-            for i in range(size[0]*size[1]):
-                im[i]=pixdata[coord(i)]
+        if bands == 1:
+            for i in range(size[0] * size[1]):
+                im[i] = pixelData[coord(i)]
         else:
-            for i in range(size[0]*size[1]):
-                im[i]=list(pixdata[coord(i)])
-    im.embedding = Embedding2dGrid(size[0],size[1])
+            for i in range(size[0] * size[1]):
+                im[i] = list(pixelData[coord(i)])
+    im.embedding = Embedding2dGrid(size[0], size[1])
     return im
 
-def saveImage(image,filename):
+
+def saveImage(image, filename):
+    """
+    Save the given image at the given location.
+
+    Always save in PNG format for now...
+
+    TODO: add support to other format
+    :param image: the image to save
+    :param filename: path where to save the image
+    :return: void
+    """
     if not PILAvailable:
         raise Exception("PIL needed to save image")
     ensureDirectoryExists(filename)
-    width=image.embedding.width;
-    size=[width,image.embedding.height]
+    width = image.embedding.width
+    size = [width, image.embedding.height]
     if isinstance(image[0], tuple):
         im = PILimage.new("RGB", size, 0)
         pix = im.load()
-    
+
         for i in range(len(image)):
-            pix[i%width,i//width]=image[i]
-    elif  isinstance(image[0], list):
+            pix[i % width, i // width] = image[i]
+    elif isinstance(image[0], list):
         im = PILimage.new("RGB", size, 0)
         pix = im.load()
-    
+
         for i in range(len(image)):
-            pix[i%width,i//width]=tuple(image[i])
+            pix[i % width, i // width] = tuple(image[i])
     else:
         im = PILimage.new("L", size, 0)
         pix = im.load()
-    
+
         for i in range(len(image)):
-            pix[i%width,i//width]=image[i]
-    
+            pix[i % width, i // width] = image[i]
+
     im.save(filename, "PNG")
-    
-    
 
 
 def readGraph(filename):
-    '''
+    """
     Read a graph (DirectedWeightedAdjacency) from ascii file.
-    format (weights are optionnale, vertices are numbered from 0 to numberOfVertices-1):
+
+    format (weights are optional, vertices are numbered from 0 to numberOfVertices-1):
     numberOfVertices numberOfEdges
     sourceVertexOfEdge_1 destinationVertexOfEdge_1 weightOfEdge_1
     sourceVertexOfEdge_2 destinationVertexOfEdge_2 weightOfEdge_2
     ...
     sourceVertexOfEdge_NumberOfEdges destinationVertexOfEdge_NumberOfEdges weightOfEdge_NumberOfEdges
-    '''
+
+    :param filename: path to the file to read
+
+    """
     infile = open(filename, "r")
     line = infile.readline()
-    while(line[0] == '#'):
+    while line[0] == '#':
         line = infile.readline()
     nbPoints = int(line.split()[0])
     lines = infile.readlines()
     infile.close()
-    graph=DirectedWeightedAdjacency(nbPoints)
-    
-    
+    graph = DirectedWeightedAdjacency(nbPoints)
+
     for line in lines:
         tokens = line.split()
-        if len(tokens)==3:
+        if len(tokens) == 3:
             graph.createEdge(int(tokens[0]), int(tokens[1]), int(tokens[2]))
         else:
             graph.createEdge(int(tokens[0]), int(tokens[1]))
-    
+
     return graph
 
+
 def saveGraph(graph, filename):
-    '''
+    """
+    FIXME: broken, do not use!
     Save a graph (DirectedWeightedAdjacency) in a file as plain text
-    '''
+
+    :param graph: the adjacency to save
+    :param filename: path to the saved file
+    """
     out = open(filename, "w")
     out.write(str(graph["nbPoints"]) + " " + str(len(graph["edges"])) + "\n")
     for e in graph["edges"]:
-        line=" ".join([str(v) for v in e])
+        line = " ".join([str(v) for v in e])
         out.write(line)
         out.write("\n")
     out.close()

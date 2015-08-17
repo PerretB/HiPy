@@ -34,7 +34,7 @@ Created on 3 juin 2015
 
 @author: perretb
 '''
-from HiPy.Structures import Image, Embedding2dGrid, AdjacencyNdRegular
+from HiPy.Structures import Image, Embedding2dGrid, AdjacencyNdRegular, HiPyLogger
 
 def crop2d(image, xmin, xmax, ymin, ymax):
     '''
@@ -51,6 +51,7 @@ def crop2d(image, xmin, xmax, ymin, ymax):
     
 
 def interpolateX2(image,interpolation = max):
+    HiPyLogger.debug("call to: doubling image size")
     sizeOri=[image.embedding.width,image.embedding.height]
     sizeDest=[((sizeOri[0])*2-1),((sizeOri[1])*2-1)]
     imDest= Image(sizeDest[0]*sizeDest[1],sizeDest)
@@ -116,6 +117,8 @@ def interpolationMedian(*args):
 
 
 def interpolatePlainMapKhalimsky(image):
+    HiPyLogger.debug("call to: interpolatePlainMapKhalimsky")    
+    
     sizeOri=[image.embedding.width,image.embedding.height]
     sizeDest=[((sizeOri[0])*2+1),((sizeOri[1])*2+1)]
     imDest= Image(sizeDest[0]*sizeDest[1])

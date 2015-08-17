@@ -8,7 +8,7 @@
 # modify and/ or redistribute the software under the terms of the CeCILL
 # license as circulated by CEA, CNRS and INRIA at the following URL
 # "http://www.cecill.info". 
-from HiPy.Structures import AdjacencyNdRegular
+
 
 # As a counterpart to the access to the source code and  rights to copy,
 # modify and redistribute granted by the license, users are provided only
@@ -44,6 +44,7 @@ from HiPy.Processing.Attributes import * #@UnusedWildImport
 from HiPy.Util.Histogram import * #@UnusedWildImport
 from HiPy.Util.VMath import * #@UnusedWildImport
 from HiPy.Util.Color import convertRGBtoLAB
+from HiPy.Structures import AdjacencyNdRegular
 
 def demoBPT():
     print("reading image...")
@@ -57,13 +58,13 @@ def demoBPT():
     print("constructing BPT...")
     bpt = constructAltitudeBPT(adjacency)
     print("drawing saliency BPT...")
-    salBpt = drawSaliencyForVizu(bpt,image)
+    salBpt = drawSaliencyForVisualisation(bpt,image)
     saveImage(salBpt, "Results/BPT Saliency map.png")
     
     print("constructing Component Tree...")
     comptTree=transformAltitudeBPTtoComponentTree(bpt)
     print("drawing saliency Comp Tree...")
-    salCt = drawSaliencyForVizu(comptTree,image)
+    salCt = drawSaliencyForVisualisation(comptTree,image)
     saveImage(salCt, "Results/CompTree Saliency map.png")
     
     if salBpt.equals(salCt):
@@ -74,14 +75,14 @@ def demoBPT():
     print("constructing watershed hierarchy by altitude...")
     wsh=transformAltitudeBPTtoWatershedHierarchy(bpt)
     print("drawing saliency watershed hierarchy by altitude...")
-    salWSh = drawSaliencyForVizu(wsh,image)
+    salWSh = drawSaliencyForVisualisation(wsh,image)
     saveImage(salWSh, "Results/Watershed by Altitude Saliency map.png")
 
     print("constructing watershed hierarchy by area...")
     addAttributeArea(wsh)
     wsha= transformBPTtoAttributeHierarchy(wsh,"area")
     print("drawing saliency watershed hierarchy by area...")
-    salWSha = drawSaliencyForVizu(wsha,image)
+    salWSha = drawSaliencyForVisualisation(wsha,image)
     saveImage(salWSha, "Results/Watershed by Area Saliency map.png")
    
 

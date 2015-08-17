@@ -66,7 +66,7 @@ def demoSWS():
     print("constructing stochastic watershed...")
     sws = constructExactRandomSeedsWatershed(adjacency, verbose=True)
     print("drawing saliency...")
-    salSWS = drawSaliencyForVizu(sws,image)
+    salSWS = drawSaliencyForVisualisation(sws,image)
     saveImage(salSWS, "Results/Random seeds SWS Saliency map.png")
     
     print("constructing area watershed...")
@@ -126,8 +126,8 @@ def demoNoiseWS(iteration=11):
     addAttributeArea(bpt)
    
     nbpt = filterBPTbyCriterion(bpt, lambda i:min(bpt.area[bpt.children[i][0]],bpt.area[bpt.children[i][1]])<10)
-    saveImage(drawSaliencyForVizu(bpt,image), "Results/Random noise WS bpt.png")
-    saveImage(drawSaliencyForVizu(nbpt,image), "Results/Random noise WS filteredbpt.png")
+    saveImage(drawSaliencyForVisualisation(bpt,image), "Results/Random noise WS bpt.png")
+    saveImage(drawSaliencyForVisualisation(nbpt,image), "Results/Random noise WS filteredbpt.png")
     
 
  
@@ -162,8 +162,8 @@ def testEdgeFilter():
     #saveImage(imSal2, "./Results/lenna area mean sal map.png")
     addAttributeRank(bpt)
     addAttributeRank(nbpt)
-    saveImage(drawSaliencyForVizu(bpt,image), "Results/lenna area mean sal bpt.png")#,"rank",1
-    saveImage(drawSaliencyForVizu(nbpt,image), "Results/lenna area mean sal bpt filtered.png")
+    saveImage(drawSaliencyForVisualisation(bpt,image), "Results/lenna area mean sal bpt.png")#,"rank",1
+    saveImage(drawSaliencyForVisualisation(nbpt,image), "Results/lenna area mean sal bpt filtered.png")
     
     
 def main():
