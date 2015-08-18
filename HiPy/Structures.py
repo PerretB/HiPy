@@ -1174,7 +1174,7 @@ class TreeIterator(object):
 
     def nextLogical(self):
         """
-        "next" iterator method when perfoming a logical browsing (only logical nodes are traversed)
+        "next" iterator method when performing a logical browsing (only logical nodes are traversed)
         """
         tree = self.tree
         isLeaf = tree.isLeaf
