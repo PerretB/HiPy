@@ -1,3 +1,14 @@
 *.db
 *.pyc
 Experimental
+.idea
+conf.py
+index.rst
+make.bat
+Makefile
+.pydevproject
+.spyderproject
+/_templates
+/_static
+/_build
+.project

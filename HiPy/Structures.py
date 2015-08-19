@@ -522,15 +522,11 @@ class AbstractWeightedAdjacency(AbstractAdjacency, Image):
         """
             Creates a new empty adjacency on a set of size elements.
             :param size: number of elements
-            :rtype : None
             """
         AbstractAdjacency.__init__(self, size)
         Image.__init__(self, 0)
         self.addAttribute('source')
         self.addAttribute('target')
-
-    def getSuccessors(self, i):
-        raise NotImplementedError("Unsupported method" + " getSuccessors")
 
 
 class WeightedAdjacency(AbstractWeightedAdjacency):
@@ -583,7 +579,6 @@ class WeightedAdjacency(AbstractWeightedAdjacency):
         for i in range(len(self)):
             adj.createEdge(self.source[i], self.target[i], self[i])
         return adj
-
 
     def getSuccessors(self, i):
         # ugly hack to symmetries the adjacency on the fly
@@ -1130,7 +1125,7 @@ class TreeIterator(object):
     """
     The TreeIterator class is intended to perform pre or post order traversal of trees.
 
-    It manages several common cases as exluding or including leaves or the root.
+    It manages several common cases as excluding or including leaves or the root.
 
     It also manages the logical difference between Component trees
     (where leaves represent pixels of the original image but not nodes of the logical tree)
@@ -1190,7 +1185,7 @@ class TreeIterator(object):
 
     def nextStructural(self):
         """
-        "next" iterator method when perfoming a structural browsing (every node is traversed)
+        "next" iterator method when performing a structural browsing (every node is traversed)
         """
         if self.curVal != self.limit:
             i = self.curVal
