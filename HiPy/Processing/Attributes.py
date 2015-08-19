@@ -31,11 +31,11 @@
 # The fact that you are presently reading this means that you have had
 # knowledge of the CeCILL license and that you accept its terms.
 
-'''
+"""
 Created on 19 juin 2015
 
 @author: perretb
-'''
+"""
 
 import random
 from math import *  # @UnusedWildImport
@@ -43,13 +43,13 @@ import HiPy.Structures
 
 
 def updateAttributeAfterFiltering(tree, attributeName, defaultValue=0):
-    '''
+    """
     Update attribute values according to a filtering.
     
     The attribute value of each node marked as deleted is set to the attribute value of its closest non deleted ancestor.
     
     If no such ancestor exist, its attribute value is set to "defaultValue".
-    '''
+    """
     deleted = tree.deleted
     attr = tree.getAttribute(attributeName)
     for i in tree.iteratorFromRootToPixels():
@@ -122,12 +122,12 @@ def addAttributeVolume(tree, name="volume"):
 
 
 def addAttributeMarker(tree, markerImage, markerValue, attributeName):
-    '''
+    """
     Compute the attribute "attributeName" on the graph.
     For each node, the attribute is set to true if the  connected 
     component of the node contains a point of the image "markerImage" 
     having the value "markerValue"
-    '''
+    """
     addAttributeChildren(tree)
 
     attr = tree.addAttribute(attributeName)
@@ -148,9 +148,9 @@ def addAttributeMarker(tree, markerImage, markerValue, attributeName):
 
 
 def addAttributeSimpleMoments2d(tree, name="moments"):
-    '''
+    """
     Compute the "raw" moments [M00 M10 M01 M11 M20 M02 M21 M12 M30 M03]  of each component
-    '''
+    """
     attr = tree.addAttribute(name)
     if attr == None:
         return
@@ -178,9 +178,9 @@ def addAttributeSimpleMoments2d(tree, name="moments"):
 
 
 def computeCentralMoments2d(rawMoment):
-    '''                           0   1   2   3   4   5   6   7   8   9
+    """                           0   1   2   3   4   5   6   7   8   9
     Compute the central moments [u00 u10 u01 u11 u20 u02 u21 u12 u30 u03]  from the raw moments
-    '''
+    """
     m = rawMoment
     mx = m[1] / m[0]
     my = m[2] / m[0]
@@ -197,9 +197,9 @@ def computeCentralMoments2d(rawMoment):
 
 
 def computeScaleInvarariantMoments2d(centralMoment):
-    '''                             3+    0   1   2   3   4   5   6   
+    """                             3+    0   1   2   3   4   5   6   
     Compute the scale invariant moments [n11 n20 n02 n21 n12 n30 n03]  from the central moments
-    '''
+    """
     u00 = centralMoment[0]
 
     def sc(u, i, j):
@@ -232,9 +232,9 @@ def computeHuInvariant(scaleInvarariantMoments):
 
 
 def addAttributeInertia2d(tree, name="inertia", momentAttributeName="moments"):
-    '''
+    """
     Compute the moment of inertia of each component 
-    '''
+    """
     attr = tree.addAttribute(name)
     if attr == None:
         return
@@ -253,9 +253,9 @@ def addAttributeInertia2d(tree, name="inertia", momentAttributeName="moments"):
 
 def addAttributeElongationOrientation2d(tree, nameElongation="elongation", nameOrientation="orientation",
                                         momentAttributeName="moments"):
-    '''
+    """
     Compute the elongation and orientation of each component
-    '''
+    """
     attrElongation = tree.addAttribute(nameElongation)
     attrOrientation = tree.addAttribute(nameOrientation)
     if attrElongation == None or attrOrientation == None:
@@ -427,9 +427,9 @@ def addAttributeComplexity(tree, name="complexity"):
 
 
 def addAttributeExtrema(tree, name="extrema"):
-    ''' 
+    """ 
     true if node is a maxima, false otherwise
-    '''
+    """
     attr = tree.addAttribute(name, True)
     if attr == None:
         return
@@ -441,13 +441,13 @@ def addAttributeExtrema(tree, name="extrema"):
 
 
 def addAttributeIsLeaf(tree, name="isLeaf"):
-    ''' 
+    """ 
     True if node is a logical leaves, false otherwise
     
     In a partition hierarchy, logical leaves and structure leaves are the same (pixels are part of the hierarchy)
     
     In a component tree, logical leaves are nodes such that every child is a structure leaf (pixels are not part of the hierarchy)
-    '''
+    """
     attr = tree.addAttribute(name, True)
     if attr == None:
         return
@@ -466,11 +466,11 @@ def addAttributeIsLeaf(tree, name="isLeaf"):
 
 
 def addAttributeRank(tree, measure="level", name="rank"):
-    '''
+    """
     Indicates the merging order. Leaves have rank 0.
 
     Target: Binary Partition Tree 
-    '''
+    """
     attr = tree.addAttribute(name, 0)
     if attr == None:
         return
