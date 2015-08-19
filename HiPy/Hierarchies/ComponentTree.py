@@ -67,9 +67,9 @@ Image Understand., vol. 75, no. 3, pp. 215-228, Sep. 1999.
 Component Tree Computation with Application to Pattern Recognition in Astronomical Imaging," \
 IEEE ICIP 2007.
 .. [4] Pa. Monasse, and F. Guichard, "Fast computation of a contrast-invariant image representation," \
-Image Processing, IEEE Transactions on , vol.9, no.5, pp.860,872, May 2000
-.. [5] Th. Géraud, E. Carlinet, S. Crozet, and L. Najman, "A Quasi-linear Algorithm to Compute the Tree \
-of Shapes of n D Images", ISMM 2013.
+Image Processing, IEEE Transactions on, vol.9, no.5, pp.860-872, May 2000
+.. [5] Th. GÃ©raud, E. Carlinet, S. Crozet, and L. Najman, "A Quasi-linear Algorithm to Compute the Tree \
+of Shapes of nD Images", ISMM 2013.
 
 Created on 3 juin 2015
 

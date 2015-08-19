@@ -71,7 +71,7 @@ def testShapeClassif():
     moments = tree.moments
     for i in tree.iteratorFromPixelsToRoot():
         comp = area[i]/(perimeter[i]**2)
-        hu1 = computeHuInvariant(computeScaleInvarariantMoments2d(computeCentralMoments2d(moments[i])))[0]
+        hu1 = computeHuInvariant(computeScaleInvariantMoments2d(computeCentralMoments2d(moments[i])))[0]
         observation[i]=[comp,hu1]
         
         

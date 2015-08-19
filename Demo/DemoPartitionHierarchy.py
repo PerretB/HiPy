@@ -36,58 +36,62 @@ Created on 15 juin 2015
 
 @author: perretb
 '''
-from math import * #@UnusedWildImport
-from HiPy.IO import * #@UnusedWildImport
-from HiPy.Hierarchies.ComponentTree import * #@UnusedWildImport
-from HiPy.Hierarchies.PartitionHierarchy import * #@UnusedWildImport
-from HiPy.Processing.Attributes import * #@UnusedWildImport
-from HiPy.Util.Histogram import * #@UnusedWildImport
-from HiPy.Util.VMath import * #@UnusedWildImport
+from math import *  # @UnusedWildImport
+from HiPy.IO import *  # @UnusedWildImport
+from HiPy.Hierarchies.ComponentTree import *  # @UnusedWildImport
+from HiPy.Hierarchies.PartitionHierarchy import *  # @UnusedWildImport
+from HiPy.Processing.Attributes import *  # @UnusedWildImport
+from HiPy.Util.Histogram import *  # @UnusedWildImport
+from HiPy.Util.VMath import *  # @UnusedWildImport
 from HiPy.Util.Color import convertRGBtoLAB
 from HiPy.Structures import AdjacencyNdRegular
+
 
 def demoBPT():
     print("reading image...")
     image = readImage('../samples/monsters.png', False)
     image = convertRGBtoLAB(image)
-    
+
     print("constructing gradient graph...")
     adj4 = AdjacencyNdRegular.getAdjacency2d4(image.embedding.size)
-    adjacency=image.adjacency = WeightedAdjacency.createAdjacency(adj4, lambda i,j: euclideanDistance(image[i], image[j]))
-    
+    adjacency = image.adjacency = WeightedAdjacency.createAdjacency(adj4,
+                                                                    lambda i, j: euclideanDistance(image[i], image[j]))
+
     print("constructing BPT...")
     bpt = constructAltitudeBPT(adjacency)
+
     print("drawing saliency BPT...")
-    salBpt = drawSaliencyForVisualisation(bpt,image)
+    salBpt = drawSaliencyForVisualisation(bpt, image)
     saveImage(salBpt, "Results/BPT Saliency map.png")
-    
+
     print("constructing Component Tree...")
-    comptTree=transformAltitudeBPTtoComponentTree(bpt)
+    comptTree = transformAltitudeBPTtoComponentTree(bpt)
     print("drawing saliency Comp Tree...")
-    salCt = drawSaliencyForVisualisation(comptTree,image)
+    salCt = drawSaliencyForVisualisation(comptTree, image)
     saveImage(salCt, "Results/CompTree Saliency map.png")
-    
+
     if salBpt.equals(salCt):
         print("Good news BPT and Compt Tree have the same saliency !")
     else:
         print("Yearkk! BPT and Compt Tree don't have the same saliency !")
-    
+
     print("constructing watershed hierarchy by altitude...")
-    wsh=transformAltitudeBPTtoWatershedHierarchy(bpt)
+    wsh = transformAltitudeBPTtoWatershedHierarchy(bpt)
     print("drawing saliency watershed hierarchy by altitude...")
-    salWSh = drawSaliencyForVisualisation(wsh,image)
+    salWSh = drawSaliencyForVisualisation(wsh, image)
     saveImage(salWSh, "Results/Watershed by Altitude Saliency map.png")
 
     print("constructing watershed hierarchy by area...")
     addAttributeArea(wsh)
-    wsha= transformBPTtoAttributeHierarchy(wsh,"area")
+    wsha = transformBPTtoAttributeHierarchy(wsh, "area")
     print("drawing saliency watershed hierarchy by area...")
-    salWSha = drawSaliencyForVisualisation(wsha,image)
+    salWSha = drawSaliencyForVisualisation(wsha, image)
     saveImage(salWSha, "Results/Watershed by Area Saliency map.png")
-   
+
 
 def main():
     demoBPT()
-    
+
+
 if __name__ == '__main__':
     main()

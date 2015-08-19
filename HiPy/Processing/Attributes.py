@@ -40,6 +40,29 @@ Created on 19 juin 2015
 import random
 from math import *  # @UnusedWildImport
 import HiPy.Structures
+from functools import wraps
+import inspect
+
+
+def autoCreateAttribute(defaultName="attribute", defaultValue=0):
+    def decorator(fun):
+        # argsSpecFun = inspect.getfullargspec(fun)
+        # argsWithDefaultVal = dict(zip(argsSpecFun.args[-len(argsSpecFun.defaults):],argsSpecFun.defaults))
+        # if "attribute" not in argsWithDefaultVal:
+        #    raise Exception("HiPy Library error: method fun should give a default attribute name value")
+        # defaultAttribute = argsWithDefaultVal["attribute"]
+
+        @wraps(fun)
+        def wrapper(tree, attributeName=defaultName, *args, **kwargs):
+            attr, created = tree.addAttribute(attributeName, defaultValue)
+            if created:
+                fun(tree, attr, *args, **kwargs)
+            return attr
+
+        wrapper.original = fun
+        return wrapper
+
+    return decorator
 
 
 def updateAttributeAfterFiltering(tree, attributeName, defaultValue=0):
@@ -61,99 +84,83 @@ def updateAttributeAfterFiltering(tree, attributeName, defaultValue=0):
                 attr[i] = defaultValue
 
 
-def addAttributeRandomColor(tree, name="randomColor"):
-    attr = tree.addAttribute(name)
-    if attr is None:
-        return
+@autoCreateAttribute("randomColor", None)
+def addAttributeRandomColor(tree: "HiPy.Structures.Tree", attribute):
     for i in tree.iteratorFromPixelsToRoot(False):
-        attr[i] = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+        attribute[i] = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
 
 
-def addAttributeArea(tree, name="area"):
-    attr = tree.addAttribute(name, 0)
-    if attr is None:
-        return
+@autoCreateAttribute("area", 0)
+def addAttributeArea(tree: "HiPy.Structures.Tree", attribute):
     for i in tree.iteratorFromPixelsToRoot(True):
         if i < tree.nbPixels:
-            attr[i] = 1
-
+            attribute[i] = 1
         par = tree[i]
-        if (par != -1):
-            attr[par] = attr[par] + attr[i]
+        if par != -1:
+            attribute[par] += attribute[i]
 
 
-def addAttributeChildren(tree, name="children"):
-    attr = tree.addAttribute(name, [])
-    if attr == None:
-        return
+@autoCreateAttribute("children", [])
+def addAttributeChildren(tree, attribute="children"):
     for i in tree.iteratorFromPixelsToRoot(True):
         par = tree[i]
-        if (par != -1):
-            attr[par].append(i)
+        if par != -1:
+            attribute[par].append(i)
 
 
-def addAttributeChildrenLogical(tree, name="childrenLogical"):
-    attr = tree.addAttribute(name, [])
-    if attr == None:
-        return
+@autoCreateAttribute("childrenLogical", [])
+def addAttributeChildrenLogical(tree, attribute):
     if tree.treeType == HiPy.Structures.TreeType.ComponentTree:
         for i in tree.iteratorFromLeavesToRoot():
             par = tree[i]
-            if (par != -1):
-                attr[par].append(i)
+            if par != -1:
+                attribute[par].append(i)
 
     else:
-        addAttributeChildren(tree, name)
+        addAttributeChildren.original(tree, attribute)
 
 
-def addAttributeVolume(tree, name="volume"):
-    addAttributeArea(tree)
-    attr = tree.addAttribute(name, 0)
-    if attr == None:
-        return
+@autoCreateAttribute("volume", 0)
+def addAttributeVolume(tree, attribute):
+    area = addAttributeArea(tree)
+
     for i in tree.iteratorFromPixelsToRoot(True):
         par = tree[i]
-        if (par != -1):
+        if par != -1:
             lvl = tree.levels[i]
-            lvlp = tree.levels[par]
-            v = abs(lvl - lvlp) * tree.area[i]
-            attr[i] = attr[i] + v
-            attr[par] = attr[par] + v
+            lvlPar = tree.levels[par]
+            v = abs(lvl - lvlPar) * area[i]
+            attribute[i] = attribute[i] + v
+            attribute[par] = attribute[par] + v
 
 
-def addAttributeMarker(tree, markerImage, markerValue, attributeName):
+@autoCreateAttribute("marker", False)
+def addAttributeMarker(tree, attribute, markerImage, markerValue):
     """
     Compute the attribute "attributeName" on the graph.
     For each node, the attribute is set to true if the  connected 
     component of the node contains a point of the image "markerImage" 
     having the value "markerValue"
     """
-    addAttributeChildren(tree)
-
-    attr = tree.addAttribute(attributeName)
-    if attr == None:
-        return
+    children = addAttributeChildren(tree)
 
     for i in range(tree.nbPixels):
-        attr[i] = (markerImage[i] == markerValue)
+        attribute[i] = (markerImage[i] == markerValue)
 
-    children = tree.getAttribute("children")
     for i in tree.iteratorFromPixelsToRoot(False):
         flag = False
         for j in children[i]:
-            if attr[j]:
+            if attribute[j]:
                 flag = True
                 break
-        attr[i] = flag
+        attribute[i] = flag
 
 
-def addAttributeSimpleMoments2d(tree, name="moments"):
+@autoCreateAttribute("moments", None)
+def addAttributeSimpleMoments2d(tree, attribute):
     """
     Compute the "raw" moments [M00 M10 M01 M11 M20 M02 M21 M12 M30 M03]  of each component
     """
-    attr = tree.addAttribute(name)
-    if attr == None:
-        return
     nbLeaves = tree.nbPixels
     embedding = tree.leavesEmbedding
 
@@ -164,15 +171,15 @@ def addAttributeSimpleMoments2d(tree, name="moments"):
             y = c[1]
             xx = x * x
             yy = y * y
-            attr[i] = [1, x, y, x * y, xx, yy, xx * y, x * yy, x * xx, y * yy]
+            attribute[i] = [1, x, y, x * y, xx, yy, xx * y, x * yy, x * xx, y * yy]
         else:
-            attr[i] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+            attribute[i] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
     for i in tree.iteratorFromPixelsToRoot():
         par = tree[i]
         if (par != -1):
-            m = attr[i]
-            mp = attr[par]
+            m = attribute[i]
+            mp = attribute[par]
             for j in range(len(m)):
                 mp[j] += m[j]
 
@@ -196,7 +203,7 @@ def computeCentralMoments2d(rawMoment):
     return [u00, u10, u01, u11, u20, u02, u21, u12, u30, u03]
 
 
-def computeScaleInvarariantMoments2d(centralMoment):
+def computeScaleInvariantMoments2d(centralMoment):
     """                             3+    0   1   2   3   4   5   6   
     Compute the scale invariant moments [n11 n20 n02 n21 n12 n30 n03]  from the central moments
     """
@@ -215,8 +222,8 @@ def computeScaleInvarariantMoments2d(centralMoment):
     return [n11, n20, n02, n21, n12, n30, n03]
 
 
-def computeHuInvariant(scaleInvarariantMoments):
-    n = scaleInvarariantMoments
+def computeHuInvariant(scaleInvariantMoments):
+    n = scaleInvariantMoments
     #  0   1   2   3   4   5   6
     # [n11 n20 n02 n21 n12 n30 n03]
     I1 = n[1] + n[2]
@@ -224,20 +231,18 @@ def computeHuInvariant(scaleInvarariantMoments):
     I3 = (n[5] - 3 * n[4]) ** 2 + (3 * n[3] - n[6]) ** 2
     I4 = (n[5] + n[4]) ** 2 + (n[3] + n[6]) ** 2
     I5 = (n[5] - 3 * n[4]) * (n[5] + n[4]) * ((n[5] + n[4]) ** 2 - 3 * (n[3] + n[6])) + (3 * n[3] - n[6]) * (
-    n[3] + n[6]) * (3 * (n[5] + n[4]) ** 2 - (n[3] + n[6]) ** 2)
+        n[3] + n[6]) * (3 * (n[5] + n[4]) ** 2 - (n[3] + n[6]) ** 2)
     I6 = (n[1] - n[2]) * ((n[5] + n[4]) ** 2 - (n[3] + n[6]) ** 2) + 4 * n[0] * (n[5] + n[4]) * (n[3] + n[6])
     I7 = (3 * n[3] - n[6]) * (n[5] + n[4]) * ((n[5] + n[4]) ** 2 - 3 * (n[3] + n[6])) - (n[5] - 3 * n[4]) * (
-    n[3] + n[6]) * (3 * (n[5] + n[4]) ** 2 - (n[3] + n[6]) ** 2)
+        n[3] + n[6]) * (3 * (n[5] + n[4]) ** 2 - (n[3] + n[6]) ** 2)
     return [I1, I2, I3, I4, I5, I6, I7]
 
 
-def addAttributeInertia2d(tree, name="inertia", momentAttributeName="moments"):
+@autoCreateAttribute
+def addAttributeInertia2d(tree, attribute="inertia", momentAttributeName="moments"):
     """
     Compute the moment of inertia of each component 
     """
-    attr = tree.addAttribute(name)
-    if attr == None:
-        return
     attrMoment = tree.getAttribute(momentAttributeName)
 
     def computeInitertia(m):
@@ -248,7 +253,7 @@ def addAttributeInertia2d(tree, name="inertia", momentAttributeName="moments"):
         return (u20 + u02) / (m[0] * m[0])
 
     for i in tree.iteratorFromPixelsToRoot():
-        attr[i] = computeInitertia(attrMoment[i])
+        attribute[i] = computeInitertia(attrMoment[i])
 
 
 def addAttributeElongationOrientation2d(tree, nameElongation="elongation", nameOrientation="orientation",
@@ -256,10 +261,10 @@ def addAttributeElongationOrientation2d(tree, nameElongation="elongation", nameO
     """
     Compute the elongation and orientation of each component
     """
-    attrElongation = tree.addAttribute(nameElongation)
-    attrOrientation = tree.addAttribute(nameOrientation)
-    if attrElongation == None or attrOrientation == None:
-        return
+    attrElongation, created1 = tree.addAttribute(nameElongation)
+    attrOrientation, created2 = tree.addAttribute(nameOrientation)
+    if not created1 and not created2:
+        return attrElongation, attrOrientation
     attrMoment = tree.getAttribute(momentAttributeName)
 
 
@@ -297,150 +302,123 @@ def addAttributeElongationOrientation2d(tree, nameElongation="elongation", nameO
     for i in tree.iteratorFromPixelsToRoot():
         attrElongation[i], attrOrientation[i] = elongationOrientationFromMoments(attrMoment[i])
 
+    return attrElongation, attrOrientation
 
-def addAttributeDepth(tree, name="depth"):
-    attr = tree.addAttribute(name, 0)
-    if attr == None:
-        return
+
+@autoCreateAttribute("depth", 0)
+def addAttributeDepth(tree, attribute):
     for j in tree.iteratorFromRootToPixels():
         par = tree[j]
         if par != -1:
-            attr[j] = attr[par] + 1
+            attribute[j] = attribute[par] + 1
 
 
-def addAttributeHighest(tree, name="highest"):
-    attr = tree.addAttribute(name, None)
-    if attr == None:
-        return
-    addAttributeChildren(tree)
+@autoCreateAttribute("highest", None)
+def addAttributeHighest(tree, attribute):
+    children = addAttributeChildren(tree)
     level = tree.level
     nbLeaves = tree.nbPixels
-    children = tree.children
     for i in tree.iteratorFromPixelsToRoot():
         if i < nbLeaves:
-            attr[i] = level[i]
+            attribute[i] = level[i]
         else:
-            maxv = attr[children[i][0]]
+            maxValue = attribute[children[i][0]]
             for c in children[i]:
-                if (attr[c] > maxv):
-                    maxv = attr[c]
-            attr[i] = maxv
+                if (attribute[c] > maxValue):
+                    maxValue = attribute[c]
+            attribute[i] = maxValue
 
 
-def addAttributeHeight(tree, name="height"):
-    attr = tree.addAttribute(name, 0)
-    if attr == None:
-        return
-    addAttributeHighest(tree)
-    highest = tree.highest
+@autoCreateAttribute("height", 0)
+def addAttributeHeight(tree, attribute):
+    highest = addAttributeHighest(tree)
     level = tree.level
-    attr[-1] = highest[-1]
+    attribute[-1] = highest[-1]
     for i in tree.iteratorFromPixelsToRoot(includeRoot=False):
-        attr[i] = highest[i] - level[tree[i]]
+        attribute[i] = highest[i] - level[tree[i]]
 
 
-def addAttributeLowest(tree, name="lowest"):
-    attr = tree.addAttribute(name, None)
-    if attr == None:
-        return
-    addAttributeChildren(tree)
+@autoCreateAttribute("lowest", None)
+def addAttributeLowest(tree, attribute):
+    children = addAttributeChildren(tree)
     level = tree.level
     nbLeaves = tree.nbPixels
-    children = tree.children
     for i in tree.iteratorFromPixelsToRoot():
         if i < nbLeaves:
-            attr[i] = level[i]
+            attribute[i] = level[i]
         else:
-            minv = attr[children[i][0]]
+            minValue = attribute[children[i][0]]
             for c in children[i]:
-                if (attr[c] < minv):
-                    minv = attr[c]
-            attr[i] = minv
+                if attribute[c] < minValue:
+                    minValue = attribute[c]
+            attribute[i] = minValue
 
 
-def addAttributeDynamics(tree, extremaAttributeName="highest", name="dynamics"):
-    attr = tree.addAttribute(name, None)
-    if attr == None:
-        return
+@autoCreateAttribute("dynamics", None)
+def addAttributeDynamics(tree, attribute, extremaAttributeName="highest"):
     extrema = tree.getAttribute(extremaAttributeName)
     level = tree.level
     for i in tree.iteratorFromRootToPixels():
         parent = tree[i]
         if parent == -1:
-            attr[i] = abs(extrema[i])
+            attribute[i] = abs(extrema[i])
         else:
             if extrema[i] == extrema[parent]:
-                attr[i] = attr[parent]
+                attribute[i] = attribute[parent]
             else:
-                attr[i] = abs(level[parent] - extrema[i])
+                attribute[i] = abs(level[parent] - extrema[i])
 
 
-def addAttributePerimeter(tree, name="perimeter", adjacency=None):
-    attr = tree.addAttribute(name, 0)
-    if attr == None:
-        return
-    addAttributeChildren(tree)
-    children = tree.getAttribute("children")
-    if adjacency == None:
+@autoCreateAttribute("perimeter", 0)
+def addAttributePerimeter(tree, attribute, adjacency=None):
+    children = addAttributeChildren(tree)
+    if adjacency is None:
         adjacency = tree.leavesAdjacency
     nbLeaves = tree.nbPixels
     visited = HiPy.Structures.Image(nbLeaves, False)
     for i in range(nbLeaves):
-        attr[i] = 4  # len(adjacency.getNeighbours(i)) FIXME !!!!
-
+        attribute[i] = 4  # len(adjacency.getNeighbours(i)) FIXME !!!!
     for i in tree.iteratorFromPixelsToRoot(False):
         remove = 0;
         for c in children[i]:
-            attr[i] = attr[i] + attr[c]
-
+            attribute[i] += attribute[c]
             if c < nbLeaves:
                 for n in adjacency.getNeighbours(c):
                     if visited[n]:
-                        remove = remove + 2
+                        remove += 2
                 visited[c] = True
+        attribute[i] -= remove
 
-        attr[i] = attr[i] - remove
 
-
-def addAttributeCompactness(tree, name="compactness"):
-    attr = tree.addAttribute(name, 0)
-    if attr == None:
-        return
-    addAttributeArea(tree)
-    addAttributePerimeter(tree)
-    area = tree.getAttribute("area")
-    perimeter = tree.getAttribute("perimeter")
+@autoCreateAttribute("compactness", 0)
+def addAttributeCompactness(tree, attribute):
+    area = addAttributeArea(tree)
+    perimeter = addAttributePerimeter(tree)
     for i in tree.iteratorFromPixelsToRoot():
-        attr[i] = 4.0 * pi * area[i] / (perimeter[i] * perimeter[i])
+        attribute[i] = 4.0 * pi * area[i] / (perimeter[i] * perimeter[i])
 
 
-def addAttributeComplexity(tree, name="complexity"):
-    attr = tree.addAttribute(name, 0)
-    if attr == None:
-        return
-    addAttributeArea(tree)
-    addAttributePerimeter(tree)
-    area = tree.getAttribute("area")
-    perimeter = tree.getAttribute("perimeter")
+@autoCreateAttribute("complexity", 0)
+def addAttributeComplexity(tree, attribute):
+    area = addAttributeArea(tree)
+    perimeter = addAttributePerimeter(tree)
     for i in tree.iteratorFromPixelsToRoot():
-        attr[i] = perimeter[i] / area[i]
+        attribute[i] = perimeter[i] / area[i]
 
 
-def addAttributeExtrema(tree, name="extrema"):
+@autoCreateAttribute("extrema", True)
+def addAttributeExtrema(tree, attribute):
     """ 
     true if node is a maxima, false otherwise
     """
-    attr = tree.addAttribute(name, True)
-    if attr == None:
-        return
-
     for i in tree.iteratorFromPixelsToRoot(False):
         par = tree[i]
         if par != -1:
-            attr[par] = False
+            attribute[par] = False
 
 
-def addAttributeIsLeaf(tree, name="isLeaf"):
+@autoCreateAttribute("isLeaf", True)
+def addAttributeIsLeaf(tree, attribute):
     """ 
     True if node is a logical leaves, false otherwise
     
@@ -448,39 +426,34 @@ def addAttributeIsLeaf(tree, name="isLeaf"):
     
     In a component tree, logical leaves are nodes such that every child is a structure leaf (pixels are not part of the hierarchy)
     """
-    attr = tree.addAttribute(name, True)
-    if attr == None:
-        return
     if tree.treeType == HiPy.Structures.TreeType.PartitionHierarchy:
         for i in tree.iteratorFromPixelsToRoot(False):
-            attr[i] = False
+            attribute[i] = False
     elif tree.treeType == HiPy.Structures.TreeType.ComponentTree:
         for i in range(tree.nbPixels):
-            attr[i] = False
+            attribute[i] = False
         for i in range(tree.nbPixels, len(tree)):
             par = tree[i]
             if par != -1:
-                attr[par] = False
+                attribute[par] = False
     else:
         raise Exception("addAttributeIsLeaf: unknown tree type.")
 
 
-def addAttributeRank(tree, measure="level", name="rank"):
+@autoCreateAttribute("rank", 0)
+def addAttributeRank(tree, attribute):
     """
     Indicates the merging order. Leaves have rank 0.
 
     Target: Binary Partition Tree 
     """
-    attr = tree.addAttribute(name, 0)
-    if attr == None:
-        return
     nbPixels = tree.nbPixels
     level = tree.level
 
     for i in tree.iteratorFromPixelsToRoot(False):
-        attr[i] = i - nbPixels + 1
+        attribute[i] = i - nbPixels + 1
 
     for i in tree.iteratorFromPixelsToRoot(False, False):
         par = tree[i]
-        if (level[i] == level[par]):
-            attr[par] = attr[i]
+        if level[i] == level[par]:
+            attribute[par] = attribute[i]

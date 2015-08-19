@@ -95,7 +95,6 @@ class TreeType(Enum):
     PartitionHierarchy = 2
 
 
-
 class Image(list):
     """
     A basic image represented as a linear array of values (can be anything).
@@ -187,16 +186,28 @@ class Image(list):
         """
         return range(len(self))
 
-    def addAttribute(self, name, defaultValue=None, resetIfExist=False):
+    def addAttribute(self, name: str, defaultValue: "void*"=None, resetIfExist: bool=False) -> ("Image", bool):
         """
-        Return the new attribute image if it did not exist or was reseted and None otherwise
+        Creates a new attribute image called with the given name and initialized with the given default value.
+        The attribute image has the same size as the current image. The attribute is automatically added to
+        the members of the current instance.
+
+        If an attribute with the same name already exists nothing is done unless resetIfExist is True.
+
+        In all cases the attribute with the given name is returned. The method also returns if a new attribute image
+        has been created.
+        :param name: name of the attribute to create
+        :param defaultValue: the initialisation value of the attribute image
+        :param resetIfExist: indicates is a new attribute image must be created is an attribute with the same name \
+            already exists.
+        :return: (attribute image, new attribute image created?)
         """
-        if not name in self.__dict__ or resetIfExist:
+        if name not in self.__dict__ or resetIfExist:
             image = Image(len(self), defaultValue, self.adjacency, self.embedding)
             self.__dict__[name] = image
-            return image
+            return image, True
 
-        return None
+        return self.__dict__[name], False
 
     def deleteAttribute(self, name):
         """

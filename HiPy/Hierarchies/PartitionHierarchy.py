@@ -419,7 +419,7 @@ def drawSaliencyForVisualisation(tree: Tree, image: Image, attributeName="level"
     """
     adj4 = AdjacencyNdRegular.getAdjacency2d4(image.embedding.size)
 
-    saliency = computeSaliencyMap(tree, adj4, attributeName)
+    saliency = computeSaliencyMapFromAttribute(tree, adj4, attributeName)
     sal = drawSaliencyMap(image.embedding.size, saliency)
 
     sal = rescaleGray(sal, 0, 1)

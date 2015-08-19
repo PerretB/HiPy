@@ -178,8 +178,8 @@ def simulateDirectModel(model, tree, attributeLabelName="label",attributeObserva
     '''
     transitionProb=model.transitionProb;
     classes=model.classes;
-    label=tree.addAttribute(attributeLabelName,0,True)
-    observation=tree.addAttribute(attributeObservationName,0,True)
+    label, _=tree.addAttribute(attributeLabelName,0,True)
+    observation, _=tree.addAttribute(attributeObservationName,0,True)
     
     root=len(tree)-1
     lbl=getRandomValue(model.initialProb)

@@ -43,7 +43,7 @@ from HiPy.Processing.Shaping import *  # @UnusedWildImport
 from HiPy.Structures import *  # @UnusedWildImport
 
 
-def dummyDemoShapping():
+def dummyDemoShaping():
     '''
     Demonstrates that performing a threshold on an increasing attribute value in the original tree space
     is equivalent to thresholding the level of the shape tree.
@@ -106,7 +106,7 @@ def demoNonIncreasingFilter():
 
 def main():
     demoNonIncreasingFilter()
-    dummyDemoShapping()
+    dummyDemoShaping()
 
 
 if __name__ == '__main__':
