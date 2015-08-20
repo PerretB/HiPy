@@ -38,7 +38,7 @@ Created on 3 juin 2015
 @author: Benjamin Perret
 """
 
-from HiPy.Structures import Image, Embedding2dGrid, DirectedWeightedAdjacency
+import HiPy.Structures
 import os
 
 PILAvailable = False
@@ -49,7 +49,16 @@ try:
     PILAvailable = True
 except ImportError:
     PILimage = None
-    print("Error: PIL library not available !")
+    HiPy.Structures.HiPyLogger.warning("Warning: PIL library not available !")
+
+# for drawing graphs in a pdf file
+try:
+    import pydot
+
+    pydotAvailable = True
+except ImportError:
+    pydotAvailable = False
+    HiPy.Structures.HiPyLogger.warning("Warning: pydot library not available !")
 
 
 def ensureDirectoryExists(directory):
@@ -79,7 +88,7 @@ def readImage(filename, grayScale=True):
     size = image.size
     coord = lambda x: (x % size[0], x // size[0])
     pixelData = image.load()
-    im = Image(size[0] * size[1])
+    im = HiPy.Structures.Image(size[0] * size[1])
     bands = 1
     if isinstance(pixelData[(0, 0)], (list, tuple)):
         bands = len(pixelData[(0, 0)])
@@ -97,7 +106,7 @@ def readImage(filename, grayScale=True):
         else:
             for i in range(size[0] * size[1]):
                 im[i] = list(pixelData[coord(i)])
-    im.embedding = Embedding2dGrid(size[0], size[1])
+    im.embedding = HiPy.Structures.Embedding2dGrid(size[0], size[1])
     return im
 
 
@@ -160,7 +169,7 @@ def readGraph(filename):
     nbPoints = int(line.split()[0])
     lines = infile.readlines()
     infile.close()
-    graph = DirectedWeightedAdjacency(nbPoints)
+    graph = HiPy.Structures.DirectedWeightedAdjacency(nbPoints)
 
     for line in lines:
         tokens = line.split()
@@ -187,3 +196,34 @@ def saveGraph(graph, filename):
         out.write(line)
         out.write("\n")
     out.close()
+
+
+def drawGraphVisualisation(name, tree, attributes=[], pixels=False):
+    if not pydotAvailable:
+        print("Error: this function requires the library pydot (which requires the software graphviz.")
+        return
+
+    # n = len(parent)
+    G = pydot.Dot(graph_type='graph')
+
+    nbPixels = tree.nbPixels
+
+    for i in tree.iteratorFromPixelsToRoot(includePixels=pixels):
+        node = pydot.Node(i)
+        if i < nbPixels:
+            node.set_shape("square")
+        label = str(i)
+        if attributes:
+            labels = ",".join([str(tree.getAttribute(a)[i]) for a in attributes])
+            label += "(" + labels + ")"
+        node.set_label(label)
+        G.add_node(node)
+
+    for i in tree.iteratorFromPixelsToRoot(includePixels=pixels):
+        par = tree[i]
+        if par != -1:
+            edge = pydot.Edge(par, i)
+            edge.set_dir("forward")
+            G.add_edge(edge)
+
+    G.write_pdf(name)

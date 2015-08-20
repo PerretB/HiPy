@@ -61,7 +61,7 @@ def testShapeClassif():
     print('Tree construction...')
     tree = constructComponentTree(imageFiltered, ComponentTreeType.MaxTree)
     addAttributeArea(tree)
-    addAttributePerimeter(tree)
+    addAttributePerimeterComponentTree(tree)
     addAttributeSimpleMoments2d(tree)
     
     tree.addAttribute("observation")

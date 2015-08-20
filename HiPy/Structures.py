@@ -62,7 +62,7 @@ Created on 3 juin 2015
 """
 import logging
 import copy
-import HiPy.Processing.Attributes as Attributes
+import HiPy.Processing.Attributes
 from HiPy.Util import VMath
 from heapq import heappop, heappush
 from enum import Enum
@@ -296,6 +296,17 @@ class AbstractAdjacency(object):
             count += len(self.getSuccessors(i))
         return count
 
+    def countOutEdges(self, i, includeExternal=False):
+        """
+        Count the number of edges of source vertex i.
+
+        If includeExternal is True, it also count edges that are going out of the domain
+        :param i: vertex index
+        :param includeExternal: include edges going out of the definition domain?
+        :return: number of out edges for vertex i
+        """
+        raise NotImplementedError("Unsupported method" + " countOutEdges")
+
     def getSuccessors(self, i):
         """
         :param i: vertex index
@@ -367,19 +378,30 @@ class AdjacencyNdRegular(AbstractAdjacency):
         self.nbNeighbours = len(neighbourList)
         self.weights = weights if weights != None else [1]*self.nbNeighbours
 
-    def countEdges(self):
+    def countEdges(self, includeExternal=False):
         count = 0
         isInBounds = self.embedding.isInBoundsWCS
         linear = self.embedding.getLinearCoordinate
         for i in range(self.nbPoints):
-            coordi = self.embedding.fromLinearCoordinate(i)
-
             for neighbour in self.neighbourList:
                 coordn = VMath.addV(coordi, neighbour)
                 linearn = linear(*coordn)
                 if linearn >= i and isInBounds(*coordn):
                     count += 1
         return count
+
+    def countOutEdges(self, i, includeExternal=False):
+        if includeExternal:
+            return self.nbNeighbours
+        else:
+            count = 0
+            coordi = self.embedding.fromLinearCoordinate(i)
+            isInBounds = self.embedding.isInBoundsWCS
+            for neighbour in self.neighbourList:
+                coordNeighbour = VMath.addV(coordi, neighbour)
+                if isInBounds(*coordNeighbour):
+                    count += 1
+            return count
 
     def getNeighbours(self, i):
         coordi = self.embedding.fromLinearCoordinate(i)
@@ -561,6 +583,9 @@ class WeightedAdjacency(AbstractWeightedAdjacency):
     def countEdges(self):
         return len(self)
 
+    def countOutEdges(self, i, includeExternal=False):
+        return len(self.edgeList[i])
+
     def createEdge(self, source, target, weight=1):
         """
         Create a new edge in the graph, linking node source to node dest.
@@ -621,7 +646,7 @@ class WeightedAdjacency(AbstractWeightedAdjacency):
         Typical use is to transform an implicit k-adjacency into an explicit weighted adjacency.
         """
         adj = WeightedAdjacency(baseAdjacency.nbPoints)
-        if weightingFunction != None:
+        if weightingFunction is not None:
             for i in range(adj.nbPoints):
                 for j in baseAdjacency.getSuccessors(i):
                     if j > i:
@@ -760,7 +785,15 @@ class DirectedWeightedAdjacency(AbstractWeightedAdjacency):
 
         return adj
 
-
+    def countOutEdges(self, i, includeExternal=False):
+        count = 0
+        e = self.outHead[i]
+        while e != -1:
+            # dest is the adjacent vertex
+            count += 1
+            # next edge in the edge list
+            e = self.nextEdge[e]
+        return count
 
     def getSuccessors(self, i):
         nodes = []
@@ -928,7 +961,7 @@ class Tree(Image):
         self.addAttribute("level")
         self.level.setAll(levels)
         self.addAttribute('reconstructedValue')
-        Attributes.addAttributeChildren(self)
+        HiPy.Processing.Attributes.addAttributeChildren(self)
 
 
     def getParent(self, i):
@@ -1042,8 +1075,9 @@ class Tree(Image):
         """
         Creates an iterator on the leaves of the tree.
         """
-        if self.treeType == TreeType.ComponentTree:
-            Attributes.addAttributeIsLeaf(self)
+
+        def leavesIterator():
+            HiPy.Processing.Attributes.addAttributeIsLeaf(self)
             isLeaf = self.isLeaf
             i = self.nbPixels
             size = len(self)
@@ -1053,6 +1087,9 @@ class Tree(Image):
                 if i < size:
                     yield i
                 i += 1
+
+        if self.treeType == TreeType.ComponentTree:
+            return leavesIterator()
         else:
             return range(self.nbPixels)
 
@@ -1149,7 +1186,7 @@ class TreeIterator(object):
 
         specialLogic = tree.treeType == TreeType.ComponentTree and logical
         if specialLogic and not includeLeaves:
-            Attributes.addAttributeIsLeaf(tree)
+            HiPy.Processing.Attributes.addAttributeIsLeaf(tree)
             self.nextMethod = self.nextLogical
         else:
             self.nextMethod = self.nextStructural

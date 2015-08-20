@@ -116,8 +116,8 @@ def testHeartSegmentation():
     dccTree = buildFinalDCCTree(stack.nbPoints, parent, completeGraphEdges, Lvls,image)
     
     print("Computing attributes")
-    addAttributeMarker(dccTree, "marker1", markerObj, 255)
-    addAttributeMarker(dccTree, "marker2", markerFond, 255)
+    addAttributeMarker(dccTree, markerObj, 255, attributeName="marker1")
+    addAttributeMarker(dccTree, markerFond, 255, attributeName="marker2")
     addAttributeMarkerDirectedComponent(dccTree,"marker2")
     
     print("Filtering")

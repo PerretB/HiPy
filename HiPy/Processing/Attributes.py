@@ -39,7 +39,9 @@ Created on 19 juin 2015
 
 import random
 from math import *  # @UnusedWildImport
+import HiPy.Hierarchies.PartitionHierarchy
 import HiPy.Structures
+import HiPy.Util.VMath as VMath
 from functools import wraps
 import inspect
 
@@ -53,7 +55,8 @@ def autoCreateAttribute(defaultName="attribute", defaultValue=0):
         # defaultAttribute = argsWithDefaultVal["attribute"]
 
         @wraps(fun)
-        def wrapper(tree, attributeName=defaultName, *args, **kwargs):
+        def wrapper(tree, *args, **kwargs):
+            attributeName = kwargs.pop("attributeName", defaultName)
             attr, created = tree.addAttribute(attributeName, defaultValue)
             if created:
                 fun(tree, attr, *args, **kwargs)
@@ -117,7 +120,7 @@ def addAttributeChildrenLogical(tree, attribute):
                 attribute[par].append(i)
 
     else:
-        addAttributeChildren.original(tree, attribute)
+        addAttributeChildren(tree, attribute)
 
 
 @autoCreateAttribute("volume", 0)
@@ -177,7 +180,7 @@ def addAttributeSimpleMoments2d(tree, attribute):
 
     for i in tree.iteratorFromPixelsToRoot():
         par = tree[i]
-        if (par != -1):
+        if par != -1:
             m = attribute[i]
             mp = attribute[par]
             for j in range(len(m)):
@@ -238,14 +241,14 @@ def computeHuInvariant(scaleInvariantMoments):
     return [I1, I2, I3, I4, I5, I6, I7]
 
 
-@autoCreateAttribute
-def addAttributeInertia2d(tree, attribute="inertia", momentAttributeName="moments"):
+@autoCreateAttribute("inertia", 0)
+def addAttributeInertia2d(tree, attribute, momentAttributeName="moments"):
     """
     Compute the moment of inertia of each component 
     """
     attrMoment = tree.getAttribute(momentAttributeName)
 
-    def computeInitertia(m):
+    def computeInertia(m):
         xmean = m[1] / m[0]
         ymean = m[2] / m[0]
         u20 = m[4] - xmean * m[1]
@@ -253,7 +256,7 @@ def addAttributeInertia2d(tree, attribute="inertia", momentAttributeName="moment
         return (u20 + u02) / (m[0] * m[0])
 
     for i in tree.iteratorFromPixelsToRoot():
-        attribute[i] = computeInitertia(attrMoment[i])
+        attribute[i] = computeInertia(attrMoment[i])
 
 
 def addAttributeElongationOrientation2d(tree, nameElongation="elongation", nameOrientation="orientation",
@@ -305,6 +308,54 @@ def addAttributeElongationOrientation2d(tree, nameElongation="elongation", nameO
     return attrElongation, attrOrientation
 
 
+@autoCreateAttribute("levelStatistics", None)
+def addAttributeLevelStatistics(tree, attribute, levelImage=None):
+    """
+    [Mean Variance]
+    :param tree:
+    :param attribute:
+    :param levelImage:
+    :return:
+    """
+    if not levelImage:
+        levelImage = tree.level
+    children = addAttributeChildren(tree)
+    area = addAttributeArea(tree)
+    meanSquare = attribute.copy(False)
+    print(tree.treeType)
+    if type(levelImage[0]) is list:
+        dim = len(levelImage[0])
+        for i in tree.iteratorOnLeaves():
+            attribute[i] = [levelImage[i], [0] * dim]
+            meanSquare[i] = VMath.multV(levelImage[i], levelImage[i])
+        for i in tree.iteratorFromPixelsToRoot(includePixels=False):
+            mean = [0] * dim
+            mean2 = [0] * dim
+            for child in children[i]:
+                mean = VMath.addV(mean, VMath.multS(attribute[child][0], area[child]))
+                mean2 = VMath.addV(mean2, VMath.multS(meanSquare[child], area[child]))
+
+            mean = VMath.divS(mean, area[i])
+            mean2 = VMath.divS(mean2, area[i])
+            meanSquare[i] = mean2
+            attribute[i] = [mean, VMath.diffV(mean2, VMath.multV(mean, mean))]
+    else:
+        for i in tree.iteratorOnLeaves():
+            attribute[i] = [levelImage[i], 0]
+            meanSquare[i] = levelImage[i] ** 2
+        for i in tree.iteratorFromPixelsToRoot(includePixels=False):
+            mean = 0
+            mean2 = 0
+            for child in children[i]:
+                mean += attribute[child][0] * area[child]
+                mean2 += meanSquare[child] * area[child]
+            mean /= area[i]
+            mean2 /= area[i]
+
+            meanSquare[i] = mean2
+            attribute[i] = [mean, mean2 - mean * mean]
+
+
 @autoCreateAttribute("depth", 0)
 def addAttributeDepth(tree, attribute):
     for j in tree.iteratorFromRootToPixels():
@@ -324,7 +375,7 @@ def addAttributeHighest(tree, attribute):
         else:
             maxValue = attribute[children[i][0]]
             for c in children[i]:
-                if (attribute[c] > maxValue):
+                if attribute[c] > maxValue:
                     maxValue = attribute[c]
             attribute[i] = maxValue
 
@@ -370,30 +421,50 @@ def addAttributeDynamics(tree, attribute, extremaAttributeName="highest"):
 
 
 @autoCreateAttribute("perimeter", 0)
-def addAttributePerimeter(tree, attribute, adjacency=None):
+def addAttributePerimeterComponentTree(tree, attribute, baseAdjacency=None):
     children = addAttributeChildren(tree)
-    if adjacency is None:
-        adjacency = tree.leavesAdjacency
+    if baseAdjacency is None:
+        baseAdjacency = tree.leavesAdjacency
     nbLeaves = tree.nbPixels
     visited = HiPy.Structures.Image(nbLeaves, False)
     for i in range(nbLeaves):
-        attribute[i] = 4  # len(adjacency.getNeighbours(i)) FIXME !!!!
+        attribute[i] = baseAdjacency.countOutEdges(i, includeExternal=True)
     for i in tree.iteratorFromPixelsToRoot(False):
-        remove = 0;
+        remove = 0
         for c in children[i]:
             attribute[i] += attribute[c]
             if c < nbLeaves:
-                for n in adjacency.getNeighbours(c):
+                for n in baseAdjacency.getNeighbours(c):
                     if visited[n]:
                         remove += 2
                 visited[c] = True
         attribute[i] -= remove
 
 
+@autoCreateAttribute("perimeter", 0)
+def addAttributePerimeterPartitionHierarchy(tree, attribute, baseAdjacency):
+    frontierLength = addAttributeFrontierLengthPartitionHierarchy(tree, baseAdjacency)
+    for i in tree.iteratorOnPixels():
+        attribute[i] = baseAdjacency.countOutEdges(i, includeExternal=True)
+    for i in tree.iteratorFromPixelsToRoot(includeRoot=False):
+        attribute[i] -= 2 * frontierLength[i]
+        attribute[tree[i]] += attribute[i]
+    attribute[len(tree) - 1] -= 2 * frontierLength[len(tree) - 1]
+
+
+@autoCreateAttribute("frontierLength", 0)
+def addAttributeFrontierLengthPartitionHierarchy(tree, attribute, adjacency):
+    nodeMapping = HiPy.Hierarchies.PartitionHierarchy.computeSaliencyMap(tree, adjacency, lambda i: i)
+    for i in range(nodeMapping.nbPoints):
+        for edge in nodeMapping.getOutEdges(i):
+            if edge[1] > edge[0]:
+                attribute[edge[2]] += 1
+
+
 @autoCreateAttribute("compactness", 0)
 def addAttributeCompactness(tree, attribute):
     area = addAttributeArea(tree)
-    perimeter = addAttributePerimeter(tree)
+    perimeter = addAttributePerimeterComponentTree(tree)
     for i in tree.iteratorFromPixelsToRoot():
         attribute[i] = 4.0 * pi * area[i] / (perimeter[i] * perimeter[i])
 
@@ -401,7 +472,7 @@ def addAttributeCompactness(tree, attribute):
 @autoCreateAttribute("complexity", 0)
 def addAttributeComplexity(tree, attribute):
     area = addAttributeArea(tree)
-    perimeter = addAttributePerimeter(tree)
+    perimeter = addAttributePerimeterComponentTree(tree)
     for i in tree.iteratorFromPixelsToRoot():
         attribute[i] = perimeter[i] / area[i]
 

@@ -35,48 +35,65 @@ Created on 26 juin 2015
 @author: perretb
 '''
 
-from math import * #@UnusedWildImport
+from math import *  # @UnusedWildImport
+
 
 def mapV(vector, function):
     return [function(v) for v in vector]
 
+
 def mapVV(v1, v2, function):
-    return [function(v1[i],v2[i]) for i in range(len(v1))]
+    return [function(v1[i], v2[i]) for i in range(len(v1))]
 
-def diffV(v1,v2):
-    return mapVV(v1,v2,lambda x,y:x-y)
 
-def multV(v1,v2):
-    return mapVV(v1,v2,lambda x,y:x*y)
+def diffV(v1, v2):
+    return mapVV(v1, v2, lambda x, y: x - y)
 
-def addV(v1,v2):
-    return mapVV(v1,v2,lambda x,y:x+y)
 
-def divV(v1,v2):
-    return mapVV(v1,v2,lambda x,y:x/y)
+def multV(v1, v2):
+    return mapVV(v1, v2, lambda x, y: x * y)
+
+
+def addV(v1, v2):
+    return mapVV(v1, v2, lambda x, y: x + y)
+
+
+def divV(v1, v2):
+    return mapVV(v1, v2, lambda x, y: x / y)
+
+
+def multS(v, value):
+    return mapV(v, lambda x: x * value)
+
+
+def divS(v, value):
+    return mapV(v, lambda x: x / value)
+
 
 def norm(v):
-    return sqrt(sum(multV(v,v)))
+    return sqrt(sum(multV(v, v)))
+
 
 def mult(v):
-    res=1
+    res = 1
     for val in v:
-        res*=val
+        res *= val
     return res
 
-def euclideanDistance(v1,v2):
-    return norm(diffV(v1,v2))
 
+def euclideanDistance(v1, v2):
+    return norm(diffV(v1, v2))
 
 
 def meanV(v):
-    return sum(v)/len(v)
+    return sum(v) / len(v)
+
 
 def medianV(v):
-    s=sorted(v)
+    s = sorted(v)
     nbE = len(s)
-    nbEd2 = nbE//2
-    if nbE%2==1:
+    nbEd2 = nbE // 2
+    if nbE % 2 == 1:
         return s[nbEd2]
     else:
-        return (s[nbEd2]+s[nbEd2+1])/2
+        return (s[nbEd2] + s[nbEd2 + 1]) / 2

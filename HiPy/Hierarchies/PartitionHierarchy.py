@@ -34,14 +34,12 @@ Created on 15 june 2015
 """
 
 import HiPy.Util.UnionFind as UnionFind
-from HiPy.Structures import Tree, Embedding2dGrid, Image, TreeType, WeightedAdjacency, \
-    AdjacencyNdRegular, HiPyLogger, AbstractWeightedAdjacency, AbstractAdjacency
-from HiPy.Processing.Attributes import addAttributeChildren, \
-    addAttributeDepth
+import HiPy.Structures
+import HiPy.Processing.Attributes
 from HiPy.Util.Histogram import imageMap, rescaleGray, normalizeToByte
 
 
-def constructAltitudeBPT(adjacency: AbstractWeightedAdjacency) -> Tree:
+def constructAltitudeBPT(adjacency: "AbstractWeightedAdjacency") -> "Tree":
     """
     Construct the binary partition tree by altitude of the given edge image.
 
@@ -50,7 +48,7 @@ def constructAltitudeBPT(adjacency: AbstractWeightedAdjacency) -> Tree:
     :param adjacency: a weighted adjacency (an edge valued graph)
     :returns the binary partition tree by altitude of the given adjacency
     """
-    HiPyLogger.debug("call to: constructAltitudeBPT")
+    HiPy.Structures.HiPyLogger.debug("call to: constructAltitudeBPT")
 
     nbPoints = adjacency.nbPoints
     edgesI = sorted(range(len(adjacency)), key=lambda x: adjacency[x])
@@ -59,17 +57,17 @@ def constructAltitudeBPT(adjacency: AbstractWeightedAdjacency) -> Tree:
     mst, parent = computeMSTBPT(nbPoints, edges)
 
     levels = [0] * nbPoints
-    adjMST = WeightedAdjacency(nbPoints)
+    adjMST = HiPy.Structures.WeightedAdjacency(nbPoints)
     for e in mst:
         levels.append(e[2])
         adjMST.createEdge(*e)
 
-    tree = Tree(TreeType.PartitionHierarchy, parent, levels)
+    tree = HiPy.Structures.Tree(HiPy.Structures.TreeType.PartitionHierarchy, parent, levels)
     tree.leavesAdjacency = adjMST
     return tree
 
 
-def transformAltitudeBPTtoComponentTree(bpt: Tree) -> Tree:
+def transformAltitudeBPTtoComponentTree(bpt: "Tree") -> "Tree":
     """
     Copy bpt and delete the nodes n such that bpt.level[n]=bpt.level[bpt[n]]
     (and update the parent relation accordingly...
@@ -79,8 +77,7 @@ def transformAltitudeBPTtoComponentTree(bpt: Tree) -> Tree:
     """
     nbLeaves = bpt.nbPixels
     nbNodes = len(bpt)
-    addAttributeChildren(bpt)
-    children = bpt.children
+    children = HiPy.Processing.Attributes.addAttributeChildren(bpt)
     level = bpt.level
 
     count = 0
@@ -118,13 +115,13 @@ def transformAltitudeBPTtoComponentTree(bpt: Tree) -> Tree:
     newParent[count] = -1
     newLevel[count] = level[-1]
 
-    newTree = Tree(TreeType.PartitionHierarchy, newParent, newLevel)
+    newTree = HiPy.Structures.Tree(HiPy.Structures.TreeType.PartitionHierarchy, newParent, newLevel)
     newTree.leavesAdjacency = bpt.leavesAdjacency
 
     return newTree
 
 
-def transformBPTtoAttributeHierarchy(bpt: Tree, attributeName: str) -> Tree:
+def transformBPTtoAttributeHierarchy(bpt: "Tree", attributeName: str) -> "Tree":
     """
     Transforms the given binary partition tree (bpt) according to the given attribute.
 
@@ -139,7 +136,7 @@ def transformBPTtoAttributeHierarchy(bpt: Tree, attributeName: str) -> Tree:
     return constructAltitudeBPT(adj)
 
 
-def filterBPTbyCriterion(bpt: Tree, filterCriterion: "function int->bool") -> Tree:
+def filterBPTbyCriterion(bpt: "Tree", filterCriterion: "function int->bool") -> "Tree":
     """
     Transforms the given binary partition tree (bpt) according to the given criterion.
 
@@ -156,7 +153,7 @@ def filterBPTbyCriterion(bpt: Tree, filterCriterion: "function int->bool") -> Tr
     return constructAltitudeBPT(adj)
 
 
-def transformAltitudeBPTtoWatershedHierarchy(bpt: Tree) -> Tree:
+def transformAltitudeBPTtoWatershedHierarchy(bpt: "Tree") -> "Tree":
     """
     Transforms the given binary partition tree (bpt) according to the given criterion.
 
@@ -178,7 +175,7 @@ def computeMSTBPT(nbPoints: int, sortedEdgeList: list) -> (list, list):
     :param sortedEdgeList: list of edges, each edge is in the form (source, destination, weight)
     :return: a list of edge composing the MST, a parent relation representing the BPT
     """
-    HiPyLogger.debug("call to: computeMSTBPT")
+    HiPy.Structures.HiPyLogger.debug("call to: computeMSTBPT")
     nbEdgeMST = nbPoints - 1
 
     mst = []
@@ -206,7 +203,7 @@ def computeMSTBPT(nbPoints: int, sortedEdgeList: list) -> (list, list):
     return mst, parent
 
 
-def extractWatershedEdges(bpt: Tree) -> AbstractWeightedAdjacency:
+def extractWatershedEdges(bpt: "Tree") -> "AbstractWeightedAdjacency":
     """
     Return a copy of the minimum spanning tree associated to the binary partition tree (bpt.leavesAdjacency)
     where the weight of the non-watershed edges are set to 0
@@ -216,9 +213,8 @@ def extractWatershedEdges(bpt: Tree) -> AbstractWeightedAdjacency:
     adj = bpt.leavesAdjacency.getCopy()
     nbLeaves = bpt.nbPixels
     nbNodes = len(bpt)
-    addAttributeChildren(bpt)
+    children = HiPy.Processing.Attributes.addAttributeChildren(bpt)
     level = bpt.level
-    children = bpt.children
 
     minima = [0] * nbNodes
     for i in bpt.iteratorFromPixelsToRoot(False):
@@ -242,7 +238,7 @@ def extractWatershedEdges(bpt: Tree) -> AbstractWeightedAdjacency:
     return adj
 
 
-def correctAttributeValueBPT(bpt: Tree, attributeName: str) -> None:
+def correctAttributeValueBPT(bpt: "Tree", attributeName: str) -> None:
     """
     Most attributes computed using functions in module HiPy.Processing.Attributes
     will be incorrect for the BPT. However their values can be corrected a posteriori
@@ -254,8 +250,7 @@ def correctAttributeValueBPT(bpt: Tree, attributeName: str) -> None:
     :param attributeName: name of the attribute
     :return: nothing, modification is done in place
     """
-    addAttributeChildren(bpt)
-    children = bpt.children
+    children = HiPy.Processing.Attributes.addAttributeChildren(bpt)
     attr = bpt.getAttribute(attributeName)
     level = bpt.level
     for i in bpt.iterateOnLeaves():
@@ -269,7 +264,7 @@ def correctAttributeValueBPT(bpt: Tree, attributeName: str) -> None:
             attr[i] = max(vc1, vc2)
 
 
-def reweightMSTByAttribute(bpt: Tree, attributeName: str, extinctionValue: bool=True):
+def reweightMSTByAttribute(bpt: "Tree", attributeName: str, extinctionValue: bool=True):
     """
     Reweight the MST associated to a binary partition tree according to a given attribute.
 
@@ -289,8 +284,7 @@ def reweightMSTByAttribute(bpt: Tree, attributeName: str, extinctionValue: bool=
     """
     nbLeaves = bpt.nbPixels
     adj = bpt.leavesAdjacency.getCopy()
-    addAttributeChildren(bpt)
-    children = bpt.children
+    children = HiPy.Processing.Attributes.addAttributeChildren(bpt)
     attr = bpt.getAttribute(attributeName)
     if extinctionValue:
         for i in bpt.iteratorFromPixelsToRoot(False):
@@ -301,8 +295,8 @@ def reweightMSTByAttribute(bpt: Tree, attributeName: str, extinctionValue: bool=
     return adj
 
 
-def filterMSTByCriterion(bpt: Tree, filterCriterion: "function int->bool") \
-        -> AbstractWeightedAdjacency:
+def filterMSTByCriterion(bpt: "Tree", filterCriterion: "function int->bool") \
+        -> "AbstractWeightedAdjacency":
     """
     Filter the MST associated to a binary partition tree according to a given criterion.
 
@@ -320,7 +314,7 @@ def filterMSTByCriterion(bpt: Tree, filterCriterion: "function int->bool") \
     """
     nbLeaves = bpt.nbPixels
     adj = bpt.leavesAdjacency.getCopy()
-    addAttributeChildren(bpt)
+    HiPy.Processing.Attributes.addAttributeChildren(bpt)
 
     for i in bpt.iteratorFromPixelsToRoot(False):
         if filterCriterion(i):
@@ -329,8 +323,8 @@ def filterMSTByCriterion(bpt: Tree, filterCriterion: "function int->bool") \
     return adj
 
 
-def computeSaliencyMapFromAttribute(partitionTree: Tree,
-                                    adjacency: AbstractWeightedAdjacency,
+def computeSaliencyMapFromAttribute(partitionTree: "Tree",
+                                    adjacency: "AbstractWeightedAdjacency",
                                     attribute="level"):
     """
     Compute the saliency values for the given attribute of the edges
@@ -345,8 +339,8 @@ def computeSaliencyMapFromAttribute(partitionTree: Tree,
     return computeSaliencyMap(partitionTree, adjacency, valFun)
 
 
-def computeSaliencyMap(partitionTree: Tree,
-                       adjacency: AbstractWeightedAdjacency,
+def computeSaliencyMap(partitionTree: "Tree",
+                       adjacency: "AbstractWeightedAdjacency",
                        valuationFunction):
     """
     Compute the saliency values for the given valuation function of the edges
@@ -356,15 +350,15 @@ def computeSaliencyMap(partitionTree: Tree,
     :param valuationFunction: a function associating a value to a node index
     :return: A copy of the given adjacency weighted by the saliency values
     """
-    addAttributeDepth(partitionTree)
+    HiPy.Processing.Attributes.addAttributeDepth(partitionTree)
     lca = partitionTree.lca
     valFun = lambda i, j: valuationFunction(lca(i, j))
-    return WeightedAdjacency.createAdjacency(adjacency, valFun)
+    return HiPy.Structures.WeightedAdjacency.createAdjacency(adjacency, valFun)
 
 
 def drawSaliencyMap(size: (int, int),
-                    saliency: AbstractAdjacency,
-                    interpolationFunction: "function *float->float"=max) -> Image:
+                    saliency: "AbstractAdjacency",
+                    interpolationFunction: "function *float->float"=max) -> "Image":
     """
     Represent a saliency map as a contour image.
     :param size: is the size [width, height] of the image.
@@ -375,14 +369,14 @@ def drawSaliencyMap(size: (int, int),
     """
     width = size[0]
     height = size[1]
-    grid = Embedding2dGrid(width, height)
+    grid = HiPy.Structures.Embedding2dGrid(width, height)
     resWidth = width * 2 - 1
     resHeight = height * 2 - 1
-    grid2 = Embedding2dGrid(resWidth, resHeight)
+    grid2 = HiPy.Structures.Embedding2dGrid(resWidth, resHeight)
 
-    res = Image(resWidth * resHeight,
+    res = HiPy.Structures.Image(resWidth * resHeight,
                 0,
-                AdjacencyNdRegular.getAdjacency2d4([resWidth, resHeight]),
+                HiPy.Structures.AdjacencyNdRegular.getAdjacency2d4([resWidth, resHeight]),
                 grid2)
     for y in range(height):
         for x in range(width):
@@ -403,7 +397,7 @@ def drawSaliencyMap(size: (int, int),
     return res
 
 
-def drawSaliencyForVisualisation(tree: Tree, image: Image, attributeName="level", gammaFactor=0.33333):
+def drawSaliencyForVisualisation(tree: "Tree", image: "Image", attributeName="level", gammaFactor=0.33333):
     """
     Draw the saliency map associated to the given partition tree in a byte image.
 
@@ -417,7 +411,7 @@ def drawSaliencyForVisualisation(tree: Tree, image: Image, attributeName="level"
     :param gammaFactor: a gamma factor applied to the saliency value
     :return a contour map image with byte values
     """
-    adj4 = AdjacencyNdRegular.getAdjacency2d4(image.embedding.size)
+    adj4 = HiPy.Structures.AdjacencyNdRegular.getAdjacency2d4(image.embedding.size)
 
     saliency = computeSaliencyMapFromAttribute(tree, adj4, attributeName)
     sal = drawSaliencyMap(image.embedding.size, saliency)

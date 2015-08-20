@@ -722,9 +722,9 @@ def computeLevelsAsDepth(parent):
 
 
 def computeAttributeDirectedComponent(dccTree, attributeName, baseAttributeName, accumulator):
-    attr = dccTree.addAttribute(attributeName)
-    if attr == None:
-        return
+    attr, created = dccTree.addAttribute(attributeName)
+    if not created:
+        return attr
     baseAttr = dccTree.getAttribute(baseAttributeName)
     successors = dccTree.sucs
     visit = [None] * len(dccTree)
@@ -757,7 +757,7 @@ def addAttributeSimpleMomentsDirectedComponent(dccTree):
 # Compute the moment of inertia of each SCC (attribute "inertia") and each DCC  (attribute "inertia_semi")
 def addAttributeInertiaDirectedComponent(dccTree):
     addAttributeInertia2d(dccTree)
-    addAttributeInertia2d(dccTree, "inertia_directed", "moments_directed")
+    addAttributeInertia2d(dccTree, "moments_directed", attributeName="inertia_directed")
 
 
 # Compute the elongation and orientation of each SCC (attributes "elongation" and "orientation") and each DCC  (attribute "elongation_semi" and "orientation_semi")

@@ -28,8 +28,9 @@
 # The fact that you are presently reading this means that you have had
 # knowledge of the CeCILL license and that you accept its terms.
 
-from HiPy.Util.VMath import medianV
-from HiPy.Structures import Image
+import HiPy.Util.VMath
+
+
 '''
 Created on 9 juin 2015
 
@@ -37,8 +38,8 @@ Created on 9 juin 2015
 '''
 
 
-def imageMap(image: Image, function, marginal=False, bandNumber=None, inPlace=False):
-    '''
+def imageMap(image: "Image", function, marginal=False, bandNumber=None, inPlace=False):
+    """
     Apply a pointwise  function to an image.
     This method assumes that the content of the image is homogeneous (either scalars or lists but not a mix of the twos).
     
@@ -50,7 +51,7 @@ def imageMap(image: Image, function, marginal=False, bandNumber=None, inPlace=Fa
         For all pixels i, for all bands b, result[i][b]= function(image[i][b]) if b==bandNumber else image[i][b]
         
     If inPlace==False the result is put in a newly allocated image, in the other case the result is put in the input image.
-    '''
+    """
     if inPlace:
         imDest = image
     else:
@@ -72,42 +73,42 @@ def imageMap(image: Image, function, marginal=False, bandNumber=None, inPlace=Fa
     return imDest
 
 
-def imageInverseGrayByte(image: Image):
+def imageInverseGrayByte(image: "Image"):
     return imageMap(image, lambda x: 255 - x, marginal=True)
 
 
-def rescaleGray(image: Image, minValue=0, maxValue=1, marginal=True):
+def rescaleGray(image: "Image", minValue=0, maxValue=1, marginal=True):
     vmin, vmax = getMinMax(image)
     return imageMap(image, lambda x: (maxValue - minValue) * (x - vmin) / (vmax - vmin) + minValue, marginal=marginal)
 
 
-def toInt(image: Image):
+def toInt(image: "Image"):
     return imageMap(image, lambda x: int(round(x)), marginal=True)
 
 
-def normalizeToByte(image: Image):
+def normalizeToByte(image: "Image"):
     im = rescaleGray(image, 0, 255)
     im = toInt(im)
     return im
 
 
-def add(image: Image, number, inPlace=False):
+def add(image: "Image", number, inPlace=False):
     return imageMap(image, lambda x: x + number, marginal=True, inPlace=inPlace)
 
 
-def sub(image: Image, number, inPlace=False):
+def sub(image: "Image", number, inPlace=False):
     return add(image, -number, inPlace)
 
 
-def mult(image: Image, number, inPlace=False):
+def mult(image: "Image", number, inPlace=False):
     return imageMap(image, lambda x: x * number, marginal=True, inPlace=inPlace)
 
 
-def divide(image: Image, number, inPlace=False):
+def divide(image: "Image", number, inPlace=False):
     return imageMap(image, lambda x: x / number, marginal=True, inPlace=inPlace)
 
 
-def getMinMax(image: Image, band=None):
+def getMinMax(image: "Image", band=None):
     '''
     Get min and max value over all band (if band==None) or a particular band
     '''
@@ -150,7 +151,7 @@ def getMinMax(image: Image, band=None):
         return vmin, vmax
 
 
-def combineBands(*args: Image):
+def combineBands(*args: "Image"):
     '''
     Takes several images and combine them in a single multiband images.
     All the input images must have the same dimension.
@@ -166,7 +167,7 @@ def combineBands(*args: Image):
     return res
 
 
-def median(*args: Image):
+def median(*args: "Image"):
     '''
     Compute the median of several scalar images.
     All the input images must have the same dimension.
@@ -176,5 +177,5 @@ def median(*args: Image):
     '''
     res = args[0].copy(copyData=False)
     for i in res.iterateOnPixels():
-        res[i] = medianV([im[i] for im in args])
+        res[i] = HiPy.Util.VMath.medianV([im[i] for im in args])
     return res
