@@ -46,7 +46,7 @@ from functools import wraps
 import inspect
 
 
-def autoCreateAttribute(defaultName="attribute", defaultValue=0):
+def autoCreateAttribute(defaultName, defaultValue=0):
     def decorator(fun):
         # argsSpecFun = inspect.getfullargspec(fun)
         # argsWithDefaultVal = dict(zip(argsSpecFun.args[-len(argsSpecFun.defaults):],argsSpecFun.defaults))
@@ -104,7 +104,7 @@ def addAttributeArea(tree: "HiPy.Structures.Tree", attribute):
 
 
 @autoCreateAttribute("children", [])
-def addAttributeChildren(tree, attribute="children"):
+def addAttributeChildren(tree, attribute):
     for i in tree.iteratorFromPixelsToRoot(True):
         par = tree[i]
         if par != -1:
@@ -280,10 +280,10 @@ def addAttributeElongationOrientation2d(tree, nameElongation="elongation", nameO
         xvar = m[4] / m[0] - xmean * xmean
         yvar = m[5] / m[0] - ymean * ymean
         xycovar = m[3] / m[0] - xmean * ymean
-        if (xvar - yvar != 0):
+        if xvar - yvar != 0:
             a = 0.5 * atan(2 * xycovar / (xvar - yvar))
-            if (sign(a) * sign(xycovar) < 0.0):
-                a += pi / 2.0;
+            if (sign(a) * sign(xycovar)) < 0.0:
+                a += pi / 2.0
             alpha = a
         else:
             if xycovar == 0:
@@ -293,9 +293,9 @@ def addAttributeElongationOrientation2d(tree, nameElongation="elongation", nameO
         lambda1 = max(0, 0.5 * (xvar + yvar + sqrt(4 * xycovar * xycovar + (xvar - yvar) * (xvar - yvar))))
         lambda2 = max(0, 0.5 * (xvar + yvar - sqrt(4 * xycovar * xycovar + (xvar - yvar) * (xvar - yvar))))
 
-        if (lambda1 == 0):  # ill posed case
+        if lambda1 == 0:  # ill posed case
             el = 1;
-        elif (lambda2 == 0):  # ill posed case
+        elif lambda2 == 0:  # ill posed case
             el = sqrt((lambda2 + 1) / (lambda1 + 1));
         else:
             el = sqrt(lambda2 / lambda1);
@@ -322,7 +322,7 @@ def addAttributeLevelStatistics(tree, attribute, levelImage=None):
     children = addAttributeChildren(tree)
     area = addAttributeArea(tree)
     meanSquare = attribute.copy(False)
-    print(tree.treeType)
+
     if type(levelImage[0]) is list:
         dim = len(levelImage[0])
         for i in tree.iteratorOnLeaves():
@@ -442,10 +442,10 @@ def addAttributePerimeterComponentTree(tree, attribute, baseAdjacency=None):
 
 
 @autoCreateAttribute("perimeter", 0)
-def addAttributePerimeterPartitionHierarchy(tree, attribute, baseAdjacency):
+def addAttributePerimeterPartitionHierarchy(tree, attribute, baseAdjacency, includeExternal=True):
     frontierLength = addAttributeFrontierLengthPartitionHierarchy(tree, baseAdjacency)
     for i in tree.iteratorOnPixels():
-        attribute[i] = baseAdjacency.countOutEdges(i, includeExternal=True)
+        attribute[i] = baseAdjacency.countOutEdges(i, includeExternal=includeExternal)
     for i in tree.iteratorFromPixelsToRoot(includeRoot=False):
         attribute[i] -= 2 * frontierLength[i]
         attribute[tree[i]] += attribute[i]
@@ -528,3 +528,4 @@ def addAttributeRank(tree, attribute):
         par = tree[i]
         if level[i] == level[par]:
             attribute[par] = attribute[i]
+

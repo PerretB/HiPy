@@ -29,7 +29,7 @@
 # knowledge of the CeCILL license and that you accept its terms.
 
 import HiPy.Util.VMath
-
+import HiPy.Structures
 
 '''
 Created on 9 juin 2015
@@ -79,6 +79,9 @@ def imageInverseGrayByte(image: "Image"):
 
 def rescaleGray(image: "Image", minValue=0, maxValue=1, marginal=True):
     vmin, vmax = getMinMax(image)
+    if vmin == vmax:
+        HiPy.Structures.HiPyLogger.warning("rescaleGray: image is constant, cannot rescale its level.")
+        return image
     return imageMap(image, lambda x: (maxValue - minValue) * (x - vmin) / (vmax - vmin) + minValue, marginal=marginal)
 
 

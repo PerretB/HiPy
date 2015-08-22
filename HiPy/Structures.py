@@ -94,6 +94,8 @@ class TreeType(Enum):
     ComponentTree = 1
     PartitionHierarchy = 2
 
+def isImmutable(var):
+    return type(var) in (str, int, bool, float, tuple)
 
 class Image(list):
     """
@@ -110,30 +112,48 @@ class Image(list):
 
         It is strongly recommended to provide an adjacency and an embedding as many other
         functions will expect to find them.
+
+        If initValue is identified as a possibly mutable type, it is deep copied in every location
         """
         super().__init__()
-        for _ in range(length):
-            self.append(copy.deepcopy(initValue))
+        if isImmutable(initValue):
+            for _ in range(length):
+                self.append(initValue)
+        else:
+            for _ in range(length):
+                self.append(copy.deepcopy(initValue))
         self.embedding = embedding
         self.adjacency = adjacency
 
     def setAll(self, image):
         """
-        Copy (deep copy) values of image into current image
+        Copy values of image into current image.
+
+        If image[0] is identified as possibly mutable, then every value is deep copied.
         """
-        for i in range(len(image)):
-            self[i] = copy.deepcopy(image[i])
+        if isImmutable(image[0]):
+            for i in range(len(image)):
+                self[i] = image[i]
+        else:
+            for i in range(len(image)):
+                self[i] = copy.deepcopy(image[i])
 
     def copy(self, copyData=False):
         """
         Warning: this is not a true deep copy!
         Image data are not shared but adjacency and embedding are shared
+
+        If copyData = True and self[0] is identified as a possible mutable type, then values are deep copied
         """
         nIm = Image(len(self), 0, self.adjacency, self.embedding)
 
         if copyData:
-            for i in range(len(self)):
-                nIm[i] = self[i]
+            if isImmutable(self[0]):
+                for i in range(len(self)):
+                    nIm[i] = self[i]
+            else:
+                for i in range(len(self)):
+                    nIm[i] = copy.deepcopy(self[i])
         return nIm
 
     def getPixel(self, i):
@@ -383,6 +403,7 @@ class AdjacencyNdRegular(AbstractAdjacency):
         isInBounds = self.embedding.isInBoundsWCS
         linear = self.embedding.getLinearCoordinate
         for i in range(self.nbPoints):
+            coordi = self.embedding.fromLinearCoordinate(i)
             for neighbour in self.neighbourList:
                 coordn = VMath.addV(coordi, neighbour)
                 linearn = linear(*coordn)
@@ -967,10 +988,16 @@ class Tree(Image):
     def getParent(self, i):
         """
         Return the parent of the node i, -1 if i is a root
+        :return parent of the node i, -1 if i is a root
         """
         return self[i]
 
-
+    def getRoot(self):
+        """
+        Return the index of the root node
+        :return: index of the root node
+        """
+        return len(self)-1
 
     def filterDirect(self, filteringCriterion):
         """

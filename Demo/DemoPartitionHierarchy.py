@@ -44,7 +44,7 @@ from HiPy.Processing.Attributes import *  # @UnusedWildImport
 from HiPy.Util.Histogram import *  # @UnusedWildImport
 from HiPy.Util.VMath import *  # @UnusedWildImport
 from HiPy.Util.Color import convertRGBtoLAB
-from HiPy.Structures import AdjacencyNdRegular
+from HiPy.Structures import AdjacencyNdRegular, WeightedAdjacency
 
 
 def demoBPT():
