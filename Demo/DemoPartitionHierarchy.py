@@ -65,15 +65,15 @@ def demoBPT():
     saveImage(salBpt, "Results/BPT Saliency map.png")
 
     print("constructing Component Tree...")
-    comptTree = transformAltitudeBPTtoComponentTree(bpt)
+    naryTree = bpt.simplifyTreeByAttribute("level")
     print("drawing saliency Comp Tree...")
-    salCt = drawSaliencyForVisualisation(comptTree, image)
+    salCt = drawSaliencyForVisualisation(naryTree, image)
     saveImage(salCt, "Results/CompTree Saliency map.png")
 
     if salBpt.equals(salCt):
-        print("Good news BPT and Compt Tree have the same saliency !")
+        print("Good news BPT and simplified tree have the same saliency !")
     else:
-        print("Yearkk! BPT and Compt Tree don't have the same saliency !")
+        print("Yearkk! BPT and simplified tree don't have the same saliency !")
 
     print("constructing watershed hierarchy by altitude...")
     wsh = transformAltitudeBPTtoWatershedHierarchy(bpt)

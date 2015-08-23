@@ -31,7 +31,7 @@
 import HiPy.Processing.Attributes as Attributes
 from collections import deque
 import math
-from HiPy.Processing.Attributes import addAttributeChildren
+
 
 __author__ = 'Benjamin Perret'
 
@@ -96,8 +96,43 @@ def addAttributeEnergyCut(tree: "Tree", attribute, energyAttributeName="energy")
             stack.extend(children[element])
 
 
+def transformTreeToOptimalMumfordShahEnergyCutHierarchy(tree, levelImage):
+    """
+    Transform the given partition tree into an optimal energy cut hierarchy using the piecewise constant
+    Mumford-Shah energy.
+
+    levelImage must be quipped with an appropriate adjacency in order to compute perimeter length of regions.
+
+    See transformTreeToOptimalEnergyCutHierarchy
+
+    :param tree: Tree to transform
+    :param levelImage: Image used to compute region statistics
+    :return: See transformTreeToOptimalEnergyCutHierarchy
+    """
+    area = Attributes.addAttributeArea(tree)
+    stats = Attributes.addAttributeLevelStatistics(tree, levelImage)
+    perimeter = Attributes.addAttributePerimeterPartitionHierarchy(tree, levelImage.adjacency, False)
+    variance, created = tree.addAttribute("variance", 0)
+    for i in tree.iteratorFromPixelsToRoot():
+        variance[i] = sum(stats[i][1]) * area[i]
+    return transformTreeToOptimalEnergyCutHierarchy(tree, variance, perimeter)
+
+
 def transformTreeToOptimalEnergyCutHierarchy(tree, dataFidelityAttribute, regularizationAttribute):
-    children = addAttributeChildren(tree)
+    """
+    Transform the given hierarchy into its optimal energy cut hierarchy for the given energy terms.
+
+    In the optimal energy cut hierarchy, any horizontal cut corresponds to an optimal energy cut in the original
+    hierarchy.
+
+    See Guigues thesis
+
+    :param tree: a partition hierarchy
+    :param dataFidelityAttribute:
+    :param regularizationAttribute:
+    :return:
+    """
+    children = Attributes.addAttributeChildren(tree)
     optimalEnergies = [None] * len(tree)
     apparitionScales, created = tree.addAttribute("apparitionScales",0)
     for i in tree.iteratorOnPixels():
@@ -114,15 +149,14 @@ def transformTreeToOptimalEnergyCutHierarchy(tree, dataFidelityAttribute, regula
         apparitionScales[i] = energyChildren.infimum(energyI)
         optimalEnergies[i] = energyChildren
 
-        #print(str(apparitionScales[i]) + "(" + str(dataFidelityAttribute[i]) +", " + str(regularizationAttribute[i]) + ")")
-
     __filterNonPersistentNodes(tree, apparitionScales)
+
+    return tree.simplifyTreeByAttribute("apparitionScales","apparitionScales")
 
 
 def __filterNonPersistentNodes(tree, apparitionScales):
     for i in tree.iteratorFromRootToPixels(includeRoot=False):
-        apparitionScales[i] = min(apparitionScales[i], apparitionScales[tree[i]])
-
+        apparitionScales[i] = max(0,min(apparitionScales[i], apparitionScales[tree[i]]))
 
 
 class LinearPiece:

@@ -67,60 +67,6 @@ def constructAltitudeBPT(adjacency: "AbstractWeightedAdjacency") -> "Tree":
     return tree
 
 
-def transformAltitudeBPTtoComponentTree(bpt: "Tree") -> "Tree":
-    """
-    Copy bpt and delete the nodes n such that bpt.level[n]=bpt.level[bpt[n]]
-    (and update the parent relation accordingly...
-
-    :param bpt: a binary partition tree
-    :returns the partition tree corresponding to the binary partition tree
-    """
-    nbLeaves = bpt.nbPixels
-    nbNodes = len(bpt)
-    children = HiPy.Processing.Attributes.addAttributeChildren(bpt)
-    level = bpt.level
-
-    count = 0
-    deleted = [False] * nbNodes
-    deletedMap = [0] * nbNodes
-
-    # from root to leaves, compute the new parent relation,
-    # don't care of the holes in the parent tab
-    for i in range(nbNodes - 2, nbLeaves - 1, -1):
-        par = bpt[i]
-        if level[i] == level[par]:
-            for c in children[i]:
-                bpt[c] = par
-            deleted[i] = True
-            count += 1
-        # inverse of what we want: number of deleted nodes after node i
-        deletedMap[i] = count
-
-    # correct the mapping
-    for i in bpt.iteratorFromPixelsToRoot(False):
-        deletedMap[i] = count - deletedMap[i]
-
-    # new relations with correct size
-    newParent = [-1] * (nbNodes - count)
-    newLevel = [0] * (nbNodes - count)
-
-    count = 0
-    for i in range(0, nbNodes - 1):
-        if not deleted[i]:
-            par = bpt[i]
-            newPar = par - deletedMap[par]
-            newParent[count] = newPar
-            newLevel[count] = level[i]
-            count += 1
-    newParent[count] = -1
-    newLevel[count] = level[-1]
-
-    newTree = HiPy.Structures.Tree(HiPy.Structures.TreeType.PartitionHierarchy, newParent, newLevel)
-    newTree.leavesAdjacency = bpt.leavesAdjacency
-
-    return newTree
-
-
 def transformBPTtoAttributeHierarchy(bpt: "Tree", attributeName: str) -> "Tree":
     """
     Transforms the given binary partition tree (bpt) according to the given attribute.

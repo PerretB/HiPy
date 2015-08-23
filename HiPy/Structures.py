@@ -984,7 +984,6 @@ class Tree(Image):
         self.addAttribute('reconstructedValue')
         HiPy.Processing.Attributes.addAttributeChildren(self)
 
-
     def getParent(self, i):
         """
         Return the parent of the node i, -1 if i is a root
@@ -1033,7 +1032,6 @@ class Tree(Image):
 
         return res
 
-
     def reconstructImage(self, attributeName="level", criterion=None):
         """
         Reconstruct an image using the value of the attribute "attributeName".
@@ -1048,7 +1046,7 @@ class Tree(Image):
         If no criterion is provided and the attribute "deleted" is not defined then every nodes
         are selected.
         """
-        if criterion == None:
+        if not criterion:
             if "deleted" in self.__dict__:
                 criterion = (lambda x: self.deleted[x])
             else:
@@ -1147,8 +1145,6 @@ class Tree(Image):
         else:
             return len(self)
 
-
-
     @staticmethod
     def _countLeaves(parent):
         """
@@ -1175,18 +1171,18 @@ class Tree(Image):
         if len(tree1) != len(tree2) or tree1.nbPixels != tree2.nbPixels:
             return False
 
-        #both tree have same size so we need to find an injection m from the nodes of t1 to
+        # both tree have same size so we need to find an injection m from the nodes of t1 to
         # the nodes of t2 such that for any node n of t1 m(parent(n))=parent(m(n))
         mapT1T2 = [-1]*len(tree1)
 
         for i in range(len(mapT1T2)-1): #root is root !
-            #pixel mapping is constant
+            # pixel mapping is constant
             if i < tree1.nbPixels:
                 mapT1T2[i] = i
             #parent(n)
             pT1 = tree1[i]
 
-            #parent(m(n))
+            # parent(m(n))
             pT2 = tree2[mapT1T2[i]]
             if mapT1T2[pT1] == -1:
                 mapT1T2[pT1] = pT2
@@ -1195,6 +1191,79 @@ class Tree(Image):
 
         return True
 
+    def simplifyTreeByCriterion(self, criterion, levelFunction) -> "Tree":
+        """
+        Creates a copy of the current Tree and deletes the nodes such that the criterion function is true.
+
+        The level of the nodes in the new tree is given by the level function.
+
+        The criterion is a function that takes two argument: a node index and its parent index and returns
+        True (this node must be deleted), or False (do not delete node i). The parent index is the updated index (after
+        node removal) and may differ from its parent index in the current tree.
+
+        The level function is function that associates a value to a node index.
+
+        :param criterion:
+        :param levelFunction:
+        :return:
+        """
+        nbLeaves = self.nbPixels
+        nbNodes = len(self)
+        children = HiPy.Processing.Attributes.addAttributeChildren(self)
+        copyParent = self.copy(True)
+
+        count = 0
+        deleted = [False] * nbNodes
+        deletedMap = [0] * nbNodes
+
+        # from root to leaves, compute the new parent relation,
+        # don't care of the holes in the parent tab
+        for i in range(nbNodes - 2, nbLeaves - 1, -1):
+            par = copyParent[i]
+            if criterion(i, par):
+                for c in children[i]:
+                    copyParent[c] = par
+                deleted[i] = True
+                count += 1
+            # inverse of what we want: number of deleted nodes after node i
+            deletedMap[i] = count
+
+        # correct the mapping
+        for i in self.iteratorFromPixelsToRoot(False):
+            deletedMap[i] = count - deletedMap[i]
+
+        # new relations with correct size
+        newParent = [-1] * (nbNodes - count)
+        newLevel = [0] * (nbNodes - count)
+
+        count = 0
+        for i in range(0, nbNodes - 1):
+            if not deleted[i]:
+                par = copyParent[i]
+                newPar = par - deletedMap[par]
+                newParent[count] = newPar
+                newLevel[count] = levelFunction(i)
+                count += 1
+        newParent[count] = -1
+        newLevel[count] = levelFunction(self.getRoot())
+
+        newTree = HiPy.Structures.Tree(self.treeType, newParent, newLevel)
+        newTree.leavesAdjacency = self.leavesAdjacency
+
+        return newTree
+
+    def simplifyTreeByAttribute(self, attributeName, levelName="level"):
+        """
+        Copy the current tree and delete the nodes n such that attribute[n]=attribute[self[n]]
+        (and update the parent relation accordingly...
+
+        The new node levels are taken from the attribute levelName
+        """
+        attribute = self.getAttribute(attributeName)
+        level = self.getAttribute(levelName)
+        criterion = lambda i, par: attribute[i] == attribute[par]
+        levelFunction = lambda i: level[i]
+        return self.simplifyTreeByCriterion(criterion, levelFunction)
 
 class TreeIterator(object):
     """
