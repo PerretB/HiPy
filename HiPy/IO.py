@@ -198,7 +198,7 @@ def saveGraph(graph, filename):
     out.close()
 
 
-def drawGraphVisualisation(name, tree, attributes=[], pixels=False):
+def drawGraphVisualisation(name, tree, attributes=None, pixels=False):
     if not pydotAvailable:
         print("Error: this function requires the library pydot (which requires the software graphviz.")
         return

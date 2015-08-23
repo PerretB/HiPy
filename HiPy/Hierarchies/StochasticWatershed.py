@@ -34,12 +34,13 @@ Created on 26 juin 2015
 @author: perretb
 '''
 
-from HiPy.Hierarchies.PartitionHierarchy import constructAltitudeBPT,\
+from HiPy.Hierarchies.PartitionHierarchy import constructAltitudeBPT, \
     reweightMSTByAttribute, transformAltitudeBPTtoWatershedHierarchy
 from HiPy.Processing.Attributes import addAttributeChildren, addAttributeArea
 
 
-def constructExactRandomSeedsWatershed(adjacency, computeAttributeFunction=addAttributeArea,seedMeasureAttribute="area", verbose=False):
+def constructExactRandomSeedsWatershed(adjacency, computeAttributeFunction=addAttributeArea,
+                                       seedMeasureAttribute="area", verbose=False):
     if verbose:
         print("Constructing Watershed hierarchy...")
     bpt = transformAltitudeBPTtoWatershedHierarchy(constructAltitudeBPT(adjacency))
@@ -48,21 +49,23 @@ def constructExactRandomSeedsWatershed(adjacency, computeAttributeFunction=addAt
     computeAttributeFunction(bpt)
     if verbose:
         print("Computing contour pdf...")
-    addAttributeRandomSeedBoundaryProbability(bpt,seedMeasureAttribute=seedMeasureAttribute, numberOfSeeds=2, attributeName="randomSeedPdf")
-    newadj=reweightMSTByAttribute(bpt, "randomSeedPdf", extinctionValue=False)
+    addAttributeRandomSeedBoundaryProbability(bpt, seedMeasureAttribute=seedMeasureAttribute, numberOfSeeds=2,
+                                              attributeName="randomSeedPdf")
+    newadj = reweightMSTByAttribute(bpt, "randomSeedPdf", extinctionValue=False)
     if verbose:
         print("Re-Constructing BPT...")
     return constructAltitudeBPT(newadj)
-    
 
-def addAttributeRandomSeedBoundaryProbability(bpt, seedMeasureAttribute="area", numberOfSeeds=2, attributeName="randomSeedPdf"):
-    attr=bpt.addAttribute(attributeName,True)
-    if attr==None:
+
+def addAttributeRandomSeedBoundaryProbability(bpt, seedMeasureAttribute="area", numberOfSeeds=2,
+                                              attributeName="randomSeedPdf"):
+    attr = bpt.addAttribute(attributeName, True)
+    if attr is None:
         return
     addAttributeChildren(bpt)
-    children=bpt.children
-    measure=bpt.getAttribute(seedMeasureAttribute)
+    children = bpt.children
+    measure = bpt.getAttribute(seedMeasureAttribute)
     measure0 = measure[-1]
     for i in bpt.iteratorFromLeavesToRoot(includeLeaves=False):
-        attr[i]=1 - (1-measure[children[i][0]]/measure0)**numberOfSeeds - (1-measure[children[i][1]]/measure0)**numberOfSeeds + (1-measure[i]/measure0)**numberOfSeeds
-    
+        attr[i] = 1 - (1 - measure[children[i][0]] / measure0) ** numberOfSeeds - (1 - measure[
+            children[i][1]] / measure0) ** numberOfSeeds + (1 - measure[i] / measure0) ** numberOfSeeds

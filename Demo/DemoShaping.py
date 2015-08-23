@@ -58,7 +58,7 @@ def dummyDemoShaping():
     addAttributeChildren(tree)
 
     print("Building tree of tree on area")
-    area = prepareForShapping(tree, tree.area)
+    area = prepareForShaping(tree, tree.area)
     tree2 = constructComponentTree(area)
 
     print("Filtering tree of tree on area based on level")
@@ -92,7 +92,7 @@ def demoNonIncreasingFilter():
     updateAttributeAfterFiltering(tree, "compactness")
 
     print("Building tree of tree on Compactness...")
-    compactness = prepareForShapping(tree, tree.compactness)
+    compactness = prepareForShaping(tree, tree.compactness)
     tree2 = constructComponentTree(compactness)
     addAttributeExtrema(tree2)
 

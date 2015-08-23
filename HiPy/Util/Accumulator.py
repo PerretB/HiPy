@@ -30,77 +30,84 @@
 # The fact that you are presently reading this means that you have had
 # knowledge of the CeCILL license and that you accept its terms.
 
-'''
+"""
 Created on 6 juil. 2015
 
 @author: perretb
-'''
+"""
 
 import copy
+
 from HiPy.Util.VMath import medianV
+
 
 class AbstractAccumulator(object):
     def reset(self):
-        raise Exception("Unsuported method" + " reset")
-    
+        raise NotImplementedError("Unsupported method" + " reset")
+
     def accumulate(self, *args):
-        raise Exception("Unsuported method" + " accumulate")
-    
+        raise NotImplementedError("Unsupported method" + " accumulate")
+
     def result(self):
-        raise Exception("Unsuported method" + " result")
-    
+        raise NotImplementedError("Unsupported method" + " result")
+
+
 class BasicAccumulator(AbstractAccumulator):
-    
     def __init__(self, accumulateFunction, resultFunction, resetValues):
-        self.resetValues=resetValues
-        self.accumulateFunction=accumulateFunction
-        self.resultFunction=resultFunction
-        self.values=None
-    
+        self.resetValues = resetValues
+        self.accumulateFunction = accumulateFunction
+        self.resultFunction = resultFunction
+        self.values = None
+
     def reset(self):
-        self.values=copy.copy(self.resetValues)
-        
+        self.values = copy.copy(self.resetValues)
+
     def accumulate(self, *args):
         self.accumulateFunction(self.values, *args)
-        
+
     def result(self):
         return self.resultFunction(self.values)
-    
+
     @staticmethod
-    def getSumAccumulator():   
+    def getSumAccumulator():
         def accFun(values, newValue, *_):
-            values[0]=values[0]+newValue
-        return BasicAccumulator(accFun, lambda values:values[0], [0])
-    
+            values[0] = values[0] + newValue
+
+        return BasicAccumulator(accFun, lambda values: values[0], [0])
+
     @staticmethod
-    def getMinAccumulator(initValue=99999999):   
+    def getMinAccumulator(initValue=99999999):
         def accFun(values, newValue, *_):
-            values[0]=min(values[0],newValue)
-        return BasicAccumulator(accFun, lambda values:values[0], [initValue])
-    
+            values[0] = min(values[0], newValue)
+
+        return BasicAccumulator(accFun, lambda values: values[0], [initValue])
+
     @staticmethod
-    def getMaxAccumulator(initValue=-99999999):   
+    def getMaxAccumulator(initValue=-99999999):
         def accFun(values, newValue, *_):
-            values[0]=max(values[0],newValue)
-        return BasicAccumulator(accFun, lambda values:values[0], [initValue])
-    
+            values[0] = max(values[0], newValue)
+
+        return BasicAccumulator(accFun, lambda values: values[0], [initValue])
+
     @staticmethod
-    def getMeanAccumulator():   
+    def getMeanAccumulator():
         def accFun(values, newValue, *_):
-            values[0]+=newValue
-            values[1]+=1
-        return BasicAccumulator(accFun, lambda values:values[0]/values[1], [0,0])
-    
+            values[0] += newValue
+            values[1] += 1
+
+        return BasicAccumulator(accFun, lambda values: values[0] / values[1], [0, 0])
+
     @staticmethod
     def getMedianAccumulator():
         def accFun(values, newValue, *_):
             values.append(newValue)
-        return BasicAccumulator(accFun, lambda values:medianV(values), [])
-    
+
+        return BasicAccumulator(accFun, lambda values: medianV(values), [])
+
     @staticmethod
-    def getWeightedMeanAccumulator(normalize=False):   
+    def getWeightedMeanAccumulator(normalize=False):
         def accFun(values, newValue, weight, *_):
-            values[0]+=newValue*weight
-            values[1]+=weight
-        return BasicAccumulator(accFun, lambda values:values[0]/values[1] if normalize else values[0], [0,0])
-    
+            values[0] += newValue * weight
+            values[1] += weight
+
+        return BasicAccumulator(accFun, lambda values: values[0] / values[1] if normalize else values[0], [0, 0])

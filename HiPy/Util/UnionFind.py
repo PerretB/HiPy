@@ -29,13 +29,14 @@
 # knowledge of the CeCILL license and that you accept its terms.
 
 
-'''
+"""
 Created on 3 juin 2015
 
 @author: perretb
-'''
+"""
 
-# Union find 
+
+# Union find
 ############################################################################## 
 # find canonical node of elem with path compression
 def findTarjan(elem, Par):
@@ -48,13 +49,13 @@ def findTarjan(elem, Par):
         Par[temp] = i
     return i
 
+
 # union of nodes i and j with ranking, the chosen canonical node is returned
 # and the successors of the other nodes are transfered to the canonical one
 def unionTarjan(i, j, Par, Rank):
     if Rank[i] > Rank[j]:
         i, j = j, i
     elif Rank[i] == Rank[j]:
-        Rank[j] = Rank[j] + 1
+        Rank[j] += 1
     Par[i] = j
-    return j,i
-
+    return j, i

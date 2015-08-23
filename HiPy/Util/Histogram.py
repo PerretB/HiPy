@@ -41,16 +41,19 @@ Created on 9 juin 2015
 def imageMap(image: "Image", function, marginal=False, bandNumber=None, inPlace=False):
     """
     Apply a pointwise  function to an image.
-    This method assumes that the content of the image is homogeneous (either scalars or lists but not a mix of the twos).
+    This method assumes that the content of the image is homogeneous (either scalars or lists but not a mix
+    of the twos).
     
-    If the image elements are not list or marginal==False then the function is simply applied to each pixel of the image:
+    If the image elements are not list or marginal==False then the function is simply applied to each pixel
+    of the image:
         For all pixels i,  result[i]=function(image[i]) 
     If the image elements are lists and marginal = True the function is applied to each band independently, 
         For all pixels i, for all bands b, result[i][b]=function(image[i][b])
     Moreover if a bandNumber is specified it will only be a applied to the specified band:
         For all pixels i, for all bands b, result[i][b]= function(image[i][b]) if b==bandNumber else image[i][b]
         
-    If inPlace==False the result is put in a newly allocated image, in the other case the result is put in the input image.
+    If inPlace==False the result is put in a newly allocated image, in the other case the result is put in
+    the input image.
     """
     if inPlace:
         imDest = image
@@ -63,7 +66,7 @@ def imageMap(image: "Image", function, marginal=False, bandNumber=None, inPlace=
             imDest[i] = function(image[i])
     else:
         bands = len(image[0])
-        if bandNumber != None:
+        if bandNumber is not None:
             for i in range(len(image)):
                 imDest[i] = [function(image[i][band]) if band == bandNumber else image[i][band] for band in
                              range(bands)]
@@ -117,7 +120,7 @@ def getMinMax(image: "Image", band=None):
     '''
     vec = isinstance(image[0], list)
     if vec:
-        if band == None:
+        if band is None:
             vmin = image[0][0]
             vmax = image[0][0]
             for i in range(len(image)):

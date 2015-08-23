@@ -685,7 +685,7 @@ def buildFinalDCCTree(nbPoints, parent, completeGraphEdges, Lvls, image, nbOut=N
     tree.addAttribute("sucs", [])
     tree.addAttribute("preds", [])
     tree.addAttribute("nbOut", -1)
-    if nbOut != None:
+    if nbOut is not None:
         tree.nbOut = Image(len(nbOut))
         tree.nbOut.setAll(nbOut)
 
@@ -781,7 +781,7 @@ def addAttributeMarkerDirectedComponent(dccTree, attributeName):
 
     def propagateSemiPred(i):
         for p in predecessors[i]:
-            if attrDirected[p] == False:
+            if not attrDirected[p]:
                 attrDirected[p] = True
                 propagateSemiPred(p)
 

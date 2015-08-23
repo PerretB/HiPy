@@ -106,11 +106,11 @@ def demoNoiseWS(iteration=11):
         saveImage(normalizeToByte(imageMap(rescaleGray(drawSaliencyMap(image.embedding.size,meanSal),0,1), lambda x:x**0.33333)) , "Results/Random noise gradient "+ str(i) +".png")
         if sal0==None:
             sal0=meanSal
-            for i in range(len(sal0)):
-                sal0[i]=[sal0[i]]
+            for j in range(len(sal0)):
+                sal0[j]=[sal0[j]]
         else:
-            for i in range(len(sal0)):
-                sal0[i].append(meanSal[i])
+            for j in range(len(sal0)):
+                sal0[j].append(meanSal[j])
     print("Merging results...")
 
     

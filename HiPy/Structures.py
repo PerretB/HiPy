@@ -396,7 +396,7 @@ class AdjacencyNdRegular(AbstractAdjacency):
         self.embedding = embedding
         self.neighbourList = neighbourList
         self.nbNeighbours = len(neighbourList)
-        self.weights = weights if weights != None else [1]*self.nbNeighbours
+        self.weights = weights if weights is not None else [1]*self.nbNeighbours
 
     def countEdges(self, includeExternal=False):
         count = 0
@@ -474,7 +474,7 @@ class AdjacencyNdRegular(AbstractAdjacency):
         :param size: (width, height) of the underlying 2d grid
         :returns AdjacencyNdRegular representing 4 adjacency
         """
-        return AdjacencyNdRegular(Embedding2dGrid(size[0], size[1]), \
+        return AdjacencyNdRegular(Embedding2dGrid(size[0], size[1]),
         [(0, -1), (-1, 0), (1, 0), (0, 1)])
 
     @staticmethod
@@ -484,7 +484,7 @@ class AdjacencyNdRegular(AbstractAdjacency):
         :param size: (width, height) of the underlying 2d grid
         :returns AdjacencyNdRegular representing 8 adjacency
         """
-        return AdjacencyNdRegular(Embedding2dGrid(size[0], size[1]), \
+        return AdjacencyNdRegular(Embedding2dGrid(size[0], size[1]),
         [(-1, -1), (0, -1), (1, -1), (-1, 0), (1, 0), (-1, 1), (0, 1), (1, 1)])
 
 
@@ -697,7 +697,7 @@ class WeightedAdjacency(AbstractWeightedAdjacency):
             heap = []
             heappush(heap, (0, i))
             flags[i] = i
-            while heap != []:
+            while heap:
                 (k, n) = heappop(heap)
                 if n > i:
                     newAdj.createEdge(i, n, weightingFunction(i, n, k))
@@ -976,9 +976,9 @@ class Tree(Image):
         self.treeType = treeType
         self.adjacency = AdjacencyTree(self)
         self.setAll(parent)
-        self.leavesAdjacency = image.adjacency if image != None else None
-        self.leavesEmbedding = image.embedding if image != None else None
-        self.nbPixels = len(image) if image != None else Tree._countLeaves(parent)
+        self.leavesAdjacency = image.adjacency if image is not None else None
+        self.leavesEmbedding = image.embedding if image is not None else None
+        self.nbPixels = len(image) if image is not None else Tree._countLeaves(parent)
         self.addAttribute("level")
         self.level.setAll(levels)
         self.addAttribute('reconstructedValue')
@@ -1276,7 +1276,7 @@ class TreeIterator(object):
     and partition hierarchies (where leaves are at the same time pixels of the original image
     and nodes of the logical tree).
     """
-    def __init__(self, tree, logical=True, reverseOrder=False, includeLeaves=True, \
+    def __init__(self, tree, logical=True, reverseOrder=False, includeLeaves=True,
     includeRoot=True):
         self.tree = tree
 

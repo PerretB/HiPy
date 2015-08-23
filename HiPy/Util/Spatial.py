@@ -43,43 +43,50 @@ Created on 6 juil. 2015
 from HiPy.Structures import AdjacencyNdRegular, WeightedAdjacency
 from HiPy.Util.Accumulator import BasicAccumulator
 
+
 def spatialFilter(image, adjacency, accumulator):
     res = image.copy(False)
     for i in image.iterateOnPixels():
         accumulator.reset()
         for e in adjacency.getOutEdges(i):
-            accumulator.accumulate(image[e[1]],e[2])
-        res[i]=accumulator.result()
+            accumulator.accumulate(image[e[1]], e[2])
+        res[i] = accumulator.result()
     return res
 
-def dilationGray(image,structuringElement):
-    adj = constructAdjacencyFromStructuringElement(image,structuringElement)
-    return spatialFilter(image,adj,BasicAccumulator.getMaxAccumulator())
 
-def erosionGray(image,structuringElement):
-    adj = constructAdjacencyFromStructuringElement(image,structuringElement)
-    return spatialFilter(image,adj,BasicAccumulator.getMinAccumulator())
+def dilationGray(image, structuringElement):
+    adj = constructAdjacencyFromStructuringElement(image, structuringElement)
+    return spatialFilter(image, adj, BasicAccumulator.getMaxAccumulator())
 
-def medianGray(image,structuringElement):
-    adj = constructAdjacencyFromStructuringElement(image,structuringElement)
-    return spatialFilter(image,adj,BasicAccumulator.getMedianAccumulator())
 
-def meanGray(image,structuringElement):
-    adj = constructAdjacencyFromStructuringElement(image,structuringElement)
-    return spatialFilter(image,adj,BasicAccumulator.getMeanAccumulator())
+def erosionGray(image, structuringElement):
+    adj = constructAdjacencyFromStructuringElement(image, structuringElement)
+    return spatialFilter(image, adj, BasicAccumulator.getMinAccumulator())
 
-def constructAdjacencyFromStructuringElement(image,structuringElement):
-    return AdjacencyNdRegular(image.embedding,structuringElement)
+
+def medianGray(image, structuringElement):
+    adj = constructAdjacencyFromStructuringElement(image, structuringElement)
+    return spatialFilter(image, adj, BasicAccumulator.getMedianAccumulator())
+
+
+def meanGray(image, structuringElement):
+    adj = constructAdjacencyFromStructuringElement(image, structuringElement)
+    return spatialFilter(image, adj, BasicAccumulator.getMeanAccumulator())
+
+
+def constructAdjacencyFromStructuringElement(image, structuringElement):
+    return AdjacencyNdRegular(image.embedding, structuringElement)
 
 
 def getCrossStructuringElement():
-    return [ (0,-1), (-1,0), (0,0), (1,0), (0,1)]
+    return [(0, -1), (-1, 0), (0, 0), (1, 0), (0, 1)]
+
 
 def getSquareStructuringElement():
-    return [ (-1,-1), (0,-1), (1,-1), (-1,0), (0,0), (1,0), (-1,1), (0,1), (1,1)]
+    return [(-1, -1), (0, -1), (1, -1), (-1, 0), (0, 0), (1, 0), (-1, 1), (0, 1), (1, 1)]
 
-# image = readImage("../../samples/lennaGray256.png")
-# image.adjacency = AdjacencyNdRegular.getAdjacency2d4(image.embedding.size)
-# bigSquareAdj = WeightedAdjacency.createKHopAjacency(image.adjacency, 6, lambda *_:1)
-# res = spatialFilter(image,bigSquareAdj,BasicAccumulator.getMaxAccumulator())
-# saveImage(res,"bigdil.png")
+    # image = readImage("../../samples/lennaGray256.png")
+    # image.adjacency = AdjacencyNdRegular.getAdjacency2d4(image.embedding.size)
+    # bigSquareAdj = WeightedAdjacency.createKHopAjacency(image.adjacency, 6, lambda *_:1)
+    # res = spatialFilter(image,bigSquareAdj,BasicAccumulator.getMaxAccumulator())
+    # saveImage(res,"bigdil.png")

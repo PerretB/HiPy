@@ -39,79 +39,84 @@ Created on 17 juin 2015
 import sys
 import random
 import copy
-import time 
+import time
 from HiPy.Processing.Attributes import addAttributeChildrenLogical
-from math import * #@UnusedWildImport
+from math import *  # @UnusedWildImport
 
 
 def timeMili():
-    return time.time()*1000.0
-    
+    return time.time() * 1000.0
+
+
 from sklearn import mixture
 
 from scipy.stats import multivariate_normal
 # system dependant epsilon: why not !
-epsilon = sys.float_info.epsilon*10.0
+epsilon = sys.float_info.epsilon * 10.0
 
 # determinist random generator
-rnd = random.Random() 
+rnd = random.Random()
 rnd.seed(1)
+
 
 class MultivariateGaussian(object):
     def __init__(self, mean, varCovarMatrix):
-        self.sciPyPDF= multivariate_normal(mean, varCovarMatrix)
-        self.mean=mean
-        self.varCovarMatrix=varCovarMatrix
-        
+        self.sciPyPDF = multivariate_normal(mean, varCovarMatrix)
+        self.mean = mean
+        self.varCovarMatrix = varCovarMatrix
+
     def rand(self):
         # it's always a pleasure to interract with numpy from pop
-        #return np.random.multivariate_normal(self.mean,self.varCovarMatrix,1)[0].tolist()
+        # return np.random.multivariate_normal(self.mean,self.varCovarMatrix,1)[0].tolist()
         return self.sciPyPDF.rvs().tolist()
-    
-    def density(self,value):
+
+    def density(self, value):
         return self.sciPyPDF.pdf(value)
-    
+
     def __str__(self):
-        stri ="Mean:\t\t" + str(self.mean) + "\n"
-        stri+="Covar:"
+        stri = "Mean:\t\t" + str(self.mean) + "\n"
+        stri += "Covar:"
         for i in self.varCovarMatrix:
-            stri+= "\t\t"+ str(i) + "\n"
+            stri += "\t\t" + str(i) + "\n"
         return stri
 
+
 class MarkovModel(object):
-    def __init__(self,initialProb, transitionProb, classes):
+    def __init__(self, initialProb, transitionProb, classes):
         self.initialProb = initialProb
         self.transitionProb = transitionProb
         self.classes = classes
-        self.numLabels=len(initialProb)
-    
+        self.numLabels = len(initialProb)
+
     def __str__(self):
-        stri=[]
+        stri = []
         stri.append("Initial Probability:\n\t\t" + str(self.initialProb) + "\n")
         stri.append("Transition Probability:\n")
         for i in self.transitionProb:
-            stri+= "\t\t"+ str(i) + "\n"
+            stri += "\t\t" + str(i) + "\n"
         for i in range(self.numLabels):
-            stri.append("Classe " +str(i) +":\n")
+            stri.append("Classe " + str(i) + ":\n")
             stri.append(str(self.classes[i]))
         return "".join(stri)
-    
+
 
 def getRandomValue(discretePDF):
     '''
     Get a random value from a discrete pdf stored in an array
     '''
-    s=discretePDF[0]
-    v=rnd.random()
-    i=0
-    while v>s:
-        i = i+1
-        if i>=len(discretePDF):
-            return i-1
-        s = s+discretePDF[i]
+    s = discretePDF[0]
+    v = rnd.random()
+    i = 0
+    while v > s:
+        i = i + 1
+        if i >= len(discretePDF):
+            return i - 1
+        s = s + discretePDF[i]
     return i
 
-def MPMSegmentTree(markovModel, tree, convergenceRatio=0.01, maxIteration=10, cleanTemporaryAttributes=True, verbose=False):
+
+def MPMSegmentTree(markovModel, tree, convergenceRatio=0.01, maxIteration=10, cleanTemporaryAttributes=True,
+                   verbose=False):
     '''
     Performs an unsupervised iterative MPM segmentation of the tree
     The initial model parameters
@@ -120,33 +125,33 @@ def MPMSegmentTree(markovModel, tree, convergenceRatio=0.01, maxIteration=10, cl
     nbClasses = markovModel.numLabels
     if verbose:
         print("Number of sites (nodes) :" + str(nbSites))
-    changeRate=1.0
-    count=1
+    changeRate = 1.0
+    count = 1
     prepareTreeForMPMSegment(tree, nbClasses)
     if verbose:
         print("Initial Markov model:")
         print(markovModel)
-    
-    while changeRate>convergenceRatio and count<=maxIteration:
+
+    while changeRate > convergenceRatio and count <= maxIteration:
         if verbose:
-            print("Iteration: " +str(count))
-            t1=timeMili()
-            
-        if count>1:
-            markovModel=updateModel(markovModel, tree)
+            print("Iteration: " + str(count))
+            t1 = timeMili()
+
+        if count > 1:
+            markovModel = updateModel(markovModel, tree)
             if verbose:
                 print("New Markov model:")
                 print(markovModel)
-        
+
         browseTree(markovModel, tree)
-        changeRate = finalMPMSegment(tree)/nbSites
+        changeRate = finalMPMSegment(tree) / nbSites
 
         if verbose:
-            t2=timeMili()
-            print("End of iteration: " +str(count) + " time: " + str(t2-t1) +" ms")
-            print("Modification rate: " + str(changeRate*100) +"%")
-            
-        count+=1
+            t2 = timeMili()
+            print("End of iteration: " + str(count) + " time: " + str(t2 - t1) + " ms")
+            print("Modification rate: " + str(changeRate * 100) + "%")
+
+        count += 1
     if verbose:
         print("Final Markov model:")
         print(markovModel)
@@ -155,13 +160,13 @@ def MPMSegmentTree(markovModel, tree, convergenceRatio=0.01, maxIteration=10, cl
     return markovModel
 
 
-
 def prepareTreeForMPMSegment(tree, nbClasses):
     addAttributeChildrenLogical(tree)
-    tree.addAttribute("pForward",[0]*nbClasses)
-    tree.addAttribute("pBackward",[0]*nbClasses)
-    tree.addAttribute("prior",[0]*nbClasses)
-    tree.addAttribute("estimLabel",-1)
+    tree.addAttribute("pForward", [0] * nbClasses)
+    tree.addAttribute("pBackward", [0] * nbClasses)
+    tree.addAttribute("prior", [0] * nbClasses)
+    tree.addAttribute("estimLabel", -1)
+
 
 def cleanTreeAfterMPMSegment(tree):
     tree.deleteAttribute("pForward")
@@ -170,66 +175,68 @@ def cleanTreeAfterMPMSegment(tree):
     tree.deleteAttribute("childrenLogical")
 
 
-def simulateDirectModel(model, tree, attributeLabelName="label",attributeObservationName="observation"):
+def simulateDirectModel(model, tree, attributeLabelName="label", attributeObservationName="observation"):
     '''
     Simulate the given model on the given tree, add two attributes to the tree:
     - simulated labels in the attribute "attributeLabelName" 
     - simulated observations in the attribute "attributeObservationName" 
     '''
-    transitionProb=model.transitionProb;
-    classes=model.classes;
-    label, _=tree.addAttribute(attributeLabelName,0,True)
-    observation, _=tree.addAttribute(attributeObservationName,0,True)
-    
-    root=len(tree)-1
-    lbl=getRandomValue(model.initialProb)
-    label[root]=lbl
-    observation[root]=classes[lbl].rand()
-    
-    for i in tree.iteratorFromRootToLeaves(True,False): #range(root-1,tree.nbPixels-1,-1):
+    transitionProb = model.transitionProb;
+    classes = model.classes;
+    label, _ = tree.addAttribute(attributeLabelName, 0, True)
+    observation, _ = tree.addAttribute(attributeObservationName, 0, True)
+
+    root = len(tree) - 1
+    lbl = getRandomValue(model.initialProb)
+    label[root] = lbl
+    observation[root] = classes[lbl].rand()
+
+    for i in tree.iteratorFromRootToLeaves(True, False):  # range(root-1,tree.nbPixels-1,-1):
         pLbl = label[tree[i]]
-        lbl=getRandomValue(transitionProb[pLbl])
-        label[i]=lbl
-        observation[i]=classes[lbl].rand()
-        
-def gmmEstimate(data, nbClasses, estimator= mixture.GMM):
+        lbl = getRandomValue(transitionProb[pLbl])
+        label[i] = lbl
+        observation[i] = classes[lbl].rand()
+
+
+def gmmEstimate(data, nbClasses, estimator=mixture.GMM):
     '''
     Performs an GMM estimation on the data with nbClasses components.
        
     Raises an exception if the algorithm fails to converge
     '''
-  
+
     clf = estimator(n_components=nbClasses, covariance_type='full')
     clf.fit(data)
-    
+
     if not clf.converged_:
         raise Exception("GMM estimation failed, check your data and number of components!")
 
-    classes=[]
+    classes = []
     for i in range(nbClasses):
         classes.append(MultivariateGaussian(clf.means_[i], clf.covars_[i]))
 
     return classes
 
 
-def computeLabelsPrior(markovModel ,tree):
+def computeLabelsPrior(markovModel, tree):
     '''
     Compute p(x_s = w) the apriori probability that label x of site s equals w
     '''
-    initialProb =markovModel.initialProb
-    transitionProb=markovModel.transitionProb
-    nbClasses=markovModel.numLabels
+    initialProb = markovModel.initialProb
+    transitionProb = markovModel.transitionProb
+    nbClasses = markovModel.numLabels
     prior = tree.prior
-    
-    prior[-1]=copy.copy(initialProb)
+
+    prior[-1] = copy.copy(initialProb)
     for n in tree.iteratorFromRootToLeaves(includeRoot=False):
         par = tree[n]
         for i in range(nbClasses):
             p = 0
             for j in range(nbClasses):
-                p += prior[par][j]*transitionProb[j][i]
-            prior[n][i]=p
-    
+                p += prior[par][j] * transitionProb[j][i]
+            prior[n][i] = p
+
+
 def getInverseTransitionProb(markovModel, priorParent, i, priorChild, j):
     '''
     Compute the inverse transition probability p(x_s- = i | x_s = j) = p(x_s = j | x_s- = i)*p(x_s- = i)/p(x_s = j)
@@ -240,10 +247,10 @@ def getInverseTransitionProb(markovModel, priorParent, i, priorChild, j):
      priorChild : apriori probability for the child x_s
      j label of the child
     '''
-    if priorChild[j]>epsilon:
-        return markovModel.transitionProb[i][j]*priorParent[i]/priorChild[j]
+    if priorChild[j] > epsilon:
+        return markovModel.transitionProb[i][j] * priorParent[i] / priorChild[j]
     else:
-        return 1.0/markovModel.numLabels
+        return 1.0 / markovModel.numLabels
 
 
 def computeNonNormalizedForwardProbability(markovModel, tree, node, masked):
@@ -256,29 +263,30 @@ def computeNonNormalizedForwardProbability(markovModel, tree, node, masked):
     masked: masked is false then the likelyhood given by the model is used otherwise we assume a 
             non informative likelyhood (uniform law on R^d) and thus p(y | x_n=i) = 1 for all y and all i
     '''
-    norm=0
+    norm = 0
     observationAtNode = tree.observation[node]
     nbClasses = markovModel.numLabels
     prior = tree.prior
     pForward = tree.pForward
     children = tree.childrenLogical
-    
+
     # consistancy and infinity check!
-    numericExceptions=[]
-    
+    numericExceptions = []
+
     for i in range(nbClasses):
         try:
-            if prior[node][i]<epsilon:
-                pForward[node][i]=0
+            if prior[node][i] < epsilon:
+                pForward[node][i] = 0
             else:
-                p=1.0
+                p = 1.0
                 for c in children[node]:
-                    s=0.0
-                    pForwardC=pForward[c]
+                    s = 0.0
+                    pForwardC = pForward[c]
                     for j in range(nbClasses):
-                        pTransitionInverse=getInverseTransitionProb(markovModel,prior[node],i,prior[c],j)
-                        s = s + pTransitionInverse*pForwardC[j]
-                    p = p * s / prior[node][i] #we do not factorize /mh.prior[i] in /mh.prior[i]^(nChildren-1) to avoid numerical issues when nChildren is large
+                        pTransitionInverse = getInverseTransitionProb(markovModel, prior[node], i, prior[c], j)
+                        s = s + pTransitionInverse * pForwardC[j]
+                    p = p * s / prior[node][
+                        i]  # we do not factorize /mh.prior[i] in /mh.prior[i]^(nChildren-1) to avoid numerical issues when nChildren is large
                 if not masked:
                     p = p * markovModel.classes[i].density(observationAtNode)
                 p = p * prior[node][i]
@@ -286,20 +294,21 @@ def computeNonNormalizedForwardProbability(markovModel, tree, node, masked):
                 norm = norm + p
         except ZeroDivisionError:
             numericExceptions.append(i)
-    
-    if len(numericExceptions)>0:
+
+    if len(numericExceptions) > 0:
         # we will distribute evenly the probabilities on the numeric exceptions
         print("Warning infinite value detected... trying to clean the mess.")
-        nv = 1.0/nbClasses;
+        nv = 1.0 / nbClasses;
         for i in range(nbClasses):
             if i in numericExceptions:
                 pForward[node][i] = 0
             else:
                 pForward[node][i] = nv
-        norm=1.0 # yahou at least we have a nice norm !
-    
-    return norm            
- 
+        norm = 1.0  # yahou at least we have a nice norm !
+
+    return norm
+
+
 def forwardPass(markovModel, tree):
     '''
     Computes P(x_s | y_s> )
@@ -307,46 +316,46 @@ def forwardPass(markovModel, tree):
     '''
     classes = markovModel.classes
     nbClasses = markovModel.numLabels
-    
-    computeLabelsPrior(markovModel , tree)
+
+    computeLabelsPrior(markovModel, tree)
     prior = tree.prior
     observation = tree.observation
     pForward = tree.pForward
-    
+
     for n in tree.iteratorOnLeaves():
-        norm=0
-        
+        norm = 0
+
         y = observation[n]
         for i in range(nbClasses):
-            v = prior[n][i]*classes[i].density(y)
+            v = prior[n][i] * classes[i].density(y)
             pForward[n][i] = v
-            norm +=  v
-        #normalization
-        if(norm<epsilon):
+            norm += v
+        # normalization
+        if (norm < epsilon):
             print("Warning very low norm detected on a leave... maybe an outlier ?")
-            #forget about likelyhood... @FIXME is this really what should be done ?
+            # forget about likelyhood... @FIXME is this really what should be done ?
             for i in range(nbClasses):
-                pForward[n][i]=prior[n][i]
+                pForward[n][i] = prior[n][i]
         else:
             for i in range(nbClasses):
-                pForward[n][i]=pForward[n][i]/norm
-       
+                pForward[n][i] = pForward[n][i] / norm
+
     for n in tree.iteratorFromLeavesToRoot(False):
-        norm=computeNonNormalizedForwardProbability(markovModel,tree, n, False);
-        if norm > epsilon: #fine
+        norm = computeNonNormalizedForwardProbability(markovModel, tree, n, False);
+        if norm > epsilon:  # fine
             for i in range(nbClasses):
-                pForward[n][i]=pForward[n][i]/norm
+                pForward[n][i] = pForward[n][i] / norm
         else:
-            print("Warning very low norm detected on node " +str(n) + "... maybe an outlier ?")
-            norm=computeNonNormalizedForwardProbability(markovModel,tree, n, True);
-            if norm > epsilon: #fine
+            print("Warning very low norm detected on node " + str(n) + "... maybe an outlier ?")
+            norm = computeNonNormalizedForwardProbability(markovModel, tree, n, True);
+            if norm > epsilon:  # fine
                 for i in range(nbClasses):
-                    pForward[n][i]=pForward[n][i]/norm
+                    pForward[n][i] = pForward[n][i] / norm
             else:
                 raise Exception("Numerical problem during forward pass, check your data and number of classes")
 
 
-def getJointPost(markovModel,tree,n,p,i,j):
+def getJointPost(markovModel, tree, n, p, i, j):
     '''
     P(x_s,x_s- |y)
     the joint posterior distribution of the label of s and its parent s- knowing all the observation y
@@ -358,30 +367,28 @@ def getJointPost(markovModel,tree,n,p,i,j):
     @param j class of xs-
     @return
     '''
-    s=0
+    s = 0
     transitionProb = markovModel.transitionProb
     nbClasses = markovModel.numLabels
-    
-    prior=tree.prior
+
+    prior = tree.prior
     pForward = tree.pForward
     pBackward = tree.pBackward
-    
-    if prior[n][i]<epsilon: #@FIXME is this really what should be done !
+
+    if prior[n][i] < epsilon:  # @FIXME is this really what should be done !
         return 0.0
-    
+
     for k in range(nbClasses):
-        if prior[n][k]>epsilon:
-            pTransitionInverse=getInverseTransitionProb(markovModel, prior[p],j, prior[n],k)
-            s+=pTransitionInverse*pForward[n][k]
-    
-    if s<epsilon: #@FIXME is this really what should be done !
+        if prior[n][k] > epsilon:
+            pTransitionInverse = getInverseTransitionProb(markovModel, prior[p], j, prior[n], k)
+            s += pTransitionInverse * pForward[n][k]
+
+    if s < epsilon:  # @FIXME is this really what should be done !
         return 0.0
-    
-    pj = transitionProb[j][i]*prior[p][j]*pForward[n][i]*pBackward[p][j]/prior[n][i]
-    return pj/s
-    
-  
-   
+
+    pj = transitionProb[j][i] * prior[p][j] * pForward[n][i] * pBackward[p][j] / prior[n][i]
+    return pj / s
+
 
 def backwardPass(markovModel, tree):
     '''
@@ -391,20 +398,20 @@ def backwardPass(markovModel, tree):
     nbClasses = markovModel.numLabels
     pBackward = tree.pBackward
     pForward = tree.pForward
-    
-    pBackward[-1]=copy.copy(pForward[-1])
 
-    for n in tree.iteratorFromRootToLeaves(True,False):
-        par=tree[n]
+    pBackward[-1] = copy.copy(pForward[-1])
+
+    for n in tree.iteratorFromRootToLeaves(True, False):
+        par = tree[n]
         for i in range(nbClasses):
-            p=0.0
+            p = 0.0
             for j in range(nbClasses):
-                p+=getJointPost(markovModel,tree,n,par,i,j)
+                p += getJointPost(markovModel, tree, n, par, i, j)
 
-            pBackward[n][i]=p
+            pBackward[n][i] = p
 
 
-def browseTree(markovModel,tree):
+def browseTree(markovModel, tree):
     '''
     browse forward and then backward
     '''
@@ -417,7 +424,7 @@ def finalMPMSegment(tree):
     Gives the label of max marginal posterior prob at each node : arg (w) max p(x_s=w|y)
     Return the number of node whose labels have changed
     '''
-    diff=0
+    diff = 0
     pBackward = tree.pBackward
     estimLabel = tree.estimLabel
     for n in tree.iteratorFromLeavesToRoot():
@@ -427,21 +434,22 @@ def finalMPMSegment(tree):
         estimLabel[n] = lbl
     return diff
 
+
 def updateInitialProb(markovModel, newMarkovModel, tree):
     '''
     Update initial probabilities  pi_w = p(xr=w)
     '''
-    s=0
+    s = 0
     pBackwardRoot = tree.pBackward[-1]
     for i in range(markovModel.numLabels):
         v = pBackwardRoot[i]
-        if s+v > 1.0:
-            v = max(1.0-s,0)
+        if s + v > 1.0:
+            v = max(1.0 - s, 0)
         s += v
-        newMarkovModel.initialProb[i]=v
-    
-    if abs(s-1)>0.001:
-            raise Exception("Update initial probability failed: integral different of 1 ! " + str(s));
+        newMarkovModel.initialProb[i] = v
+
+    if abs(s - 1) > 0.001:
+        raise Exception("Update initial probability failed: integral different of 1 ! " + str(s));
 
 
 def updateTransitionProb(markovModel, newMarkovModel, tree):
@@ -452,26 +460,27 @@ def updateTransitionProb(markovModel, newMarkovModel, tree):
     pBackward = tree.pBackward
     tmp = [0] * nbClasses
     transitionProb = newMarkovModel.transitionProb
-    
+
     for n in tree.iteratorFromRootToLeaves(includeRoot=False):
         par = tree[n]
         for i in range(nbClasses):
-            tmp[i]+=pBackward[par][i]
+            tmp[i] += pBackward[par][i]
             for j in range(nbClasses):
-                transitionProb[i][j]+=getJointPost(markovModel, tree, n, par, j, i)
-                
+                transitionProb[i][j] += getJointPost(markovModel, tree, n, par, j, i)
+
     for i in range(nbClasses):
-        if tmp[i]<epsilon:
-            raise Exception("Update transition probability failed: sum to low for class "+ str(i))
-        s=0
+        if tmp[i] < epsilon:
+            raise Exception("Update transition probability failed: sum to low for class " + str(i))
+        s = 0
         for j in range(nbClasses):
-            v = transitionProb[i][j]/tmp[i]
-            if s+v>1.0:
-                v=max(1.0-s,0)
-            s+=v
-            transitionProb[i][j]=v
-        if abs(s-1.0)>0.001:
+            v = transitionProb[i][j] / tmp[i]
+            if s + v > 1.0:
+                v = max(1.0 - s, 0)
+            s += v
+            transitionProb[i][j] = v
+        if abs(s - 1.0) > 0.001:
             raise Exception("Update transition probability failed: integral different of 1 ! " + str(s));
+
 
 def updateClassGaussian(markovModel, newMarkovModel, tree, classe):
     '''
@@ -480,47 +489,49 @@ def updateClassGaussian(markovModel, newMarkovModel, tree, classe):
     dim = len(markovModel.classes[0].mean)
     observation = tree.observation
     pBackward = tree.pBackward
-    
-    mean = [0]*dim
-    covar = [[0]*dim for _ in range(dim)] 
 
-    #mean update
-    s=0
+    mean = [0] * dim
+    covar = [[0] * dim for _ in range(dim)]
+
+    # mean update
+    s = 0
     for n in tree.iteratorFromLeavesToRoot():
         y = observation[n]
         marginalPost = pBackward[n][classe]
-        s+=marginalPost
+        s += marginalPost
         for i in range(dim):
-            mean[i]+=y[i]*marginalPost
-            
-    if s<epsilon:
+            mean[i] += y[i] * marginalPost
+
+    if s < epsilon:
         raise Exception("Update gaussian parameters failed: sum to low for class " + str(classe))
     for i in range(dim):
-            mean[i]/=s
-            
-    #covar update
-    tmp =[0]*dim
+        mean[i] /= s
+
+    # covar update
+    tmp = [0] * dim
     for n in tree.iteratorFromLeavesToRoot():
         y = observation[n]
         marginalPost = pBackward[n][classe]
         for i in range(dim):
-            tmp[i]= y[i]-mean[i]
+            tmp[i] = y[i] - mean[i]
         for i in range(dim):
             for j in range(dim):
-                covar[i][j]+=marginalPost*tmp[i]*tmp[j]
-                
+                covar[i][j] += marginalPost * tmp[i] * tmp[j]
+
     for i in range(dim):
         for j in range(dim):
-            covar[i][j]/=s
-            
-    newMarkovModel.classes[classe] = MultivariateGaussian(mean,covar)
-    
+            covar[i][j] /= s
+
+    newMarkovModel.classes[classe] = MultivariateGaussian(mean, covar)
+
+
 def updatePDFParamGaussian(markovModel, newMarkovModel, tree):
     '''
     Update parametres of gaussian likelihood for all classes
     '''
     for i in range(markovModel.numLabels):
         updateClassGaussian(markovModel, newMarkovModel, tree, i)
+
 
 def updateModel(markovModel, tree):
     '''
@@ -532,12 +543,12 @@ def updateModel(markovModel, tree):
     Return the new updated model
     '''
     nbClasses = markovModel.numLabels
-    initialProb = [0]*nbClasses
-    transitionProb = [[0]*nbClasses for _ in range(nbClasses)] 
-    classes = [None]*nbClasses
+    initialProb = [0] * nbClasses
+    transitionProb = [[0] * nbClasses for _ in range(nbClasses)]
+    classes = [None] * nbClasses
     newMarkovModel = MarkovModel(initialProb, transitionProb, classes)
-    updateInitialProb(markovModel,newMarkovModel,tree)
-    updateTransitionProb(markovModel,newMarkovModel,tree)
+    updateInitialProb(markovModel, newMarkovModel, tree)
+    updateTransitionProb(markovModel, newMarkovModel, tree)
     updatePDFParamGaussian(markovModel, newMarkovModel, tree)
     return newMarkovModel
 
@@ -551,24 +562,26 @@ def getInitialGuess(tree, nbClasses, maxSamples=40000):
         
     @todo: support maxSamples
     '''
-    initialProb = [1.0/nbClasses]*nbClasses
-    transitionProb = [[0]*nbClasses for _ in range(nbClasses)] 
-    oProb = 0.25/(nbClasses-1.0)
+    initialProb = [1.0 / nbClasses] * nbClasses
+    transitionProb = [[0] * nbClasses for _ in range(nbClasses)]
+    oProb = 0.25 / (nbClasses - 1.0)
     for i in range(nbClasses):
         for j in range(nbClasses):
-            transitionProb[i][j]= 0.75 if i==j else oProb
-            
-    nbNodes=tree.nbNodes()
-    lenTree=len(tree)
-    data=tree.observation[lenTree-nbNodes:lenTree+1]
-    classes=gmmEstimate(data,nbClasses)
+            transitionProb[i][j] = 0.75 if i == j else oProb
+
+    nbNodes = tree.nbNodes()
+    lenTree = len(tree)
+    data = tree.observation[lenTree - nbNodes:lenTree + 1]
+    classes = gmmEstimate(data, nbClasses)
     return MarkovModel(initialProb, transitionProb, classes)
 
+
 def norm(vec):
-    s=0
+    s = 0
     for i in vec:
-        s+=i**2
+        s += i ** 2
     return sqrt(s)
+
 
 def reOrderLabels(markovModel, tree, rankingFunction=None):
     '''
@@ -577,22 +590,22 @@ def reOrderLabels(markovModel, tree, rankingFunction=None):
     If no ranking function is provided
     '''
     estimLabel = tree.estimLabel
-    if rankingFunction==None:
-        rankingFunction=lambda x:norm(x.mean)
-        
+    if rankingFunction is None:
+        rankingFunction = lambda x: norm(x.mean)
+
     classes = markovModel.classes
     nbClasses = markovModel.numLabels
-    
+
     labels = [i for i in range(nbClasses)]
     ranks = [rankingFunction(classes[i]) for i in range(nbClasses)]
-    labels=sorted(labels, key=lambda x:ranks[x])
-    inverse = [0]*nbClasses
+    labels = sorted(labels, key=lambda x: ranks[x])
+    inverse = [0] * nbClasses
     for i in range(nbClasses):
-        inverse[labels[i]]=i
+        inverse[labels[i]] = i
     for n in tree.iteratorFromLeavesToRoot():
-        estimLabel[n]=inverse[estimLabel[n]]
-        
-    nClasses=[]
+        estimLabel[n] = inverse[estimLabel[n]]
+
+    nClasses = []
     for i in range(nbClasses):
         nClasses.append(classes[labels[i]])
-    markovModel.classes=nClasses
+    markovModel.classes = nClasses

@@ -36,13 +36,14 @@ Created on 10 juin 2015
 @author: perretb
 '''
 
-from HiPy.IO import * #@UnusedWildImport
-from HiPy.Hierarchies.DirectedComponentHierarchy import * #@UnusedWildImport
+from HiPy.IO import *  # @UnusedWildImport
+from HiPy.Hierarchies.DirectedComponentHierarchy import *  # @UnusedWildImport
 
 
 # for drawing graphs in a pdf file
 try:
-    import pydot 
+    import pydot
+
     pydotAvailable = True
 except ImportError:
     pydotAvailable = False
@@ -57,15 +58,15 @@ except ImportError:
 def testAlgoArticle():
     print("Test of the paper algorithm for vertex weighted graphs")
     graph = readGraph('../samples/DCC/fig5-Graph.list')
-    image=readImage("../samples/DCC/fig5-Image.png")
-    image.adjacency=graph
-    parent, adj= DirectedComponentHierarchy(image)
-    parents = [-1]*graph.nbPoints
+    image = readImage("../samples/DCC/fig5-Image.png")
+    image.adjacency = graph
+    parent, adj = DirectedComponentHierarchy(image)
+    parents = [-1] * graph.nbPoints
     parents.extend(parent)
     levels = computeLevelsAsDepth(parents)
 
     dccTree = buildFinalDCCTree(graph.nbPoints, parents, adj, levels, image)
-    drawGraphVizAttr("Results/DCC-Hierarchy-Fig5.pdf", dccTree, ["level"],False)
+    drawGraphVizAttr("Results/DCC-Hierarchy-Fig5.pdf", dccTree, ["level"], False)
     print("=> Result saved in file " + " 'DCC-Hierarchy-Fig5.pdf'")
     print("Done\n\n")
 
@@ -79,14 +80,14 @@ def testAlgoArticle():
 def testAlgoStackGraphArticle():
     print("Test of the general algorithm for stacks of graphs")
     adj = readGraph("../samples/DCC/fig5-Graph.list")
-    image= readImage("../samples/DCC/fig5-Image.png")
-    stack = createGraphStackFromVertexWeightedGraph(adj,image)
-    
+    image = readImage("../samples/DCC/fig5-Image.png")
+    stack = createGraphStackFromVertexWeightedGraph(adj, image)
+
     parent, DAGsAdj, Lvls, _ = directedComponentHierarchyStack(stack)
     ensureTree(parent, Lvls)
     dccTree = buildFinalDCCTree(stack.nbPoints, parent, DAGsAdj, Lvls, image)
-    
-    drawGraphVizAttr("Results/DCC-Hierarchy-Fig5-Stack.pdf", dccTree, ["level"],False)
+
+    drawGraphVizAttr("Results/DCC-Hierarchy-Fig5-Stack.pdf", dccTree, ["level"], False)
     print("=> Result saved in file " + " 'DCC-Hierarchy-Fig5-Stack.pdf'")
     print("Done\n\n")
 
@@ -101,16 +102,16 @@ def testAlgoStackGraphArticleFast():
     print("Test of the general algorithm for stacks of graphs with optimization")
     adj = readGraph("../samples/DCC/fig5-Graph.list")
     image = readImage("../samples/DCC/fig5-Image.png")
-    stack = createGraphStackFromVertexWeightedGraph(adj,image)
+    stack = createGraphStackFromVertexWeightedGraph(adj, image)
 
     parent, DAGsAdj, Lvls = directedComponentHierarchyStackFast(stack)
     ensureTree(parent, Lvls)
     dccTree = buildFinalDCCTree(stack.nbPoints, parent, DAGsAdj, Lvls, image)
-    
-    drawGraphVizAttr("Results/DCC-Hierarchy-Fig5-Stack-Fast.pdf", dccTree, ["level"],False)
+
+    drawGraphVizAttr("Results/DCC-Hierarchy-Fig5-Stack-Fast.pdf", dccTree, ["level"], False)
     print("=> Result saved in file " + " 'DCC-Hierarchy-Fig5-Stack-Fast.pdf'")
     print("Done\n\n")
-    
+
 
 # draw directed component hierarchy in a pdf with the values of the specified attributes
 # "name" : filename of the produced pdf
@@ -118,52 +119,51 @@ def testAlgoStackGraphArticleFast():
 # "attributes" : list of attributes values to print
 # "leaves" : if true leaves are ploted
 
-def drawGraphVizAttr(name, dccTree, attributes=[], leaves=False):
+def drawGraphVizAttr(name, dccTree, attributes=None, leaves=False):
     if not pydotAvailable:
-        print ("Error: this function requires the library pydot (which requires the software graphviz.")
+        print("Error: this function requires the library pydot (which requires the software graphviz.")
         return
-    
-    #n = len(parent)
+
+    # n = len(parent)
     G = pydot.Dot(graph_type='graph')
 
     nbLeaves = dccTree.nbPixels
-    
+
     for i in dccTree.iteratorFromPixelsToRoot():
-        if(i>=nbLeaves or leaves):
+        if i >= nbLeaves or leaves:
             node = pydot.Node(i)
-            if(i < nbLeaves):
+            if i < nbLeaves:
                 node.set_shape("square")
             label = str(i)
-            if attributes != []:
+            if attributes:
                 labels = ",".join([str(dccTree.getAttribute(a)[i]) for a in attributes])
                 label += "(" + labels + ")"
             node.set_label(label)
             G.add_node(node)
-       
+
     for i in dccTree.iteratorFromPixelsToRoot():
-        if(i>=nbLeaves or leaves):
+        if i >= nbLeaves or leaves:
             par = dccTree[i]
-            if(par != -1):
+            if (par != -1):
                 edge = pydot.Edge(par, i)
                 edge.set_dir("forward")
                 G.add_edge(edge)
-    
+
             for d in dccTree.getAttribute("sucs")[i]:
                 edge = pydot.Edge(i, d)
                 edge.set_dir("forward")
                 edge.set_style("dotted")
                 edge.set_constraint("false")
                 G.add_edge(edge)
-       
 
     G.write_pdf(name)
-  
-    
+
+
 def main():
     testAlgoArticle()
-    testAlgoStackGraphArticle() 
-    testAlgoStackGraphArticleFast()    
-    
+    testAlgoStackGraphArticle()
+    testAlgoStackGraphArticleFast()
+
+
 if __name__ == '__main__':
     main()
-    

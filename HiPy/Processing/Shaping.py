@@ -28,29 +28,29 @@
 # The fact that you are presently reading this means that you have had
 # knowledge of the CeCILL license and that you accept its terms.
 
-'''
+"""
 Created on 17 juin 2015
 
 @author: perretb
-'''
+"""
 
 
-def prepareForShapping(tree,attributeImage):
-    '''
+def prepareForShaping(tree, attributeImage):
+    """
     Erase attribute values of the leaves with the one of their parents.
     Leaves act then as duplicated nodes.
     
     A more fancy would be to delete the leaves, but then we loose direct indices matching.
-    '''
+    """
     im = attributeImage.copy(True)
-    nbLeaves=tree.nbPixels
+    nbLeaves = tree.nbPixels
     for i in range(nbLeaves):
-        im[i]=im[tree[i]]
+        im[i] = im[tree[i]]
     return im
 
 
 def shapingCriterion(tree):
-    '''
+    """
     Creates a filtering criterion that maps a filter applied to a shaping tree "tree" back to the orignal tree.
-    '''
+    """
     return lambda x: tree.deleted[tree[x]]
