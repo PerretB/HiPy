@@ -43,9 +43,10 @@ import os
 
 PILAvailable = False
 # for image I/O
+
+
 try:
     from PIL import Image as PILimage
-
     PILAvailable = True
 except ImportError:
     PILimage = None

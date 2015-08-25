@@ -42,7 +42,7 @@ def prepareForShaping(tree, attributeImage):
     
     A more fancy would be to delete the leaves, but then we loose direct indices matching.
     """
-    im = attributeImage.copy(True)
+    im = attributeImage.getCopy(True)
     nbLeaves = tree.nbPixels
     for i in range(nbLeaves):
         im[i] = im[tree[i]]

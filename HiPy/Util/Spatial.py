@@ -45,7 +45,7 @@ from HiPy.Util.Accumulator import BasicAccumulator
 
 
 def spatialFilter(image, adjacency, accumulator):
-    res = image.copy(False)
+    res = image.getCopy(False)
     for i in image.iterateOnPixels():
         accumulator.reset()
         for e in adjacency.getOutEdges(i):

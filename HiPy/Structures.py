@@ -68,6 +68,7 @@ from heapq import heappop, heappush
 from enum import Enum
 from collections import deque
 
+
 class HiPyException(Exception):
     """Base class for exceptions in this module."""
     pass
@@ -85,7 +86,9 @@ def initLogger():
     logger.addHandler(handler)
     return logger
 
+
 HiPyLogger = initLogger()
+
 
 class TreeType(Enum):
     """
@@ -94,8 +97,10 @@ class TreeType(Enum):
     ComponentTree = 1
     PartitionHierarchy = 2
 
+
 def isImmutable(var):
     return type(var) in (str, int, bool, float, tuple)
+
 
 class Image(list):
     """
@@ -138,7 +143,7 @@ class Image(list):
             for i in range(len(image)):
                 self[i] = copy.deepcopy(image[i])
 
-    def copy(self, copyData=False):
+    def getCopy(self, copyData=False):
         """
         Warning: this is not a true deep copy!
         Image data are not shared but adjacency and embedding are shared
@@ -276,24 +281,26 @@ class AbstractEmbedding(object):
         """
         return self.isInBoundsWCS(self.fromLinearCoordinate(i))
 
+
 class Embedding2dGrid(AbstractEmbedding):
     """
     This class represents an embedding from discrete linear coordinates to discrete 2d coordinates
     organized on a regular grid given by its width and height (typically a pixel grid).
     """
+
     def __init__(self, width, height):
         self.width = width
         self.height = height
         self.size = [width, height]
 
     def getLinearCoordinate(self, *args):
-        return args[1]*self.width+args[0]
+        return args[1] * self.width + args[0]
 
     def fromLinearCoordinate(self, i):
-        return (i%self.width, i//self.width)
+        return i % self.width, i // self.width
 
     def isInBoundsWCS(self, *args):
-        return args[0] >= 0 and args[0] < self.width and args[1] >= 0 and args[1] < self.height
+        return 0 <= args[0] < self.width and 0 <= args[1] < self.height
 
 
 class AbstractAdjacency(object):
@@ -355,7 +362,7 @@ class AbstractAdjacency(object):
         (* can be any auxiliary data, usually weights)
 
         """
-        return self.getInEdges(i)+self.getOutEdges(i)
+        return self.getInEdges(i) + self.getOutEdges(i)
 
     def getOutEdges(self, i):
         """
@@ -364,7 +371,7 @@ class AbstractAdjacency(object):
         (* can be any auxiliary data, usually weights)
 
         """
-        raise NotImplementedError("Unsuported method" + " getOutEdges")
+        raise NotImplementedError("Unsupported method" + " getOutEdges")
 
     def getInEdges(self, i):
         """
@@ -372,7 +379,7 @@ class AbstractAdjacency(object):
         :return list of in  edges of the form [j,i,*] such that j->i
         (* can be any auxiliary data, usually weights)
         """
-        raise NotImplementedError("Unsuported method" + " getInEdges")
+        raise NotImplementedError("Unsupported method" + " getInEdges")
 
 
 class AdjacencyNdRegular(AbstractAdjacency):
@@ -396,7 +403,7 @@ class AdjacencyNdRegular(AbstractAdjacency):
         self.embedding = embedding
         self.neighbourList = neighbourList
         self.nbNeighbours = len(neighbourList)
-        self.weights = weights if weights is not None else [1]*self.nbNeighbours
+        self.weights = weights if weights is not None else [1] * self.nbNeighbours
 
     def countEdges(self, includeExternal=False):
         count = 0
@@ -475,7 +482,7 @@ class AdjacencyNdRegular(AbstractAdjacency):
         :returns AdjacencyNdRegular representing 4 adjacency
         """
         return AdjacencyNdRegular(Embedding2dGrid(size[0], size[1]),
-        [(0, -1), (-1, 0), (1, 0), (0, 1)])
+                                  [(0, -1), (-1, 0), (1, 0), (0, 1)])
 
     @staticmethod
     def getAdjacency2d8(size):
@@ -485,7 +492,7 @@ class AdjacencyNdRegular(AbstractAdjacency):
         :returns AdjacencyNdRegular representing 8 adjacency
         """
         return AdjacencyNdRegular(Embedding2dGrid(size[0], size[1]),
-        [(-1, -1), (0, -1), (1, -1), (-1, 0), (1, 0), (-1, 1), (0, 1), (1, 1)])
+                                  [(-1, -1), (0, -1), (1, -1), (-1, 0), (1, 0), (-1, 1), (0, 1), (1, 1)])
 
 
 class AdjacencyTree(AbstractAdjacency):
@@ -536,7 +543,7 @@ class AdjacencyTree(AbstractAdjacency):
         par = tree[cur]
         distr = 0
         while par != -1:
-            distr = distr+dist(cur, par)
+            distr = distr + dist(cur, par)
             if distr <= maxDist:
                 neighbourList.append(par)
                 cur = par
@@ -545,14 +552,14 @@ class AdjacencyTree(AbstractAdjacency):
                 par = -1
 
 
-        #search towards leaves
+        # search towards leaves
         stack = [[i, 0]]
         while len(stack) != 0:
             elem = stack.pop()
             cur = elem[0]
             diste = elem[1]
             for child in children[cur]:
-                distd = diste+dist(cur, child)
+                distd = diste + dist(cur, child)
                 if distd <= maxDist:
                     neighbourList.append(child)
                     stack.append([child, distd])
@@ -626,11 +633,13 @@ class WeightedAdjacency(AbstractWeightedAdjacency):
         if source != target:
             self.edgeList[target].append(i)
 
-    def getCopy(self):
+    def getCopy(self, copyData=True):
         """
         Returns a copy of the current adjacency.
         Guaranties that edges indices are consistent between the copy and the current object
         (ie copy[i]==original[i] for all i)
+
+        Parameter copyData is silently ignored
         """
         adj = WeightedAdjacency(self.nbPoints)
         for i in range(len(self)):
@@ -651,10 +660,10 @@ class WeightedAdjacency(AbstractWeightedAdjacency):
         return [[self.source[e], self.target[e], self[e]] for e in self.edgeList[i]]
 
     def getOutEdges(self, i):
-        return [[i, self.source[e]+self.target[e]-i, self[e]] for e in self.edgeList[i]]
+        return [[i, self.source[e] + self.target[e] - i, self[e]] for e in self.edgeList[i]]
 
     def getInEdges(self, i):
-        return [[self.source[e]+self.target[e]-i, i, self[e]] for e in self.edgeList[i]]
+        return [[self.source[e] + self.target[e] - i, i, self[e]] for e in self.edgeList[i]]
 
     @staticmethod
     def createAdjacency(baseAdjacency, weightingFunction=None):
@@ -691,7 +700,7 @@ class WeightedAdjacency(AbstractWeightedAdjacency):
         """
         nbPoints = baseAdjacency.nbPoints
         newAdj = WeightedAdjacency(nbPoints)
-        flags = [None]*nbPoints
+        flags = [None] * nbPoints
 
         for i in range(nbPoints):
             heap = []
@@ -896,9 +905,11 @@ class DirectedWeightedAdjacency(AbstractWeightedAdjacency):
             self.nextEdge[self.prevEdge[e]] = self.nextEdge[e]
         self.nextEdge[e] = self.prevEdge[e] = -1
 
-    def getCopy(self):
+    def getCopy(self, copyData=True):
         """
         Creates a copy of the current adjacency
+
+        Parameter copyData is silently ignored
         """
         adj = DirectedWeightedAdjacency(self.nbPoints)
         for i in range(len(self)):
@@ -932,7 +943,6 @@ class DirectedWeightedAdjacency(AbstractWeightedAdjacency):
                     graph.createEdge(j, i)
         return graph
 
-
     def getTranspose(self):
         """
         Transpose the graph: each edge (p,q) is transformed into the edge (q,p)
@@ -942,8 +952,6 @@ class DirectedWeightedAdjacency(AbstractWeightedAdjacency):
             for j in self.getSuccessors(i):
                 graph.createEdge(j, i)
         return graph
-
-
 
 
 class Tree(Image):
@@ -970,6 +978,7 @@ class Tree(Image):
     the leaves of the logical tree are the nodes whose children are all leaves in the
     data structure (ie. pixels).
     """
+
     def __init__(self, treeType, parent, levels, image=None):
         super(Tree, self).__init__(len(parent), None)
         HiPyLogger.debug("constructor: Tree")
@@ -996,7 +1005,7 @@ class Tree(Image):
         Return the index of the root node
         :return: index of the root node
         """
-        return len(self)-1
+        return len(self) - 1
 
     def filterDirect(self, filteringCriterion):
         """
@@ -1020,7 +1029,7 @@ class Tree(Image):
         for the attribute "attributeName"
         """
         attr = None
-        if  attributeName != None:
+        if attributeName != None:
             attr = self.getAttribute(attributeName)
 
         res = []
@@ -1051,9 +1060,9 @@ class Tree(Image):
                 criterion = (lambda x: self.deleted[x])
             else:
                 criterion = (lambda _: False)
-        root = len(self)-1
+        root = len(self) - 1
         for i in self.iteratorFromRootToPixels():
-            if i >= self.nbPixels and (i == root or  not criterion(i)):
+            if i >= self.nbPixels and (i == root or not criterion(i)):
                 self.reconstructedValue[i] = self.__dict__[attributeName][i]
             else:
                 self.reconstructedValue[i] = self.reconstructedValue[self[i]]
@@ -1141,7 +1150,7 @@ class Tree(Image):
         For partition hierarchies or others the result is equal to len(tree)
         """
         if self.treeType == TreeType.ComponentTree:
-            return len(self)-self.nbPixels
+            return len(self) - self.nbPixels
         else:
             return len(self)
 
@@ -1150,7 +1159,7 @@ class Tree(Image):
         """
         Count Leaves in a parent relation
         """
-        leaves = [True]*len(parent)
+        leaves = [True] * len(parent)
         for i in range(len(parent)):
             par = parent[i]
             if par != -1:
@@ -1159,7 +1168,7 @@ class Tree(Image):
         count = 0
         for i in range(len(parent)):
             if leaves[i]:
-                count = count+1
+                count = count + 1
 
         return count
 
@@ -1173,13 +1182,13 @@ class Tree(Image):
 
         # both tree have same size so we need to find an injection m from the nodes of t1 to
         # the nodes of t2 such that for any node n of t1 m(parent(n))=parent(m(n))
-        mapT1T2 = [-1]*len(tree1)
+        mapT1T2 = [-1] * len(tree1)
 
-        for i in range(len(mapT1T2)-1): #root is root !
+        for i in range(len(mapT1T2) - 1):  # root is root !
             # pixel mapping is constant
             if i < tree1.nbPixels:
                 mapT1T2[i] = i
-            #parent(n)
+            # parent(n)
             pT1 = tree1[i]
 
             # parent(m(n))
@@ -1210,7 +1219,7 @@ class Tree(Image):
         nbLeaves = self.nbPixels
         nbNodes = len(self)
         children = HiPy.Processing.Attributes.addAttributeChildren(self)
-        copyParent = self.copy(True)
+        copyParent = self.getCopy(True)
 
         count = 0
         deleted = [False] * nbNodes
@@ -1265,6 +1274,7 @@ class Tree(Image):
         levelFunction = lambda i: level[i]
         return self.simplifyTreeByCriterion(criterion, levelFunction)
 
+
 class TreeIterator(object):
     """
     The TreeIterator class is intended to perform pre or post order traversal of trees.
@@ -1276,8 +1286,9 @@ class TreeIterator(object):
     and partition hierarchies (where leaves are at the same time pixels of the original image
     and nodes of the logical tree).
     """
+
     def __init__(self, tree, logical=True, reverseOrder=False, includeLeaves=True,
-    includeRoot=True):
+                 includeRoot=True):
         self.tree = tree
 
         specialLogic = tree.treeType == TreeType.ComponentTree and logical
@@ -1294,19 +1305,16 @@ class TreeIterator(object):
 
         bmax = len(tree)
         if not includeRoot:
-            bmax = bmax-1
+            bmax = bmax - 1
 
         if not reverseOrder:
             self.curVal = bmin
             self.limit = bmax
             self.step = 1
         else:
-            self.curVal = bmax-1
-            self.limit = bmin-1
+            self.curVal = bmax - 1
+            self.limit = bmin - 1
             self.step = -1
-
-
-
 
     def __iter__(self):
         return self
@@ -1403,8 +1411,8 @@ class PriorityQueue:
         """
         if not self.isLevelEmpty(level):
             return level
-        lvlb = level-1
-        lvlu = level+1
+        lvlb = level - 1
+        lvlu = level + 1
         while lvlb >= 0 or lvlu < self.levels:
             if lvlb >= 0:
                 if not self.isLevelEmpty(lvlb):

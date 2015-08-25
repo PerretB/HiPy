@@ -57,13 +57,13 @@ def createKNNNeighbourhoodGraph(image, size, similarityFunc, k, maxD):
         px, py = coordLinTo2D(i)
         measures = []
         for y in range(py - maxD, py + maxD + 1, 1):
-            if y >= 0 and y < height:
+            if 0 <= y < height:
                 for x in range(px - maxD, px + maxD + 1, 1):
-                    if x >= 0 and x < width:
-                        if (x != px or y != py):
+                    if 0 <= x < width:
+                        if x != px or y != py:
                             pos = coord2DToLin(x, y)
                             op = similarityFunc(image, size, i, pos)
-                            if (op != None):
+                            if op is not None:
                                 measures.append((pos, op))
         measures = sorted(measures, key=lambda x: x[1])
         for j in range(min(len(measures), k)):
@@ -75,7 +75,7 @@ def createKNNNeighbourhoodGraph(image, size, similarityFunc, k, maxD):
 # k=4 or 8 indicates the adjacency.
 # If "graph" equals None a new graph is created, otherwise the edges are added to the existing graph.
 def createSimpleNeighbourhoodGraph(size, k=4, graph=None):
-    if graph == None:
+    if graph is None:
         graph = DirectedWeightedAdjacency(size[0] * size[1])
     width = size[0]
     height = size[1]
@@ -83,34 +83,34 @@ def createSimpleNeighbourhoodGraph(size, k=4, graph=None):
     coord2DToLin = lambda x, y: y * width + x
     dim = width * height
 
-    def writeLink(i, j):
-        if not j in graph.getSuccessors(i):
-            graph.createEdge(i, j)
+    def writeLink(k, j):
+        if j not in graph.getSuccessors(k):
+            graph.createEdge(k, j)
 
     for i in range(dim):
         x, y = coordLinTo2D(i)
-        if (x + 1 < width):
+        if x + 1 < width:
             writeLink(i, coord2DToLin(x + 1, y))
-        if (x - 1 >= 0):
+        if x - 1 >= 0:
             writeLink(i, coord2DToLin(x - 1, y))
-        if (y + 1 < height):
+        if y + 1 < height:
             writeLink(i, coord2DToLin(x, y + 1))
-        if (y - 1 >= 0):
+        if y - 1 >= 0:
             writeLink(i, coord2DToLin(x, y - 1))
-        if (k == 8):
-            if (x + 1 < width and y - 1 >= 0):
+        if k == 8:
+            if x + 1 < width and y - 1 >= 0:
                 writeLink(i, coord2DToLin(x + 1, y - 1))
-            if (x - 1 >= 0 and y - 1 >= 0):
+            if x - 1 >= 0 and y - 1 >= 0:
                 writeLink(i, coord2DToLin(x - 1, y - 1))
-            if (x + 1 < width and y + 1 < height):
+            if x + 1 < width and y + 1 < height:
                 writeLink(i, coord2DToLin(x + 1, y + 1))
-            if (x - 1 >= 0 and y + 1 < height):
+            if x - 1 >= 0 and y + 1 < height:
                 writeLink(i, coord2DToLin(x - 1, y + 1))
 
     return graph
 
 
-# Pseudo symilarity measure for finding the brighest pixels
+# Pseudo similarity measure for finding the brightest pixels
 #    - im: image
 #    - size: dimensions of im
 #    - p1: first pixel
@@ -158,7 +158,7 @@ def filterRetine(imageNumber, method=1):
         print("Incorrect method !")
         return
 
-    numS = "%02d" % (imageNumber)
+    numS = "%02d" % imageNumber
     fileName = numS + "_test_filtered"
     filePath = "../samples/DCC/DRIVE/" + fileName + ".png"
 
@@ -229,7 +229,8 @@ def filterRetine(imageNumber, method=1):
 #       - method==4: Filtering on connected components on a non-local symmetric graph (symmetrization strategy: max)
 #       - method==5: Filtering on connected components on a non-local symmetric graph (symmetrization strategy: min)
 # Input: 
-#    - files "DRIVE/XX_test_filtered.png" for XX from 00 to 20: the preprocessed image of the DRIVE database number <imageNumber>
+#    - files "DRIVE/XX_test_filtered.png" for XX from 00 to 20: the preprocessed image of the DRIVE database
+#       number <imageNumber>
 # Output:
 #    - filtering result saved in file "DRIVE/XX_test_filtered_result_method_<method>.png"  for XX from 00 to 20
 def testRetineAll(method, lastImage=21):

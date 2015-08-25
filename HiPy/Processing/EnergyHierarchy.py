@@ -69,8 +69,8 @@ def addAttributeEnergyCut(tree: "Tree", attribute, energyAttributeName="energy")
     :param energyAttributeName:
     :return:
     """
-    optimalNodes = attribute.copy(False)
-    optimalEnergy = attribute.copy(False)
+    optimalNodes = attribute.getCopy(False)
+    optimalEnergy = attribute.getCopy(False)
     children = Attributes.addAttributeChildren(tree)
     energyAttribute = tree.getAttribute(energyAttributeName)
     for i in tree.iterateOnPixels():

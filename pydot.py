@@ -29,7 +29,8 @@ import copy
 try:
     import dot_parser
 except Exception:
-    print("Couldn't import dot_parser, loading of dot files will not be possible.")
+    pass
+    #print("Couldn't import dot_parser, loading of dot files will not be possible.")
     
 
 

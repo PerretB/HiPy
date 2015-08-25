@@ -36,62 +36,61 @@ Created on 17 juin 2015
 @author: perretb
 '''
 
-from HiPy.Hierarchies.ComponentTree import constructComponentTree,\
+from HiPy.Hierarchies.ComponentTree import constructComponentTree, \
     ComponentTreeType
 from HiPy.Structures import AdjacencyNdRegular
 
-from HiPy.IO import * #@UnusedWildImport
-from HiPy.Hierarchies import * #@UnusedWildImport
-from HiPy.Processing.Attributes import * #@UnusedWildImport
-from HiPy.Processing.Markov import * #@UnusedWildImport
-from HiPy.Util.Histogram import * #@UnusedWildImport
-from HiPy.Util.Color import * #@UnusedWildImport
+from HiPy.IO import *  # @UnusedWildImport
+from HiPy.Hierarchies import *  # @UnusedWildImport
+from HiPy.Processing.Attributes import *  # @UnusedWildImport
+from HiPy.Processing.Markov import *  # @UnusedWildImport
+from HiPy.Util.Histogram import *  # @UnusedWildImport
+from HiPy.Util.Color import *  # @UnusedWildImport
+
 
 def testShapeClassif():
     print('Reading image...')
     image = readImage("../samples/squares and circles.png", True)
     image.adjacency = AdjacencyNdRegular.getAdjacency2d4(image.embedding.size)
-    
+
     print('Pre-filtering image...')
     tree = constructComponentTree(image, ComponentTreeType.MaxTree)
     addAttributeArea(tree)
     addAttributeHeight(tree)
-    imageFiltered = tree.reconstructImage(criterion=lambda n:tree.area[n]<5 or tree.height[n]<25)
-    
+    imageFiltered = tree.reconstructImage(criterion=lambda n: tree.area[n] < 5 or tree.height[n] < 25)
+
     print('Tree construction...')
     tree = constructComponentTree(imageFiltered, ComponentTreeType.MaxTree)
     addAttributeArea(tree)
     addAttributePerimeterComponentTree(tree)
     addAttributeSimpleMoments2d(tree)
-    
+
     tree.addAttribute("observation")
     observation = tree.observation
     area = tree.area
     perimeter = tree.perimeter
     moments = tree.moments
     for i in tree.iteratorFromPixelsToRoot():
-        comp = area[i]/(perimeter[i]**2)
+        comp = area[i] / (perimeter[i] ** 2)
         hu1 = computeHuInvariant(computeScaleInvariantMoments2d(computeCentralMoments2d(moments[i])))[0]
-        observation[i]=[comp,hu1]
-        
-        
+        observation[i] = [comp, hu1]
+
     print('Markov model initialization...')
-    markovModel=getInitialGuess(tree, 3)
+    markovModel = getInitialGuess(tree, 3)
     print('Markov model Estimation...')
-    markovModel=MPMSegmentTree(markovModel,tree,maxIteration=10,verbose=False)
-    
+    markovModel = MPMSegmentTree(markovModel, tree, maxIteration=10, verbose=False)
+
     reOrderLabels(markovModel, tree)
-    
-    res = tree.reconstructImage("estimLabel", lambda x:tree.estimLabel[x]==0)
-    
+
+    res = tree.reconstructImage("estimLabel", lambda x: tree.estimLabel[x] == 0)
+
     print('Saving label reconstructions to "Results/squares and circles classification.png"')
     saveImage(normalizeToByte(res), "Results/squares and circles classification.png")
- 
-    
+
 
 def main():
-    
     testShapeClassif()
+
 
 if __name__ == '__main__':
     main()

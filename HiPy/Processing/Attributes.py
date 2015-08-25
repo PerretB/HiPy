@@ -321,7 +321,7 @@ def addAttributeLevelStatistics(tree, attribute, levelImage=None):
         levelImage = tree.level
     children = addAttributeChildren(tree)
     area = addAttributeArea(tree)
-    meanSquare = attribute.copy(False)
+    meanSquare = attribute.getCopy(False)
 
     if type(levelImage[0]) is list:
         dim = len(levelImage[0])

@@ -58,7 +58,7 @@ def imageMap(image: "Image", function, marginal=False, bandNumber=None, inPlace=
     if inPlace:
         imDest = image
     else:
-        imDest = image.copy(False)
+        imDest = image.getCopy(False)
 
     vec = isinstance(image[0], list)
     if not vec or not marginal:

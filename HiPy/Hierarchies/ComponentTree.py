@@ -203,7 +203,7 @@ def __preTreeConstruction(image: Image, sortedPixels: list) -> Image:
     :returns a pre-parent relation
     """
     HiPyLogger.debug("call to: __preTreeConstruction")
-    parent = image.copy(False)
+    parent = image.getCopy(False)
     ufParent = Image(len(image), None)
     ufRank = Image(len(image))
     representing = Image(len(image))
@@ -255,7 +255,7 @@ def __expandCanonizedParentRelation(canonizedTreeImage: Image, nodeLevels: Image
         * node levels associated to the parent relation
     """
     HiPyLogger.debug("call to: __expandCanonizedParentRelation")
-    levels = nodeLevels.copy(True)
+    levels = nodeLevels.getCopy(True)
     data = [None] * len(canonizedTreeImage)
     for j in range(len(canonizedTreeImage) - 1, -1, -1):
         i = sortedPixels[j]
@@ -320,7 +320,7 @@ def sortTreeOfShape(image: Image, maxLevel: int) -> (list, list):
     :return: list of sorted pixel indices, list of enqueued levels
     """
     dejaVu = Image(len(image), False)
-    enqueuedLevels = image.copy(False)
+    enqueuedLevels = image.getCopy(False)
     sortedPixels = []
     queue = PriorityQueue(maxLevel)
     startPoint = 0  # Uhuhuhuhuuuuuuuuuuuu !!!!!!!
