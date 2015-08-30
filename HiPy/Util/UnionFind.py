@@ -36,6 +36,16 @@ Created on 3 juin 2015
 """
 
 
+def initialiseStructure(nbElem):
+    ufParent = [i for i in range(nbElem)]
+    ufRank = [0]*nbElem
+    return ufParent, ufRank
+
+
+def makeSet(ufParent, ufRank):
+    ufParent.append(len(ufParent))
+    ufRank.append(0)
+
 # Union find
 ############################################################################## 
 # find canonical node of elem with path compression

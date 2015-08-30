@@ -599,14 +599,29 @@ class WeightedAdjacency(AbstractWeightedAdjacency):
       - methods getEdges, getOutEdges, and getInEdges are equivalent
     """
 
-    def __init__(self, size):
+    def __init__(self, size, optimizedRemove=False):
         """
         Create a new empty adjacency on a set of size elements
         """
         AbstractWeightedAdjacency.__init__(self, size)
+        self.optimizedRemove = optimizedRemove
         self.edgeList = []
-        for _ in range(size):
+        if optimizedRemove:
+            self.appendFunct = lambda collection, item: collection.add(item)
+            for _ in range(size):
+                self.edgeList.append(set())
+        else:
+            self.appendFunct = lambda collection, item: collection.append(item)
+            for _ in range(size):
+                self.edgeList.append([])
+
+    def addVertex(self):
+        newVertex = len(self.edgeList)
+        if self.optimizedRemove:
+            self.edgeList.append(set())
+        else:
             self.edgeList.append([])
+        return newVertex
 
     def countEdges(self):
         return len(self)
@@ -621,6 +636,8 @@ class WeightedAdjacency(AbstractWeightedAdjacency):
         As the graph is undirected, by convention, the method will ensure that source < target
 
         Warning: does not verify is the edge already exists
+
+        Returns the index of the new edge
         """
         i = len(self)
         if source > target:
@@ -629,11 +646,48 @@ class WeightedAdjacency(AbstractWeightedAdjacency):
         self.source.append(source)
         self.target.append(target)
 
-        self.edgeList[source].append(i)
+        self.appendFunct(self.edgeList[source],i)
         if source != target:
-            self.edgeList[target].append(i)
+            self.appendFunct(self.edgeList[target],i)
+        return i
 
-    def getCopy(self, copyData=True):
+    def setEdge(self, index, source, target, weight):
+        if source > target:
+            source, target = target, source
+        prevSource = self.source[index]
+        prevTarget = self.target[index]
+
+        cond1 = prevSource != source
+        cond2 = prevSource != target
+        cond3 = prevTarget != target
+        cond4 = prevTarget != source
+
+        if cond1:
+            if cond2:
+                self.edgeList[prevSource].remove(index)
+            if cond4:
+                self.appendFunct(self.edgeList[source],index)
+        if cond3:
+            if cond4:
+                self.edgeList[prevTarget].remove(index)
+            if cond2:
+                self.appendFunct(self.edgeList[target],index)
+
+        self.source[index] = source
+        self.target[index] = target
+        self[index] = weight
+
+    def removeEdge(self, i):
+        source = self.source[i]
+        target = self.target[i]
+        self.edgeList[source].remove(i)
+        if source != target:
+            self.edgeList[target].remove(i)
+
+    def getEdgeFromIndex(self, i):
+        return self.source[i], self.target[i], self[i]
+
+    def getCopy(self, copyData=True, optimizedRemove=False):
         """
         Returns a copy of the current adjacency.
         Guaranties that edges indices are consistent between the copy and the current object
@@ -641,14 +695,14 @@ class WeightedAdjacency(AbstractWeightedAdjacency):
 
         Parameter copyData is silently ignored
         """
-        adj = WeightedAdjacency(self.nbPoints)
+        adj = WeightedAdjacency(self.nbPoints, optimizedRemove=optimizedRemove)
         for i in range(len(self)):
             adj.createEdge(self.source[i], self.target[i], self[i])
         return adj
 
     def getSuccessors(self, i):
         # ugly hack to symmetries the adjacency on the fly
-        return [self.source[e] + self.target[e] - i for e in self.edgeList[i]]
+        return (self.source[e] + self.target[e] - i for e in self.edgeList[i])
 
     def getPredecessors(self, i):
         return self.getSuccessors(i)
@@ -657,13 +711,13 @@ class WeightedAdjacency(AbstractWeightedAdjacency):
         return self.getSuccessors(i)
 
     def getEdges(self, i):
-        return [[self.source[e], self.target[e], self[e]] for e in self.edgeList[i]]
+        return ((self.source[e], self.target[e], self[e]) for e in self.edgeList[i])
 
     def getOutEdges(self, i):
-        return [[i, self.source[e] + self.target[e] - i, self[e]] for e in self.edgeList[i]]
+        return ((i, self.source[e] + self.target[e] - i, self[e]) for e in self.edgeList[i])
 
     def getInEdges(self, i):
-        return [[self.source[e] + self.target[e] - i, i, self[e]] for e in self.edgeList[i]]
+        return ((self.source[e] + self.target[e] - i, i, self[e]) for e in self.edgeList[i])
 
     @staticmethod
     def createAdjacency(baseAdjacency, weightingFunction=None):
@@ -1029,7 +1083,7 @@ class Tree(Image):
         for the attribute "attributeName"
         """
         attr = None
-        if attributeName != None:
+        if attributeName is not None:
             attr = self.getAttribute(attributeName)
 
         res = []
@@ -1168,7 +1222,7 @@ class Tree(Image):
         count = 0
         for i in range(len(parent)):
             if leaves[i]:
-                count = count + 1
+                count += 1
 
         return count
 
@@ -1256,7 +1310,7 @@ class Tree(Image):
         newParent[count] = -1
         newLevel[count] = levelFunction(self.getRoot())
 
-        newTree = HiPy.Structures.Tree(self.treeType, newParent, newLevel)
+        newTree = Tree(self.treeType, newParent, newLevel)
         newTree.leavesAdjacency = self.leavesAdjacency
 
         return newTree

@@ -47,7 +47,7 @@ from HiPy.Util.Color import convertRGBtoLAB
 from HiPy.Structures import AdjacencyNdRegular, WeightedAdjacency
 
 
-def demoBPT():
+def demoWatershedHierarchies():
     print("reading image...")
     image = readImage('../samples/monsters.png', False)
     image = convertRGBtoLAB(image)
@@ -90,7 +90,7 @@ def demoBPT():
 
 
 def main():
-    demoBPT()
+    demoWatershedHierarchies()
 
 
 if __name__ == '__main__':

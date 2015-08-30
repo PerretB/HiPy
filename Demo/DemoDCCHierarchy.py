@@ -144,7 +144,7 @@ def drawGraphVizAttr(name, dccTree, attributes=None, leaves=False):
     for i in dccTree.iteratorFromPixelsToRoot():
         if i >= nbLeaves or leaves:
             par = dccTree[i]
-            if (par != -1):
+            if par != -1:
                 edge = pydot.Edge(par, i)
                 edge.set_dir("forward")
                 G.add_edge(edge)
