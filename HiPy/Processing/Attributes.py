@@ -39,7 +39,7 @@ Created on 19 juin 2015
 
 import random
 from math import *  # @UnusedWildImport
-import HiPy.Hierarchies.PartitionHierarchy
+import HiPy.Hierarchies.WatershedHierarchy
 import HiPy.Structures
 import HiPy.Util.VMath as VMath
 from functools import wraps
@@ -454,7 +454,7 @@ def addAttributePerimeterPartitionHierarchy(tree, attribute, baseAdjacency, incl
 
 @autoCreateAttribute("frontierLength", 0)
 def addAttributeFrontierLengthPartitionHierarchy(tree, attribute, adjacency):
-    nodeMapping = HiPy.Hierarchies.PartitionHierarchy.computeSaliencyMap(tree, adjacency, lambda i: i)
+    nodeMapping = HiPy.Hierarchies.WatershedHierarchy.computeSaliencyMap(tree, adjacency, lambda i: i)
     for i in range(nodeMapping.nbPoints):
         for edge in nodeMapping.getOutEdges(i):
             if edge[1] > edge[0]:

@@ -29,12 +29,12 @@
 # The fact that you are presently reading this means that you have had
 # knowledge of the CeCILL license and that you accept its terms.
 
-'''
+"""
 Created on 10 juin 2015
 
 
 @author: perretb
-'''
+"""
 
 from HiPy.IO import *  # @UnusedWildImport
 from HiPy.Hierarchies.DirectedComponentHierarchy import *  # @UnusedWildImport

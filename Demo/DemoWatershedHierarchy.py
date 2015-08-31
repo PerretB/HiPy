@@ -39,7 +39,7 @@ Created on 15 juin 2015
 from math import *  # @UnusedWildImport
 from HiPy.IO import *  # @UnusedWildImport
 from HiPy.Hierarchies.ComponentTree import *  # @UnusedWildImport
-from HiPy.Hierarchies.PartitionHierarchy import *  # @UnusedWildImport
+from HiPy.Hierarchies.WatershedHierarchy import *  # @UnusedWildImport
 from HiPy.Processing.Attributes import *  # @UnusedWildImport
 from HiPy.Util.Histogram import *  # @UnusedWildImport
 from HiPy.Util.VMath import *  # @UnusedWildImport

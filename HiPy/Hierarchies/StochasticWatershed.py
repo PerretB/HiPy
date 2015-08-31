@@ -34,7 +34,7 @@ Created on 26 juin 2015
 @author: perretb
 '''
 
-from HiPy.Hierarchies.PartitionHierarchy import constructAltitudeBPT, \
+from HiPy.Hierarchies.WatershedHierarchy import constructAltitudeBPT, \
     reweightMSTByAttribute, transformAltitudeBPTtoWatershedHierarchy
 from HiPy.Processing.Attributes import addAttributeChildren, addAttributeArea
 

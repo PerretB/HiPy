@@ -29,14 +29,15 @@
 
 # The fact that you are presently reading this means that you have had
 # knowledge of the CeCILL license and that you accept its terms.
-from HiPy.Hierarchies.PartitionHierarchy import constructAltitudeBPT, transformBPTtoAttributeHierarchy, \
+from HiPy.Hierarchies.WatershedHierarchy import constructAltitudeBPT, transformBPTtoAttributeHierarchy, \
     drawSaliencyForVisualisation
 from HiPy.IO import readImage, saveImage
 from HiPy.Processing.Attributes import addAttributeArea
 from HiPy.Processing.EnergyHierarchy import transformTreeToOptimalMumfordShahEnergyCutHierarchy, \
-    addAttributeMumfordShahEnergy, addAttributeEnergyCut
+    addAttributeMumfordShahEnergy, addAttributeEnergyCut, constructMumfordShahEnergyBPT
 from HiPy.Structures import AdjacencyNdRegular, WeightedAdjacency
 from HiPy.Util import VMath
+from HiPy.Util.Color import convertRGBtoLAB
 
 __author__ = 'Benjamin Perret'
 
@@ -44,6 +45,7 @@ __author__ = 'Benjamin Perret'
 def demoEnergyCut():
     print("Construction primal hierarchy by area...")
     image = readImage("../samples/monsters.png", False)
+    image = convertRGBtoLAB(image)
     image.adjacency = AdjacencyNdRegular.getAdjacency2d4(image.embedding.size)
     weightedAdjacency = WeightedAdjacency.createAdjacency(image.adjacency,
                                                           lambda i, j: VMath.euclideanDistance(image[i], image[j]))
@@ -68,7 +70,8 @@ def demoEnergyCut():
 
 def demoOptimalEnergyCutHierarchy():
     print("Construction primal hierarchy by area...")
-    image = readImage("../samples/monsters.png", False)  
+    image = readImage("../samples/monsters.png", False)
+    image = convertRGBtoLAB(image)
     image.adjacency = AdjacencyNdRegular.getAdjacency2d4(image.embedding.size)
     weightedAdjacency = WeightedAdjacency.createAdjacency(image.adjacency,
                                                           lambda i, j: VMath.euclideanDistance(image[i], image[j]))
@@ -88,13 +91,33 @@ def demoOptimalEnergyCutHierarchy():
     print("Done")
 
 
+def demoOptimalEnergyHierarchy():
+    print("reading image...")
+    image = readImage("../samples/monsters.png", False)
+    image = convertRGBtoLAB(image)
+    adj4 = AdjacencyNdRegular.getAdjacency2d4(image.embedding.size)
+
+    print("Computing optimal energy hierarchy w.r.t. Mumford-Shah energy...")
+    bpt = constructMumfordShahEnergyBPT(image, adj4)
+
+    print("Drawing saliency")
+    result = drawSaliencyForVisualisation(bpt, image, gammaFactor=1)
+
+    fileName = "Results/Energy hierarchy Saliency map.png"
+    print("Saving result to: " + fileName)
+    saveImage(result, fileName)
+    print("Done")
+
+
 def main():
     print("--- Optimal energy cut")
-    demoEnergyCut()
+    #demoEnergyCut()
 
     print("--- Optimal energy cut hierarchy")
-    demoOptimalEnergyCutHierarchy()
+    #demoOptimalEnergyCutHierarchy()
 
+    print("--- Optimal energy hierarchy")
+    demoOptimalEnergyHierarchy()
 
 if __name__ == '__main__':
     main()

@@ -27,13 +27,102 @@
 
 # The fact that you are presently reading this means that you have had
 # knowledge of the CeCILL license and that you accept its terms.
+from HiPy.Hierarchies.BinaryPartitionTree import constructBPT
 
 import HiPy.Processing.Attributes as Attributes
 from collections import deque
 import math
-
+import HiPy.Util.VMath as VMath
+from HiPy.Structures import WeightedAdjacency
 
 __author__ = 'Benjamin Perret'
+
+
+def constructMumfordShahEnergyBPT(image, baseAdjacency):
+    adjacency = WeightedAdjacency.createAdjacency(baseAdjacency)
+
+    vectorial = type(image[0]) is list
+    # attributes on regions
+    regionStats = []  # (area, perimeterLength, mean, mean²)
+    optimalEnergies = []
+
+    # attributes on edges
+    edgeLength = [1] * len(adjacency)
+
+    def computeLinearPieceForStatVectorial(regionStat):
+        return LinearPiece(0,  regionStat[0]*sum(VMath.diffV(regionStat[3], VMath.multV(regionStat[2],regionStat[2]))),
+                           regionStat[1])
+
+    def computeLinearPieceForStatScalar(regionStat):
+        return LinearPiece(0, regionStat[0] * (regionStat[3] - regionStat[2] * regionStat[2]),
+                           regionStat[1])
+
+    def computeFusionStatsScalar(region1, region2, fusionEdge):
+        statR1 = regionStats[region1]
+        statR2 = regionStats[region2]
+        area = statR1[0] + statR2[0]
+        perimeterLength = statR1[1] + statR2[1] - 2 * edgeLength[fusionEdge]
+        mean = (statR1[2] * statR1[0] + statR2[2] * statR2[0]) / area
+        mean2 = (statR1[3] * statR1[0] + statR2[3] * statR2[0]) / area
+        return [area, perimeterLength, mean, mean2]
+
+    def computeFusionStatsVectorial(region1, region2, fusionEdge):
+        statR1 = regionStats[region1]
+        statR2 = regionStats[region2]
+        area = statR1[0] + statR2[0]
+        perimeterLength = statR1[1] + statR2[1] - 2 * edgeLength[fusionEdge]
+        mean = VMath.divS(VMath.addV(VMath.multS(statR1[2], statR1[0]), VMath.multS(statR2[2], statR2[0])), area)
+        mean2 = VMath.divS(VMath.addV(VMath.multS(statR1[3], statR1[0]), VMath.multS(statR2[3], statR2[0])), area)
+        return [area, perimeterLength, mean, mean2]
+
+    if vectorial:
+        computeLinearPieceForStat = computeLinearPieceForStatVectorial
+        computeFusionStats = computeFusionStatsVectorial
+    else:
+        computeLinearPieceForStat = computeLinearPieceForStatScalar
+        computeFusionStats = computeFusionStatsScalar
+
+    def computeFusionEnergy(region1, region2, fusionEdge):
+        statFusion = computeFusionStats(region1, region2, fusionEdge)
+        energyFun = optimalEnergies[region1].sum(optimalEnergies[region2])
+        apparitionScale = energyFun.infimum(computeLinearPieceForStat(statFusion))
+        return apparitionScale, energyFun
+
+    for i in image.iterateOnPixels():
+        v = image[i]
+        if vectorial:
+            regionStats.append([1, baseAdjacency.countOutEdges(i, includeExternal=True), v, VMath.multV(v, v)])
+        else:
+            regionStats.append([1, baseAdjacency.countOutEdges(i, includeExternal=True), v, v * v])
+        optimalEnergies.append(PiecewiseLinearEnergyFunction(
+            computeLinearPieceForStat(regionStats[i])))
+
+    edgeLength = [1] * len(adjacency)
+    for i in adjacency.iterateOnPixels():
+        adjacency[i] = computeFusionEnergy(adjacency.source[i], adjacency.target[i], i)[0]
+
+    def computeFusionWeights(image, adjacency, fusionEdge, neighbourList, inEdges):
+
+        # attribute merged regions
+        newRegion = len(regionStats)
+        region1 = adjacency.source[fusionEdge]
+        region2 = adjacency.target[fusionEdge]
+        statNewRegion = computeFusionStats(region1, region2, fusionEdge)
+        regionStats.append(statNewRegion)
+        optimalEnergies.append(computeFusionEnergy(region1, region2, fusionEdge)[1])
+
+        weights = []
+        # attribute edges and reweighting
+        for n in neighbourList:
+            edgeLength[inEdges[n][0]] = sum([edgeLength[j] for j in inEdges[n]])
+
+            weight = computeFusionEnergy(newRegion, n, inEdges[n][0])[0]
+
+            weights.append(weight)
+        return weights
+
+    return constructBPT(image, adjacency, computeFusionWeights)
+
 
 
 @Attributes.autoCreateAttribute("mumfordShahEnergy", False)
@@ -134,16 +223,16 @@ def transformTreeToOptimalEnergyCutHierarchy(tree, dataFidelityAttribute, regula
     """
     children = Attributes.addAttributeChildren(tree)
     optimalEnergies = [None] * len(tree)
-    apparitionScales, created = tree.addAttribute("apparitionScales",0)
+    apparitionScales, created = tree.addAttribute("apparitionScales", 0)
     for i in tree.iteratorOnPixels():
         optimalEnergies[i] = PiecewiseLinearEnergyFunction(
             LinearPiece(0, dataFidelityAttribute[i], regularizationAttribute[i]))
-        apparitionScales[i] = -dataFidelityAttribute[i]/regularizationAttribute[i]
+        apparitionScales[i] = -dataFidelityAttribute[i] / regularizationAttribute[i]
 
     for i in tree.iteratorFromPixelsToRoot(includePixels=False):
         energyI = LinearPiece(0, dataFidelityAttribute[i], regularizationAttribute[i])
         energyChildren = optimalEnergies[children[i][0]]
-        for childIndex in range(1,len(children[i])):
+        for childIndex in range(1, len(children[i])):
             child = children[i][childIndex]
             energyChildren = energyChildren.sum(optimalEnergies[child])
         apparitionScales[i] = energyChildren.infimum(energyI)
@@ -151,12 +240,12 @@ def transformTreeToOptimalEnergyCutHierarchy(tree, dataFidelityAttribute, regula
 
     __filterNonPersistentNodes(tree, apparitionScales)
 
-    return tree.simplifyTreeByAttribute("apparitionScales","apparitionScales")
+    return tree.simplifyTreeByAttribute("apparitionScales", "apparitionScales")
 
 
 def __filterNonPersistentNodes(tree, apparitionScales):
     for i in tree.iteratorFromRootToPixels(includeRoot=False):
-        apparitionScales[i] = max(0,min(apparitionScales[i], apparitionScales[tree[i]]))
+        apparitionScales[i] = max(0, min(apparitionScales[i], apparitionScales[tree[i]]))
 
 
 class LinearPiece:

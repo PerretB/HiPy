@@ -93,6 +93,6 @@ def convertRGBtoLAB(image):
         A1 = 500. * (var_X1 - var_Y1)
         B1 = 200. * (var_Y1 - var_Z1)
 
-        res[i] = (L1, A1, B1)
+        res[i] = [L1, A1, B1]
 
     return res
