@@ -319,9 +319,9 @@ def drawSaliencyMap(size: (int, int),
     resWidth = width * 2 - 1
     resHeight = height * 2 - 1
     grid2 = HiPy.Structures.Embedding2dGrid(resWidth, resHeight)
-
+    defaultValue = 0 if type(saliency[0]) is not list else [0]*len(saliency[0])
     res = HiPy.Structures.Image(resWidth * resHeight,
-                0,
+                defaultValue,
                 HiPy.Structures.AdjacencyNdRegular.getAdjacency2d4([resWidth, resHeight]),
                 grid2)
     for y in range(height):

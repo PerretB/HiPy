@@ -90,7 +90,7 @@ def updateAttributeAfterFiltering(tree, attributeName, defaultValue=0):
 @autoCreateAttribute("randomColor", None)
 def addAttributeRandomColor(tree: "HiPy.Structures.Tree", attribute):
     for i in tree.iteratorFromPixelsToRoot(False):
-        attribute[i] = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+        attribute[i] = [random.randint(100, 255), random.randint(100, 255), random.randint(100, 255)]
 
 
 @autoCreateAttribute("area", 0)
@@ -130,8 +130,8 @@ def addAttributeVolume(tree, attribute):
     for i in tree.iteratorFromPixelsToRoot(True):
         par = tree[i]
         if par != -1:
-            lvl = tree.levels[i]
-            lvlPar = tree.levels[par]
+            lvl = tree.level[i]
+            lvlPar = tree.level[par]
             v = abs(lvl - lvlPar) * area[i]
             attribute[i] = attribute[i] + v
             attribute[par] = attribute[par] + v
