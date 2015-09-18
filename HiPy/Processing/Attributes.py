@@ -408,6 +408,9 @@ def addAttributeLowest(tree, attribute):
 @autoCreateAttribute("dynamics", None)
 def addAttributeDynamics(tree, attribute, extremaAttributeName="highest"):
     extrema = tree.getAttribute(extremaAttributeName)
+    if not extrema:
+        raise HiPy.Structures.HiPyException("Attribute '" + extremaAttributeName +
+                                            "' cannot be found in order to compute dynamics.")
     level = tree.level
     for i in tree.iteratorFromRootToPixels():
         parent = tree[i]

@@ -84,15 +84,20 @@ def demoNoiseWS(iteration=11):
     image = readImage('../samples/monsters.png', grayScale=True)
     adj4 = AdjacencyNdRegular.getAdjacency2d4(image.embedding.size)
     image = rescaleGray(image, 0, 1)
-
+    convolve = False
+    noiseInImage = True
     sal0 = None
     for i in range(iteration):
         print("-> Iteration " + str(i))
-        print("Adding noise...")
-        im2 = imageMap(image, lambda x: x + rnd.uniform(-0.001, 0.001), marginal=True)
-
         print("Constructing gradient graph...")
-        adjacency = WeightedAdjacency.createAdjacency(adj4, lambda i, j: abs(im2[i] - im2[j]))
+        if noiseInImage:
+            im2 = imageMap(image, lambda x: x + rnd.uniform(-0.001, 0.001), marginal=True, inPlace=False)
+            adjacency = WeightedAdjacency.createAdjacency(adj4, lambda i, j: abs(im2[i] - im2[j]))
+        else:
+            adjacency = WeightedAdjacency.createAdjacency(adj4, lambda i, j: abs(image[i] - image[j]))
+            adjacency = imageMap(adjacency, lambda x: x + rnd.uniform(-0.001, 0.001), marginal=True, inPlace=True)
+
+
         print("Constructing area watershed...")
         # wsh = transformAltitudeBPTtoWatershedHierarchy(constructAltitudeBPT(adjacency))
         # addAttributeArea(wsh)
@@ -101,10 +106,13 @@ def demoNoiseWS(iteration=11):
         sal = computeSaliencyMapFromAttribute(wsha, adj4)
 
         print("Averaging and Drawing saliency...")
-        lineGraph = WeightedAdjacency.createLineGraph(sal)
-        adjLineGraps = WeightedAdjacency.createReflexiveRelation(lineGraph)
-        meanSal = spatialFilter(sal, adjLineGraps, BasicAccumulator.getMeanAccumulator())
-        # meanSal=sal
+        if convolve:
+            lineGraph = WeightedAdjacency.createLineGraph(sal)
+            adjLineGraph = WeightedAdjacency.createReflexiveRelation(lineGraph)
+            meanSal = spatialFilter(sal, adjLineGraph, BasicAccumulator.getMeanAccumulator())
+        else:
+            meanSal = sal
+
         saveImage(normalizeToByte(
             imageMap(rescaleGray(drawSaliencyMap(image.embedding.size, meanSal), 0, 1), lambda x: x ** 0.33333)),
             "Results/Random noise gradient " + str(i) + ".png")
