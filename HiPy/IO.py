@@ -149,7 +149,7 @@ def saveImage(image, filename):
     im.save(filename, "PNG")
 
 
-def readGraph(filename):
+def readGraph(filename, directed=True):
     """
     Read a graph (DirectedWeightedAdjacency) from ascii file.
 
@@ -170,32 +170,38 @@ def readGraph(filename):
     nbPoints = int(line.split()[0])
     lines = infile.readlines()
     infile.close()
-    graph = HiPy.Structures.DirectedWeightedAdjacency(nbPoints)
+    if directed:
+        graph = HiPy.Structures.DirectedWeightedAdjacency(nbPoints)
+    else:
+        graph = HiPy.Structures.WeightedAdjacency(nbPoints)
 
     for line in lines:
         tokens = line.split()
+        origin = int(tokens[0])
+        target = int(tokens[1])
         if len(tokens) == 3:
-            graph.createEdge(int(tokens[0]), int(tokens[1]), int(tokens[2]))
+            graph.createEdge(origin, target, int(tokens[2]))
         else:
-            graph.createEdge(int(tokens[0]), int(tokens[1]))
+            graph.createEdge(origin, target)
 
     return graph
 
 
-def saveGraph(graph, filename):
+def saveGraph(abstractAdjacency, filename, directed=True):
     """
-    FIXME: broken, do not use!
     Save a graph (DirectedWeightedAdjacency) in a file as plain text
 
-    :param graph: the adjacency to save
+    :param abstractAdjacency: the adjacency to save
     :param filename: path to the saved file
     """
     out = open(filename, "w")
-    out.write(str(graph["nbPoints"]) + " " + str(len(graph["edges"])) + "\n")
-    for e in graph["edges"]:
-        line = " ".join([str(v) for v in e])
-        out.write(line)
-        out.write("\n")
+    out.write(str(abstractAdjacency.nbPoints) + " " + str(abstractAdjacency.countEdges()) + "\n")
+    for v in range(abstractAdjacency.nbPoints):
+        for e in abstractAdjacency.getOutEdges(v):
+            if directed or e[1] > e[0]:
+                line = " ".join([str(v) for v in e])
+                out.write(line)
+                out.write("\n")
     out.close()
 
 

@@ -29,18 +29,18 @@
 # knowledge of the CeCILL license and that you accept its terms.
 
 
-'''
+"""
 Created on 3 juin 2015
 
 @author: perretb
-'''
+"""
 from HiPy.Structures import Image, Embedding2dGrid, AdjacencyNdRegular, HiPyLogger
 
 
 def crop2d(image, xmin, xmax, ymin, ymax):
-    '''
+    """
     limits included
-    '''
+    """
     width = xmax - xmin + 1
     height = ymax - ymin + 1
     im = Image(width * height)
