@@ -187,15 +187,21 @@ def readGraph(filename, directed=True):
     return graph
 
 
-def saveGraph(abstractAdjacency, filename, directed=True):
+def saveGraph(abstractAdjacency, image, filename, directed=True):
     """
-    Save a graph (DirectedWeightedAdjacency) in a file as plain text
+    Save a graph (DirectedWeightedAdjacency) in a file as plain text (hugly) pink format
 
     :param abstractAdjacency: the adjacency to save
     :param filename: path to the saved file
     """
     out = open(filename, "w")
+    embedding = image.embedding
+    out.write("#rs " + str(embedding.height) + " cs " + str(embedding.width) + "\n")
+    #rs 481 cs 321
     out.write(str(abstractAdjacency.nbPoints) + " " + str(abstractAdjacency.countEdges()) + "\n")
+    out.write("val sommets\n")
+    for i in image.iterateOnPixels():
+        out.write(str(i) + " " + str(image[i]) + "\n")
     out.write("arcs values\n")
     for v in range(abstractAdjacency.nbPoints):
         for e in abstractAdjacency.getOutEdges(v):
