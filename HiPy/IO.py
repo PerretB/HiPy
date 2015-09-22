@@ -196,6 +196,7 @@ def saveGraph(abstractAdjacency, filename, directed=True):
     """
     out = open(filename, "w")
     out.write(str(abstractAdjacency.nbPoints) + " " + str(abstractAdjacency.countEdges()) + "\n")
+    out.write("arcs values\n")
     for v in range(abstractAdjacency.nbPoints):
         for e in abstractAdjacency.getOutEdges(v):
             if directed or e[1] > e[0]:
