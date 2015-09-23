@@ -196,7 +196,7 @@ def saveGraph(abstractAdjacency, image, filename, directed=True):
     """
     out = open(filename, "w")
     embedding = image.embedding
-    out.write("#rs " + str(embedding.height) + " cs " + str(embedding.width) + "\n")
+    out.write("#rs " + str(embedding.width) + " cs " + str(embedding.height) + "\n")
     #rs 481 cs 321
     out.write(str(abstractAdjacency.nbPoints) + " " + str(abstractAdjacency.countEdges()) + "\n")
     out.write("val sommets\n")
