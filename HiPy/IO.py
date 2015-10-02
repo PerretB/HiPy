@@ -40,6 +40,7 @@ Created on 3 juin 2015
 
 import HiPy.Structures
 import os
+import pickle
 
 PILAvailable = False
 # for image I/O
@@ -73,7 +74,7 @@ def ensureDirectoryExists(directory):
         os.makedirs(d)
 
 
-def readImage(filename, grayScale=True):
+def readImage(filename, grayScale=False):
     """
     Reads an image from a file an returns the corresponding HiPy.Structures.Image object.
 
@@ -241,3 +242,14 @@ def drawGraphVisualisation(name, tree, attributes=None, pixels=False):
             G.add_edge(edge)
 
     G.write_pdf(name)
+
+
+def saveHiPy(data, filename):
+    with open(filename, 'wb') as f:
+        pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
+
+
+def loadHiPy(filename):
+    with open(filename, 'rb') as f:
+        data = pickle.load(f)
+    return data

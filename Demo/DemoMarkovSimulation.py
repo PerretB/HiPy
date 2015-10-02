@@ -48,7 +48,7 @@ from HiPy.Util.Histogram import * #@UnusedWildImport
 
 def simuDirect():
     print('Reading image...')
-    image = readImage("../samples/blobs-ndg.png", True)
+    image = readImage("../samples/blobs-ndg.png", grayScale=True)
     image.adjacency = AdjacencyNdRegular.getAdjacency2d4(image.embedding.size)
     
     print('Constructing tree...')

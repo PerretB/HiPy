@@ -50,7 +50,7 @@ from HiPy.Util.Color import *  # @UnusedWildImport
 
 def testShapeClassif():
     print('Reading image...')
-    image = readImage("../samples/squares and circles.png", True)
+    image = readImage("../samples/squares and circles.png", grayScale=True)
     image.adjacency = AdjacencyNdRegular.getAdjacency2d4(image.embedding.size)
 
     print('Pre-filtering image...')

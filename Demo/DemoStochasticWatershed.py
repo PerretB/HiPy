@@ -57,7 +57,7 @@ rnd.seed(1)
 
 def demoSWS():
     print("reading image...")
-    image = readImage('../samples/monsters.png', False)
+    image = readImage('../samples/monsters.png')
     image = convertRGBtoLAB(image)
 
     print("constructing gradient graph...")
@@ -142,7 +142,7 @@ def demoNoiseWS(iteration=11):
 
 
 def testEdgeFilter():
-    image = readImage('../samples/lennaGray256.png', False)
+    image = readImage('../samples/lennaGray256.png')
     adj4 = AdjacencyNdRegular.getAdjacency2d4(image.embedding.size)
     im2 = rescaleGray(image, 0, 1)
 

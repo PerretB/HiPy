@@ -57,7 +57,7 @@ def testSelfDuality():
               # "blobs-ndg.png","lennaGray256.png","blood1.png","detection_test.png","spot5.png"]
     for imName in images:
 
-        im = readImage('../samples/' + imName)
+        im = readImage('../samples/' + imName, grayScale=True)
         print("image " + imName)
 
         imInv = imageInverseGrayByte(im)
@@ -76,7 +76,7 @@ def testAreaFilter():
     Performs a simple area filter with the tree of shapes of an image
     :return: void
     """
-    image = readImage('../samples/lenna.png')
+    image = readImage('../samples/lenna.png', grayScale=True)
     image = imagePadding(image, 0)
 
     image.adjacency = AdjacencyNdRegular.getAdjacency2d4(image.embedding.size)

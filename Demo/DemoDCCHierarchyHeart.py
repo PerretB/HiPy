@@ -91,10 +91,10 @@ def createHeartGradientGraph(image, size, weightFunction, connectivity=8):
 def testHeartSegmentation():
     print("Illustration on heart image segmentation")
     print("Reading images")
-    image = readImage("../samples/DCC/heart.pgm")
+    image = readImage("../samples/DCC/heart.pgm", grayScale=True)
     size = [image.embedding.width, image.embedding.height]
-    markerObj = readImage("../samples/DCC/heart-ObjectMarker.pgm")
-    markerFond = readImage("../samples/DCC/heart-BackgroundMarker.pgm")
+    markerObj = readImage("../samples/DCC/heart-ObjectMarker.pgm", grayScale=True)
+    markerFond = readImage("../samples/DCC/heart-BackgroundMarker.pgm", grayScale=True)
 
     print("Creating adjacency")
 

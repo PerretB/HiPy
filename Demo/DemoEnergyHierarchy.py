@@ -44,7 +44,7 @@ __author__ = 'Benjamin Perret'
 
 def demoEnergyCut():
     print("Construction primal hierarchy by area...")
-    image = readImage("../samples/monsters.png", False)
+    image = readImage("../samples/monsters.png")
     image = convertRGBtoLAB(image)
     image.adjacency = AdjacencyNdRegular.getAdjacency2d4(image.embedding.size)
     weightedAdjacency = WeightedAdjacency.createAdjacency(image.adjacency,
@@ -70,7 +70,7 @@ def demoEnergyCut():
 
 def demoOptimalEnergyCutHierarchy():
     print("Construction primal hierarchy by area...")
-    image = readImage("../samples/monsters.png", False)
+    image = readImage("../samples/monsters.png")
     image = convertRGBtoLAB(image)
     image.adjacency = AdjacencyNdRegular.getAdjacency2d4(image.embedding.size)
     weightedAdjacency = WeightedAdjacency.createAdjacency(image.adjacency,
@@ -93,7 +93,7 @@ def demoOptimalEnergyCutHierarchy():
 
 def demoOptimalEnergyHierarchy():
     print("reading image...")
-    image = readImage("../samples/monsters.png", False)
+    image = readImage("../samples/monsters.png")
     image = convertRGBtoLAB(image)
     adj4 = AdjacencyNdRegular.getAdjacency2d4(image.embedding.size)
 

@@ -163,7 +163,7 @@ def filterRetine(imageNumber, method=1):
     filePath = "../samples/DCC/DRIVE/" + fileName + ".png"
 
     print("Reading image: " + filePath)
-    image = readImage(filePath)
+    image = readImage(filePath, grayScale=True)
     size = [image.embedding.width, image.embedding.height]
     print("Creating adjacency")
 

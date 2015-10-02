@@ -47,7 +47,7 @@ def testAreaFilter():
     Performs a simple area filter on a sample image using a max tree.
     """
     print("Reading image")
-    image = readImage('../samples/lennaGray256.png')
+    image = readImage('../samples/lennaGray256.png', grayScale=True)
     image.adjacency = AdjacencyNdRegular.getAdjacency2d4(image.embedding.size)
 
     print("Tree construction")

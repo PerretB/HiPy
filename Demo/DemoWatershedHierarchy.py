@@ -49,7 +49,7 @@ from HiPy.Structures import AdjacencyNdRegular, WeightedAdjacency
 
 def demoWatershedHierarchies():
     print("reading image...")
-    image = readImage('../samples/monsters.png', False)
+    image = readImage('../samples/monsters.png')
     image = convertRGBtoLAB(image)
 
     print("constructing gradient graph...")

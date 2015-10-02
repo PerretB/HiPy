@@ -41,7 +41,7 @@ __author__ = 'Benjamin Perret'
 
 def testBPTSingleLinkage():
     print("reading image...")
-    image = readImage("../samples/remotesensing1.png", False)# "../samples/monsters.png", False)#
+    image = readImage("../samples/remotesensing1.png")# "../samples/monsters.png", False)#
     image = convertRGBtoLAB(image)
 
     print("constructing gradient graph...")
@@ -67,7 +67,7 @@ def testBPTSingleLinkage():
 
 def testBPTCompleteLinkage():
     print("reading image...")
-    image = readImage("../samples/monsters.png", False)# "../samples/remotesensing1.png", False)#"samples/monsters.png", False)#
+    image = readImage("../samples/monsters.png")# "../samples/remotesensing1.png", False)#"samples/monsters.png", False)#
     image = convertRGBtoLAB(image)
 
     print("constructing gradient graph...")

@@ -607,13 +607,21 @@ class WeightedAdjacency(AbstractWeightedAdjacency):
         self.optimizedRemove = optimizedRemove
         self.edgeList = []
         if optimizedRemove:
-            self.appendFunct = lambda collection, item: collection.add(item)
+            self.appendFunct = WeightedAdjacency.addSet#lambda collection, item: collection.add(item)
             for _ in range(size):
                 self.edgeList.append(set())
         else:
-            self.appendFunct = lambda collection, item: collection.append(item)
+            self.appendFunct = WeightedAdjacency.addList#lambda collection, item: collection.append(item)
             for _ in range(size):
                 self.edgeList.append([])
+
+    @staticmethod
+    def addList(collection, item):
+        collection.append(item)
+
+    @staticmethod
+    def addSet(collection, item):
+        collection.add(item)
 
     def addVertex(self):
         newVertex = len(self.edgeList)

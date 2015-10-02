@@ -96,9 +96,9 @@ def testNeuriteFiltering():
     LabelV = 70  # gray level of vessels in the classification
     LabelB = 140  # gray level of blobs in the classification
 
-    image = readImage(greyFile)
+    image = readImage(greyFile, grayScale=True)
     size = [image.embedding.width, image.embedding.height]
-    classif = readImage(classeFile)
+    classif = readImage(classeFile, grayScale=True)
     adj = createSemanticGraphNeurite(classif, size, LabelV, LabelB)
 
     print("Creating hierarchy")

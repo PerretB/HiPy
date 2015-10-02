@@ -49,7 +49,7 @@ def dummyDemoShaping():
     is equivalent to thresholding the level of the shape tree.
     '''
     print("Reading image...")
-    image = readImage("../samples/blood1.png")
+    image = readImage("../samples/blood1.png", grayScale=True)
     image.adjacency = AdjacencyNdRegular.getAdjacency2d4(image.embedding.size)
 
     print("Building tree...")
@@ -80,7 +80,7 @@ def demoNonIncreasingFilter():
     Demonstrate how to select attribute maxima of high value using a shaping
     '''
     print("Reading image...")
-    image = readImage("../samples/blood1.png")
+    image = readImage("../samples/blood1.png", grayScale=True)
     image.adjacency = AdjacencyNdRegular.getAdjacency2d4(image.embedding.size)
 
     print("Building tree...")
