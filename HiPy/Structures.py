@@ -736,6 +736,9 @@ class WeightedAdjacency(AbstractWeightedAdjacency):
         Warning: the base adjacency is assumed to be symmetric!
 
         Typical use is to transform an implicit k-adjacency into an explicit weighted adjacency.
+
+        weightingFunction is a function that takes two parameters - the indices of the source i and target j vertex -
+        and returns a weight for this edge. You can assume that j > i for all calls to weightingFunction.
         """
         adj = WeightedAdjacency(baseAdjacency.nbPoints)
         if weightingFunction is not None:

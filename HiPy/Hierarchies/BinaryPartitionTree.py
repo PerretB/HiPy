@@ -37,7 +37,7 @@ import functools
 import heapdict
 
 
-def constructBPT(image, baseAdjacency, computeFusionWeights):
+def constructBPT(image, baseAdjacency, computeFusionWeights, preMergeFlatZone=False):
     adjacency = baseAdjacency.getCopy(optimizedRemove=True, copyData=True)
 
     parent = [-1] * len(image)
@@ -46,6 +46,8 @@ def constructBPT(image, baseAdjacency, computeFusionWeights):
     inEdges = []
     for _ in range(len(image)):
         inEdges.append([])
+
+
 
     heap = heapdict.heapdict()
     __initHeap(image, adjacency, heap, active)
@@ -73,6 +75,26 @@ def constructBPT(image, baseAdjacency, computeFusionWeights):
                                   active, inEdges)
 
     return Tree(TreeType.PartitionHierarchy, parent, level, image)
+
+
+def __preMergeFlatZones(image, adjacency, level, parent, active, inEdges):
+    tmpLevel = []
+    for i in image.iterateOnPixels():
+        tmpLevel.append(image[i])
+    for i in image.iterateOnPixels():
+        for edge in adjacency.edgeList[i]:
+            region1, region2, weight = adjacency.getEdgeFromIndex(edge)
+            if tmpLevel[region1]==tmpLevel[region2]:
+                newParent = adjacency.addVertex()
+                parent[region1] = newParent
+                parent[region2] = newParent
+                parent.append(-1)
+                level.append(0)
+                tmpLevel.append(tmpLevel[region2])
+                inEdges.append([])
+                deletedEdges = adjacency.edgeList[region1] | adjacency.edgeList[region2]
+                neighbours = __findNeighbours(adjacency, deletedEdges, region1, region2, active, inEdges)
+
 
 
 def __initHeap(image, adjacency, heap, active):
