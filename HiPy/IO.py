@@ -202,7 +202,8 @@ def saveGraph(abstractAdjacency, image, filename, directed=True):
     out.write(str(abstractAdjacency.nbPoints) + " " + str(abstractAdjacency.countEdges()) + "\n")
     out.write("val sommets\n")
     for i in image.iterateOnPixels():
-        out.write(str(i) + " " + str(image[i]) + "\n")
+        out.write(str(i) + " 1\n")
+        #out.write(str(i) + " " + str(image[i]) + "\n")
     out.write("arcs values\n")
     for v in range(abstractAdjacency.nbPoints):
         for e in abstractAdjacency.getOutEdges(v):
