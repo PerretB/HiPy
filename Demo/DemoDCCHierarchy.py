@@ -57,7 +57,7 @@ except ImportError:
 #    - file "DCC-Hierarchy-Fig5.pdf": pdf plot of the graph Fig. 6 c
 def testAlgoArticle():
     print("Test of the paper algorithm for vertex weighted graphs")
-    graph = readGraph('../samples/DCC/fig5-Graph.list')
+    graph = readEdgeGraph('../samples/DCC/fig5-Graph.list')
     image = readImage("../samples/DCC/fig5-Image.png", grayScale=True)
     image.adjacency = graph
     parent, adj = DirectedComponentHierarchy(image)
@@ -79,7 +79,7 @@ def testAlgoArticle():
 #    - file "DCC-Hierarchy-Fig5-Stack.pdf": pdf plot of the graph Fig. 6 c
 def testAlgoStackGraphArticle():
     print("Test of the general algorithm for stacks of graphs")
-    adj = readGraph("../samples/DCC/fig5-Graph.list")
+    adj = readEdgeGraph("../samples/DCC/fig5-Graph.list")
     image = readImage("../samples/DCC/fig5-Image.png", grayScale=True)
     stack = createGraphStackFromVertexWeightedGraph(adj, image)
 
@@ -100,7 +100,7 @@ def testAlgoStackGraphArticle():
 #    - file "DCC-Hierarchy-Fig5-Stack-Fast.pdf": pdf plot of the graph Fig. 6 c
 def testAlgoStackGraphArticleFast():
     print("Test of the general algorithm for stacks of graphs with optimization")
-    adj = readGraph("../samples/DCC/fig5-Graph.list")
+    adj = readEdgeGraph("../samples/DCC/fig5-Graph.list")
     image = readImage("../samples/DCC/fig5-Image.png", grayScale=True)
     stack = createGraphStackFromVertexWeightedGraph(adj, image)
 

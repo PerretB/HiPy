@@ -39,7 +39,7 @@ import HiPy.Processing.Attributes
 from HiPy.Util.Histogram import imageMap, rescaleGray, normalizeToByte
 
 
-def constructAltitudeBPT(adjacency: "AbstractWeightedAdjacency") -> "Tree":
+def constructAltitudeBPT(adjacency: "AbstractWeightedAdjacency", image=None) -> "Tree":
     """
     Construct the binary partition tree by altitude of the given edge image.
 
@@ -64,6 +64,8 @@ def constructAltitudeBPT(adjacency: "AbstractWeightedAdjacency") -> "Tree":
 
     tree = HiPy.Structures.Tree(HiPy.Structures.TreeType.PartitionHierarchy, parent, levels)
     tree.leavesAdjacency = adjMST
+    if image:
+        tree.leavesEmbedding = image.embedding
     return tree
 
 
@@ -79,7 +81,9 @@ def transformBPTtoAttributeHierarchy(bpt: "Tree", attributeName: str) -> "Tree":
     :return: the new binary partition tree
     """
     adj = reweightMSTByAttribute(bpt, attributeName)
-    return constructAltitudeBPT(adj)
+    ntree = constructAltitudeBPT(adj)
+    ntree.leavesEmbedding = bpt.leavesEmbedding
+    return ntree
 
 
 def filterBPTbyCriterion(bpt: "Tree", filterCriterion: "function int->bool") -> "Tree":
@@ -96,7 +100,9 @@ def filterBPTbyCriterion(bpt: "Tree", filterCriterion: "function int->bool") -> 
     :return: the new binary partition tree
     """
     adj = filterMSTByCriterion(bpt, filterCriterion)
-    return constructAltitudeBPT(adj)
+    ntree = constructAltitudeBPT(adj)
+    ntree.leavesEmbedding = bpt.leavesEmbedding
+    return ntree
 
 
 def transformAltitudeBPTtoWatershedHierarchy(bpt: "Tree") -> "Tree":
@@ -109,7 +115,9 @@ def transformAltitudeBPTtoWatershedHierarchy(bpt: "Tree") -> "Tree":
     :return: the new binary partition tree
     """
     adj = extractWatershedEdges(bpt)
-    return constructAltitudeBPT(adj)
+    ntree = constructAltitudeBPT(adj)
+    ntree.leavesEmbedding = bpt.leavesEmbedding
+    return ntree
 
 
 def computeMSTBPT(nbPoints: int, sortedEdgeList: list) -> (list, list):

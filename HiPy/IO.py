@@ -41,6 +41,7 @@ Created on 3 juin 2015
 import HiPy.Structures
 import os
 import pickle
+from HiPy.Structures import Embedding2dGrid
 
 PILAvailable = False
 # for image I/O
@@ -150,7 +151,7 @@ def saveImage(image, filename):
     im.save(filename, "PNG")
 
 
-def readGraph(filename, directed=True):
+def readEdgeGraph(filename, directed=True):
     """
     Read a graph (DirectedWeightedAdjacency) from ascii file.
 
@@ -212,6 +213,44 @@ def saveGraph(abstractAdjacency, image, filename, directed=True):
                 out.write(line)
                 out.write("\n")
     out.close()
+
+def readGraph(filename, directed=False):
+    """
+    Read a graph (WeightedAdjacency) from a file as plain text (hugly) pink format
+
+
+
+    :param filename: path to the file to read
+
+    """
+    infile = open(filename, "r")
+    line = infile.readline()
+    embedding = None
+    while line[0] == '#':
+        if line.startswith("#rs"):
+            tokens = line.split()
+            embedding = Embedding2dGrid(int(tokens[1]), int(tokens[3]))
+        line = infile.readline()
+    nbPoints = int(line.split()[0])
+    nbEdges = int(line.split()[1])
+    lines = infile.readlines()
+    infile.close()
+    if directed:
+        graph = HiPy.Structures.DirectedWeightedAdjacency(nbPoints)
+    else:
+        graph = HiPy.Structures.WeightedAdjacency(nbPoints)
+
+    for i in range(2+nbPoints,len(lines)):
+        line = lines[i]
+        tokens = line.split()
+        origin = int(tokens[0])
+        target = int(tokens[1])
+        if len(tokens) == 3:
+            graph.createEdge(origin, target, int(tokens[2]))
+        else:
+            graph.createEdge(origin, target)
+
+    return graph, embedding
 
 
 def drawGraphVisualisation(name, tree, attributes=None, pixels=False):
