@@ -246,7 +246,7 @@ def readGraph(filename, directed=False):
         origin = int(tokens[0])
         target = int(tokens[1])
         if len(tokens) == 3:
-            graph.createEdge(origin, target, int(tokens[2]))
+            graph.createEdge(origin, target, float(tokens[2]))
         else:
             graph.createEdge(origin, target)
 

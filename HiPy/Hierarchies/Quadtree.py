@@ -27,7 +27,7 @@
 
 # The fact that you are presently reading this means that you have had
 # knowledge of the CeCILL license and that you accept its terms.
-from math import log2
+from math import log2, ceil
 
 from HiPy.Structures import Image, Tree, TreeType, HiPyException, HiPyLogger, Embedding2dGrid
 
@@ -64,7 +64,7 @@ def constructBinaryQuadTree(image: Image):
             level.append(curLevel)
             return newNode
 
-    maxLevel = log2(max(size))+1
+    maxLevel = ceil(log2(max(size)))*2+1
     _recursiveBinarySplit(maxLevel, 0, 0, size[0], size[1])
     return Tree(TreeType.PartitionHierarchy, parent, level, image)
 

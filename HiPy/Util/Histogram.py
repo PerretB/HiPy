@@ -185,3 +185,23 @@ def median(*args: "Image"):
     for i in res.iterateOnPixels():
         res[i] = HiPy.Util.VMath.medianV([im[i] for im in args])
     return res
+
+
+def remapToInt(image):
+    '''
+    Takes a gray level image and apply the smallest strictly increasing gray level transform to the set of positive integer.
+
+    If the input image contains n unique gray values: the transform t will have the following property:
+    - t is a surjection to [0..n-1]
+    - given v1, v2 in input image, v1 < v2 => t(v1) < t(v2)
+    :param image: gray level image
+    :return: gray level image with int values
+    '''
+    values = set()
+    for v in image:
+        values.add(v)
+    values = sorted(values)
+    myMap = dict()
+    for i in range(len(values)):
+        myMap[values[i]] = i
+    return imageMap(image, lambda g: myMap[g])
