@@ -1126,11 +1126,18 @@ class Tree(Image):
             else:
                 criterion = (lambda _: False)
         root = len(self) - 1
-        for i in self.iteratorFromRootToPixels():
-            if i >= self.nbPixels and (i == root or not criterion(i)):
-                self.reconstructedValue[i] = self.__dict__[attributeName][i]
-            else:
-                self.reconstructedValue[i] = self.reconstructedValue[self[i]]
+        if self.treeType == TreeType.ComponentTree:
+            for i in self.iteratorFromRootToPixels():
+                if i >= self.nbPixels and (i == root or not criterion(i)):
+                    self.reconstructedValue[i] = self.__dict__[attributeName][i]
+                else:
+                    self.reconstructedValue[i] = self.reconstructedValue[self[i]]
+        else:
+            for i in self.iteratorFromRootToPixels():
+                if i == root or not criterion(i):
+                    self.reconstructedValue[i] = self.__dict__[attributeName][i]
+                else:
+                    self.reconstructedValue[i] = self.reconstructedValue[self[i]]
 
         image = Image(self.nbPixels, 0, self.leavesAdjacency, self.leavesEmbedding)
         for i in range(len(image)):
