@@ -355,10 +355,41 @@ class AbstractAdjacency(object):
         """
         raise NotImplementedError("Unsupported method" + " getNeighbours")
 
+    def getEdgeFromIndex(self, i):
+        """
+        :param i: edge index
+        :return: triple [k l *]  indicating that edge i links vertex k to vertex l and has auxilary data *
+        """
+        raise NotImplementedError("Unsupported method" + " getEdgeFromIndex")
+
+    def getEdgeIndices(self, i):
+        """
+        :param i: vertex index
+        :return: list of  edge indices of the form [j,i] or [i,j] such that j->i or i->j
+        (* can be any auxiliary data, usually weights)
+        """
+        return self.getInEdgeIndices(i) + self.getOutEdgeIndices(i)
+
+    def getInEdgeIndices(self, i):
+        """
+        :param i: vertex index
+        :return: list of in edge indices of the form [j,i] or [i,j] such that j->i or i->j
+        (* can be any auxiliary data, usually weights)
+        """
+        raise NotImplementedError("Unsupported method" + " getinEdgeIndices")
+
+    def getOutEdgeIndices(self, i):
+        """
+        :param i: vertex index
+        :return: list of out edges indices of the form [i,j,*] such that i->j
+        (* can be any auxiliary data, usually weights)
+        """
+        raise NotImplementedError("Unsupported method" + " getOutEdgeIndices")
+
     def getEdges(self, i):
         """
         :param i: vertex index
-        :return list of in  edges of the form [j,i,*] or [i,j,*] such that j->i or i->j
+        :return list of edges of the form [j,i,*] or [i,j,*] such that j->i or i->j
         (* can be any auxiliary data, usually weights)
 
         """
@@ -367,7 +398,7 @@ class AbstractAdjacency(object):
     def getOutEdges(self, i):
         """
         :param i: vertex index
-        :return list of outHead edges of the form [i,j,*] such that i->j
+        :return list of out edges of the form [i,j,*] such that i->j
         (* can be any auxiliary data, usually weights)
 
         """
@@ -691,6 +722,15 @@ class WeightedAdjacency(AbstractWeightedAdjacency):
         self.edgeList[source].remove(i)
         if source != target:
             self.edgeList[target].remove(i)
+
+    def getEdgeIndices(self, i):
+        return self.edgeList[i]
+
+    def getInEdgeIndices(self, i):
+        return self.edgeList[i]
+
+    def getOutEdgeIndices(self, i):
+        return self.edgeList[i]
 
     def getEdgeFromIndex(self, i):
         return self.source[i], self.target[i], self[i]
