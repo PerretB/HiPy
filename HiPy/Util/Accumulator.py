@@ -69,6 +69,12 @@ class BasicAccumulator(AbstractAccumulator):
         return self.resultFunction(self.values)
 
     @staticmethod
+    def getCounterAccumulator():
+        def accFun(values, newValue, *_):
+            values[0] += 1
+        return BasicAccumulator(accFun, lambda values: values[0], [0])
+
+    @staticmethod
     def getSumAccumulator():
         def accFun(values, newValue, *_):
             values[0] = values[0] + newValue
