@@ -189,7 +189,7 @@ def readEdgeGraph(filename, directed=True):
     return graph
 
 
-def saveGraph(abstractAdjacency, image, filename, directed=True):
+def saveGraph(abstractAdjacency, filename, directed=True, image=None, embedding= None):
     """
     Save a graph (DirectedWeightedAdjacency) in a file as plain text (hugly) pink format
 
@@ -197,15 +197,18 @@ def saveGraph(abstractAdjacency, image, filename, directed=True):
     :param filename: path to the saved file
     """
     out = open(filename, "w")
-    embedding = image.embedding
-    out.write("#rs " + str(embedding.width) + " cs " + str(embedding.height) + "\n")
+    if (not embedding) and image:
+        embedding = image.embedding
+    if embedding:
+        out.write("#rs " + str(embedding.width) + " cs " + str(embedding.height) + "\n")
     #rs 481 cs 321
     out.write(str(abstractAdjacency.nbPoints) + " " + str(abstractAdjacency.countEdges()) + "\n")
-    out.write("val sommets\n")
-    for i in image.iterateOnPixels():
-        out.write(str(i) + " 1\n")
-        #out.write(str(i) + " " + str(image[i]) + "\n")
-    out.write("arcs values\n")
+    if image:
+        out.write("val sommets\n")
+        for i in image.iterateOnPixels():
+            out.write(str(i) + " " + str(image[i]) + "\n")
+            #out.write(str(i) + " " + str(image[i]) + "\n")
+        out.write("arcs values\n")
     for v in range(abstractAdjacency.nbPoints):
         for e in abstractAdjacency.getOutEdges(v):
             if directed or e[1] > e[0]:
@@ -218,7 +221,7 @@ def readGraph(filename, directed=False):
     """
     Read a graph (WeightedAdjacency) from a file as plain text (hugly) pink format
 
-
+    TODO: read vertex value
 
     :param filename: path to the file to read
 
@@ -240,7 +243,7 @@ def readGraph(filename, directed=False):
     else:
         graph = HiPy.Structures.WeightedAdjacency(nbPoints)
 
-    for i in range(2+nbPoints,len(lines)):
+    for i in range(len(lines)-nbEdges, len(lines)):
         line = lines[i]
         tokens = line.split()
         origin = int(tokens[0])

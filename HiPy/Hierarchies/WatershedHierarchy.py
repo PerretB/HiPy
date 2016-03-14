@@ -304,6 +304,7 @@ def computeSaliencyMap(partitionTree: "Tree",
     :param valuationFunction: a function associating a value to a node index
     :return: A copy of the given adjacency weighted by the saliency values
     """
+    HiPy.Structures.HiPyLogger.debug("call to: computeSaliencyMap")
     HiPy.Processing.Attributes.addAttributeDepth(partitionTree)
     lca = partitionTree.lca
     valFun = lambda i, j: valuationFunction(lca(i, j))
@@ -321,6 +322,7 @@ def drawSaliencyMap(size: (int, int),
         Its argument is a list containing the value of the neighbours 1-faces
     :returns An contour map image of size [2*width-1,2*height-1]
     """
+    HiPy.Structures.HiPyLogger.debug("call to: drawSaliencyMap")
     width = size[0]
     height = size[1]
     grid = HiPy.Structures.Embedding2dGrid(width, height)

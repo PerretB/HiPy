@@ -129,6 +129,7 @@ class Image(list):
                 self.append(copy.deepcopy(initValue))
         self.embedding = embedding
         self.adjacency = adjacency
+        self.attributes = {}
 
     def setAll(self, image):
         """
@@ -230,6 +231,7 @@ class Image(list):
         if name not in self.__dict__ or resetIfExist:
             image = Image(len(self), defaultValue, self.adjacency, self.embedding)
             self.__dict__[name] = image
+            self.attributes[name] = image
             return image, True
 
         return self.__dict__[name], False
@@ -240,6 +242,7 @@ class Image(list):
         """
         if name in self.__dict__:
             del self.__dict__[name]
+            del self.attributes[name]
 
     def getAttribute(self, name):
         """

@@ -68,6 +68,10 @@ class BasicAccumulator(AbstractAccumulator):
     def result(self):
         return self.resultFunction(self.values)
 
+    def copy(self):
+        return BasicAccumulator(self.accumulateFunction, self.resultFunction, self.resetValues)
+
+
     @staticmethod
     def getCounterAccumulator():
         def accFun(values, newValue, *_):
