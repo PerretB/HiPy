@@ -208,7 +208,7 @@ def saveGraph(abstractAdjacency, filename, directed=True, image=None, embedding=
         for i in image.iterateOnPixels():
             out.write(str(i) + " " + str(image[i]) + "\n")
             #out.write(str(i) + " " + str(image[i]) + "\n")
-        out.write("arcs values\n")
+    out.write("arcs values\n")
     for v in range(abstractAdjacency.nbPoints):
         for e in abstractAdjacency.getOutEdges(v):
             if directed or e[1] > e[0]:
