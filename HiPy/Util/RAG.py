@@ -165,7 +165,7 @@ def accumulateOnRAGPixels(rag, values, accumulator):
     for i in image.iterateOnPixels():
         accumulators[i] = accumulator.copy()
         accumulators[i].reset()
-    pixelMap = rag.attributes["pixelDAGMap"]
+    pixelMap = rag.attributes["pixelRAGMap"]
     for i in pixelMap.iterateOnPixels():
         accumulators[pixelMap[i]].accumulate(values[i])
 

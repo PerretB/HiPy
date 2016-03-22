@@ -38,6 +38,7 @@ Created on 6 juil. 2015
 
 import copy
 
+from HiPy.Util import VMath
 from HiPy.Util.VMath import medianV
 
 
@@ -106,6 +107,15 @@ class BasicAccumulator(AbstractAccumulator):
             values[1] += 1
 
         return BasicAccumulator(accFun, lambda values: values[0] / values[1], [0, 0])
+
+    @staticmethod
+    def getMeanVAccumulator(dim):
+        def accFun(values, newValue, *_):
+            values[0] = VMath.addV(values[0], newValue)
+            values[1] += 1
+
+        return BasicAccumulator(accFun, lambda values: VMath.divS(values[0], values[1]), [[0]*dim, 0])
+
 
     @staticmethod
     def getMedianAccumulator():
