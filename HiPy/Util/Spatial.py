@@ -33,6 +33,7 @@ from HiPy.IO import readImage, saveImage
 
 # The fact that you are presently reading this means that you have had
 # knowledge of the CeCILL license and that you accept its terms.
+from HiPy.Util.Histogram import normalizeToByte
 
 '''
 Created on 6 juil. 2015
@@ -85,8 +86,26 @@ def getCrossStructuringElement():
 def getSquareStructuringElement():
     return [(-1, -1), (0, -1), (1, -1), (-1, 0), (0, 0), (1, 0), (-1, 1), (0, 1), (1, 1)]
 
+
+def simpleXGradient(image):
+    adj = AdjacencyNdRegular(image.embedding, neighbourList=[(-1, 0), (1, 0)], weights=[-1, 1])
+    return spatialFilter(image, adj, BasicAccumulator.getWeightedSumAccumulator())
+
+
+def simpleYGradient(image):
+    adj = AdjacencyNdRegular(image.embedding, neighbourList=[(0, -1), (0, 1)], weights=[-1, 1])
+    return spatialFilter(image, adj, BasicAccumulator.getWeightedSumAccumulator())
+
     # image = readImage("../../samples/lennaGray256.png")
     # image.adjacency = AdjacencyNdRegular.getAdjacency2d4(image.embedding.size)
     # bigSquareAdj = WeightedAdjacency.createKHopAjacency(image.adjacency, 6, lambda *_:1)
     # res = spatialFilter(image,bigSquareAdj,BasicAccumulator.getMaxAccumulator())
-    # saveImage(res,"bigdil.png")
+#     # saveImage(res,"bigdil.png")
+# image = readImage("../../samples/lennaGray256.png", grayScale=True)
+# xg = simpleXGradient(image)
+# yg = simpleYGradient(image)
+#
+# xg = normalizeToByte(xg)
+# yg = normalizeToByte(yg)
+# saveImage(xg, "f:/xg.png")
+# saveImage(yg, "f:/yg.png")

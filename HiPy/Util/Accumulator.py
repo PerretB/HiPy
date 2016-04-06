@@ -87,6 +87,13 @@ class BasicAccumulator(AbstractAccumulator):
         return BasicAccumulator(accFun, lambda values: values[0], [0])
 
     @staticmethod
+    def getWeightedSumAccumulator():
+        def accFun(values, newValue, weight, *_):
+            values[0] = values[0] + weight * newValue
+
+        return BasicAccumulator(accFun, lambda values: values[0], [0])
+
+    @staticmethod
     def getMinAccumulator(initValue=99999999):
         def accFun(values, newValue, *_):
             values[0] = min(values[0], newValue)
