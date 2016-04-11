@@ -41,7 +41,7 @@ Created on 3 juin 2015
 import HiPy.Structures
 import os
 import pickle
-from HiPy.Structures import Embedding2dGrid
+
 
 PILAvailable = False
 # for image I/O
@@ -232,7 +232,7 @@ def readGraph(filename, directed=False):
     while line[0] == '#':
         if line.startswith("#rs"):
             tokens = line.split()
-            embedding = Embedding2dGrid(int(tokens[1]), int(tokens[3]))
+            embedding = HiPy.Structures.Embedding2dGrid(int(tokens[1]), int(tokens[3]))
         line = infile.readline()
     nbPoints = int(line.split()[0])
     nbEdges = int(line.split()[1])

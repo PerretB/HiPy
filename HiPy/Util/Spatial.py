@@ -41,7 +41,7 @@ Created on 6 juil. 2015
 @author: perretb
 '''
 
-from HiPy.Structures import AdjacencyNdRegular, WeightedAdjacency
+import HiPy.Structures
 from HiPy.Util.Accumulator import BasicAccumulator
 
 
@@ -76,7 +76,7 @@ def meanGray(image, structuringElement):
 
 
 def constructAdjacencyFromStructuringElement(image, structuringElement):
-    return AdjacencyNdRegular(image.embedding, structuringElement)
+    return HiPy.Structures.AdjacencyNdRegular(image.embedding, structuringElement)
 
 
 def getCrossStructuringElement():
@@ -88,12 +88,12 @@ def getSquareStructuringElement():
 
 
 def simpleXGradient(image):
-    adj = AdjacencyNdRegular(image.embedding, neighbourList=[(-1, 0), (1, 0)], weights=[-1, 1])
+    adj = HiPy.Structures.AdjacencyNdRegular(image.embedding, neighbourList=[(-1, 0), (1, 0)], weights=[-1, 1])
     return spatialFilter(image, adj, BasicAccumulator.getWeightedSumAccumulator())
 
 
 def simpleYGradient(image):
-    adj = AdjacencyNdRegular(image.embedding, neighbourList=[(0, -1), (0, 1)], weights=[-1, 1])
+    adj = HiPy.Structures.AdjacencyNdRegular(image.embedding, neighbourList=[(0, -1), (0, 1)], weights=[-1, 1])
     return spatialFilter(image, adj, BasicAccumulator.getWeightedSumAccumulator())
 
     # image = readImage("../../samples/lennaGray256.png")

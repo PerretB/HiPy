@@ -74,6 +74,10 @@ def norm(v):
     return sqrt(sum(multV(v, v)))
 
 
+def normEpsilon(v, epsilon=10e-5):
+    return sqrt(sum(multV(v, v))+epsilon)
+
+
 def mult(v):
     res = 1
     for val in v:

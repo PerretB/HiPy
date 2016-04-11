@@ -45,6 +45,8 @@ import HiPy.Util.VMath as VMath
 from functools import wraps
 import inspect
 
+from HiPy.Util.Spatial import simpleXGradient, simpleYGradient
+
 
 def autoCreateAttribute(defaultName, defaultValue=0):
     def decorator(fun):
@@ -240,6 +242,16 @@ def computeHuInvariant(scaleInvariantMoments):
         n[3] + n[6]) * (3 * (n[5] + n[4]) ** 2 - (n[3] + n[6]) ** 2)
     return [I1, I2, I3, I4, I5, I6, I7]
 
+
+@autoCreateAttribute("huInvariant", 0)
+def addAttributeHuInvariant(tree, attribute, momentAttributeName="moments"):
+    """
+    Compute the Hu invariants (1 to 7) of each component
+    """
+    attrMoment = tree.getAttribute(momentAttributeName)
+
+    for i in tree.iteratorFromPixelsToRoot():
+        attribute[i] = computeHuInvariant(computeScaleInvariantMoments2d(computeCentralMoments2d(attrMoment[i])))
 
 @autoCreateAttribute("inertia", 0)
 def addAttributeInertia2d(tree, attribute, momentAttributeName="moments"):
@@ -532,3 +544,40 @@ def addAttributeRank(tree, attribute):
         if level[i] == level[par]:
             attribute[par] = attribute[i]
 
+
+@autoCreateAttribute("hog", None)
+def addAttributeHOG(tree, attribute, grayImage, orientationBins=8):
+    xGradient = simpleXGradient(grayImage)
+    yGradient = simpleYGradient(grayImage)
+    children = addAttributeChildren(tree)
+    magnitude = grayImage.getCopy(False)
+    orientation = grayImage.getCopy(False)
+    binWidth = pi / orientationBins
+
+    def getOrientationBin(angleOri):
+        if angleOri < 0: #unsigned
+            angle = pi + angleOri
+        else:
+            angle = angleOri
+        binNum = int(floor(angle/binWidth))
+        if binNum == orientationBins:
+            binNum -= 1
+
+        return binNum
+
+    for i in grayImage.iterateOnPixels():
+        magnitude[i] = sqrt(xGradient[i]*xGradient[i] + yGradient[i]*yGradient[i])
+        orientation[i] = atan2(yGradient[i], xGradient[i])
+
+    for i in attribute.iterateOnPixels():
+        attribute[i] = [0]*orientationBins
+
+    for i in tree.iteratorOnPixels():
+        attribute[i][getOrientationBin(orientation[i])] = magnitude[i]
+
+    for i in tree.iteratorFromPixelsToRoot(includePixels=False):
+        for c in children[i]:
+            attribute[i] = VMath.addV(attribute[i], attribute[c])
+
+    for i in attribute.iterateOnPixels():
+        attribute[i] = VMath.divS(attribute[i], VMath.normEpsilon(attribute[i]))
