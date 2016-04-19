@@ -203,11 +203,13 @@ def saveGraph(abstractAdjacency, filename, directed=True, image=None, embedding=
         out.write("#rs " + str(embedding.width) + " cs " + str(embedding.height) + "\n")
     #rs 481 cs 321
     out.write(str(abstractAdjacency.nbPoints) + " " + str(abstractAdjacency.countEdges()) + "\n")
+    out.write("val sommets\n")
     if image:
-        out.write("val sommets\n")
         for i in image.iterateOnPixels():
             out.write(str(i) + " " + str(image[i]) + "\n")
-            #out.write(str(i) + " " + str(image[i]) + "\n")
+    else:
+        for i in range(abstractAdjacency.nbPoints):
+            out.write(str(i) + " 1\n") # compatibility issues for some pink tools :(
     out.write("arcs values\n")
     for v in range(abstractAdjacency.nbPoints):
         for e in abstractAdjacency.getOutEdges(v):
