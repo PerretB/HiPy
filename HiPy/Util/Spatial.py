@@ -12,7 +12,7 @@
 import heapq
 from heapq import heappush
 from _heapq import heappop
-from HiPy.IO import readImage, saveImage
+
 
 # As a counterpart to the access to the source code and  rights to copy,
 # modify and redistribute granted by the license, users are provided only
