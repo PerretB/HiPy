@@ -165,7 +165,7 @@ def combineBands(*args: "Image"):
     If args = [image1, image2, ..., imageN)
     The result is, for all pixel i, res[i]=[image1[i], image2[i], ..., imageN[i]]
     '''
-    res = args[0].copy(copyData=False)
+    res = args[0].getCopy(copyData=False)
 
     for i in res.iterateOnPixels():
         res[i] = [im[i] for im in args]
@@ -181,7 +181,7 @@ def median(*args: "Image"):
     If args = [image1, image2, ..., imageN)
     The result is, for all pixel i, res[i]=median(image1[i], image2[i], ..., imageN[i])
     '''
-    res = args[0].copy(copyData=False)
+    res = args[0].getCopy(copyData=False)
     for i in res.iterateOnPixels():
         res[i] = HiPy.Util.VMath.medianV([im[i] for im in args])
     return res
