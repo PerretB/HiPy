@@ -43,9 +43,7 @@ import HiPy.Hierarchies.WatershedHierarchy
 import HiPy.Structures
 import HiPy.Util.VMath as VMath
 from functools import wraps
-import inspect
-
-from HiPy.Util.Spatial import simpleXGradient, simpleYGradient
+import HiPy.Util.Spatial
 
 
 def autoCreateAttribute(defaultName, defaultValue=0):
@@ -306,11 +304,11 @@ def addAttributeElongationOrientation2d(tree, nameElongation="elongation", nameO
         lambda2 = max(0, 0.5 * (xvar + yvar - sqrt(4 * xycovar * xycovar + (xvar - yvar) * (xvar - yvar))))
 
         if lambda1 == 0:  # ill posed case
-            el = 1;
+            el = 1
         elif lambda2 == 0:  # ill posed case
-            el = sqrt((lambda2 + 1) / (lambda1 + 1));
+            el = sqrt((lambda2 + 1) / (lambda1 + 1))
         else:
-            el = sqrt(lambda2 / lambda1);
+            el = sqrt(lambda2 / lambda1)
 
         return el, alpha
 
@@ -547,8 +545,8 @@ def addAttributeRank(tree, attribute):
 
 @autoCreateAttribute("hog", None)
 def addAttributeHOG(tree, attribute, grayImage, orientationBins=8):
-    xGradient = simpleXGradient(grayImage)
-    yGradient = simpleYGradient(grayImage)
+    xGradient = HiPy.Util.Spatial.simpleXGradient(grayImage)
+    yGradient = HiPy.Util.Spatial.simpleYGradient(grayImage)
     children = addAttributeChildren(tree)
     magnitude = grayImage.getCopy(False)
     orientation = grayImage.getCopy(False)

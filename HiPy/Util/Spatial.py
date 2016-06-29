@@ -33,7 +33,7 @@ from _heapq import heappop
 
 # The fact that you are presently reading this means that you have had
 # knowledge of the CeCILL license and that you accept its terms.
-from HiPy.Util.Histogram import normalizeToByte
+
 
 '''
 Created on 6 juil. 2015
