@@ -34,7 +34,7 @@ Created on 3 juin 2015
 
 @author: perretb
 """
-from HiPy.Structures import Image, Embedding2dGrid, AdjacencyNdRegular, HiPyLogger
+from HiPy.Structures import Image, Embedding2dGrid, AdjacencyNdRegular, HiPyLogger, WeightedAdjacency
 
 
 def crop2d(image, xmin, xmax, ymin, ymax):
@@ -161,6 +161,20 @@ def reduceKhalimsky(image):
             res.setPixelWCS(image.getPixelWCS(x * 2 + 1, y * 2 + 1), x, y)
     return res
 
+def khalimskyToWeightedGraph(image):
+    w = image.embedding.width
+    h = image.embedding.height
+    sizeDest = [w // 2 + 1, h // 2 + 1]
+    adj4 = AdjacencyNdRegular.getAdjacency2d4(sizeDest)
+    e2 = Embedding2dGrid(*sizeDest)
+    def wf(i, j):
+        xi, yi = e2.fromLinearCoordinate(i)
+        if j == i + 1:
+            return image.getPixelWCS(2*xi+1, 2*yi)
+        else:
+            return image.getPixelWCS(2*xi, 2*yi+1)
+    adj = WeightedAdjacency.createAdjacency(adj4, wf)
+    return adj
 
 def imagePadding(image, borderValue=0):
     sizeOri = [image.embedding.width, image.embedding.height]
