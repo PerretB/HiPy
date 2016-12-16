@@ -44,6 +44,7 @@ import HiPy.Structures
 import HiPy.Util.VMath as VMath
 from functools import wraps
 import HiPy.Util.Spatial
+from HiPy.Util.Accumulator import BasicAccumulator
 
 
 def autoCreateAttribute(defaultName, defaultValue=0):
@@ -366,6 +367,63 @@ def addAttributeLevelStatistics(tree, attribute, levelImage=None):
             attribute[i] = [mean, mean2 - mean * mean]
 
 
+@autoCreateAttribute("levelHistogram", None)
+def addAttributeLevelHistogram(tree, attribute, bins, minValue=0, maxValue=1, levelImage=None):
+    """
+    (multivariate) histogram of level distribution
+    :param tree:
+    :param attribute:
+    :param levelImage:
+    :return:
+    """
+    if not levelImage:
+        levelImage = tree.level
+    children = addAttributeChildren(tree)
+    binSize = (maxValue-minValue)/bins
+
+    if type(levelImage[0]) is list or type(levelImage[0]) is tuple:
+        dim = len(levelImage[0])
+        for i in tree.iteratorFromLeavesToRoot():
+
+            op = []
+            for d in range(dim):
+                op.append([0]*bins)
+            if i < tree.nbPixels:
+                l = levelImage[i]
+                for d in range(dim):
+                    b = int(min(bins-1, floor((l[d]-minValue)/binSize)))
+                    op[d][b] = 1
+
+            attribute[i] = op
+
+        for i in tree.iteratorFromPixelsToRoot(includePixels=False):
+
+            for child in children[i]:
+                for d in range(dim):
+                    attribute[i][d] = VMath.addV(attribute[i][d], attribute[child][d])
+
+        for i in tree.iteratorFromPixelsToRoot(includePixels=False):
+            for d in range(dim):
+                attribute[i][d] = VMath.divS(attribute[i][d], sum(attribute[i][d]))
+    else:
+        for i in tree.iteratorFromLeavesToRoot():
+            op = [0]*bins
+            if i < tree.nbPixels:
+                l = levelImage[i]
+
+                b = int(min(bins-1, floor((l-minValue)/binSize)))
+                #print(str(l) + " -> " + str(b) + " (bsize " + str(binSize) + ") " + str(((l-minValue)/binSize)))
+                op[b] = 1
+            attribute[i] = op
+
+        for i in tree.iteratorFromPixelsToRoot(includePixels=False):
+            for child in children[i]:
+                attribute[i] = VMath.addV(attribute[i], attribute[child])
+
+        for i in tree.iteratorFromPixelsToRoot(includePixels=False):
+            attribute[i] = VMath.divS(attribute[i], sum(attribute[i]))
+
+
 @autoCreateAttribute("depth", 0)
 def addAttributeDepth(tree, attribute):
     for j in tree.iteratorFromRootToPixels():
@@ -474,6 +532,29 @@ def addAttributeFrontierLengthPartitionHierarchy(tree, attribute, adjacency):
                 attribute[edge[2]] += 1
 
 
+@autoCreateAttribute("frontierMeanLevel", 0)
+def addAttributeFrontierMeanLevelPartitionHierarchy(tree, attribute, adjacency, edgeWeights):
+    _computeAttributeFrontierStatPartitionHierarchy(tree, attribute, adjacency, BasicAccumulator.getMeanAccumulator(), edgeWeights)
+
+
+def _computeAttributeFrontierStatPartitionHierarchy(tree, attribute, adjacency, accumulator, level):
+    acc = BasicAccumulator.getMeanAccumulator()
+
+    for i in attribute.iterateOnPixels():
+        attribute[i] = accumulator.copy()
+        attribute[i].reset()
+
+    nodeMapping = HiPy.Hierarchies.WatershedHierarchy.computeSaliencyMap(tree, adjacency, lambda i: i)
+    for i in range(nodeMapping.nbPoints):
+        for edgei in nodeMapping.getOutEdgeIndices(i):
+            edge = nodeMapping.getEdgeFromIndex(edgei)
+            if edge[1] > edge[0]:
+                attribute[edge[2]].accumulate(level[edgei])
+
+    for i in attribute.iterateOnPixels():
+        attribute[i] = attribute[i].result()
+
+
 @autoCreateAttribute("compactness", 0)
 def addAttributeCompactness(tree, attribute):
     area = addAttributeArea(tree)
@@ -579,3 +660,47 @@ def addAttributeHOG(tree, attribute, grayImage, orientationBins=8):
 
     for i in attribute.iterateOnPixels():
         attribute[i] = VMath.divS(attribute[i], VMath.normEpsilon(attribute[i]))
+
+
+@autoCreateAttribute("bbox", None)
+def addAttributeBoundingBox(tree, attribute):
+    """
+    Compute the bounding box ((xmin,ymin),(xmax,ymax))  of each component
+    """
+    nbLeaves = tree.nbPixels
+    embedding = tree.leavesEmbedding
+    xmax = embedding.width
+    ymax = embedding.height
+    for i in tree.iteratorFromPixelsToRoot():
+        if i < nbLeaves:
+            c = embedding.fromLinearCoordinate(i)
+            x = c[0]
+            y = c[1]
+            yy = y * y
+            attribute[i] = ((x, y), (x, y))
+        else:
+            attribute[i] = ((xmax, ymax), (0, 0))
+
+    for i in tree.iteratorFromPixelsToRoot():
+        par = tree[i]
+        if par != -1:
+            m = attribute[i]
+            mp = attribute[par]
+            c1 = m[0]
+            c2 = m[1]
+            cp1 = mp[0]
+            cp2 = mp[1]
+            attribute[par] = ((min(c1[0], cp1[0]), min(c1[1], cp1[1])), (max(c2[0], cp2[0]), max(c2[1], cp2[1])))
+
+
+@autoCreateAttribute("bboxArea", 0)
+def addAttributeBoundingBoxArea(tree, attribute):
+    """
+    Compute the area of the bounding box of each component
+    """
+    bbox = addAttributeBoundingBox(tree)
+
+    for i in tree.iteratorFromPixelsToRoot():
+        b = bbox[i]
+        attribute[i] = (b[1][0] - b[0][0] + 1) * (b[1][1] - b[0][1] + 1)
+

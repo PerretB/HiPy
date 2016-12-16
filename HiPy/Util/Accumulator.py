@@ -113,7 +113,7 @@ class BasicAccumulator(AbstractAccumulator):
             values[0] += newValue
             values[1] += 1
 
-        return BasicAccumulator(accFun, lambda values: values[0] / values[1], [0, 0])
+        return BasicAccumulator(accFun, lambda values: values[0] / values[1] if values[1] != 0 else 0, [0, 0])
 
     @staticmethod
     def getMeanVAccumulator(dim):
