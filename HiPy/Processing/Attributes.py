@@ -322,7 +322,8 @@ def addAttributeElongationOrientation2d(tree, nameElongation="elongation", nameO
 @autoCreateAttribute("levelStatistics", None)
 def addAttributeLevelStatistics(tree, attribute, levelImage=None):
     """
-    [Mean Variance]
+    Gaussian model of level statistics (multivariate if levelImage is multivariate)
+    [Mean Variance(Co-variance)]
     :param tree:
     :param attribute:
     :param levelImage:
@@ -334,22 +335,52 @@ def addAttributeLevelStatistics(tree, attribute, levelImage=None):
     area = addAttributeArea(tree)
     meanSquare = attribute.getCopy(False)
 
-    if type(levelImage[0]) is list:
-        dim = len(levelImage[0])
-        for i in tree.iteratorOnLeaves():
-            attribute[i] = [levelImage[i], [0] * dim]
-            meanSquare[i] = VMath.multV(levelImage[i], levelImage[i])
-        for i in tree.iteratorFromPixelsToRoot(includePixels=False):
-            mean = [0] * dim
-            mean2 = [0] * dim
-            for child in children[i]:
-                mean = VMath.addV(mean, VMath.multS(attribute[child][0], area[child]))
-                mean2 = VMath.addV(mean2, VMath.multS(meanSquare[child], area[child]))
+    def compVarCovar(dim, m, m2):
+        res = []
+        for i in range(dim):
+            res.append([0]*dim)
 
-            mean = VMath.divS(mean, area[i])
-            mean2 = VMath.divS(mean2, area[i])
-            meanSquare[i] = mean2
-            attribute[i] = [mean, VMath.diffV(mean2, VMath.multV(mean, mean))]
+        c = 0
+        for i in range(dim):
+            for j in range(i,dim,1):
+
+                res[i][j] = m2[c] - m[i]*m[j]
+                #print(str(i) + " " + str(j) + " " + str(res[i][j]))
+                res[j][i] = res[i][j]
+                c += 1
+
+        #print("----")
+        #print(m)
+        #print(m2)
+        #print(res)
+        return res
+
+
+    if type(levelImage[0]) is list or type(levelImage[0]) is tuple:  # should use duck typing instead
+        mean = attribute.getCopy(False)
+        dim = len(levelImage[0])
+        dim2 = (dim * (dim + 1)) // 2
+        for i in tree.iteratorOnLeaves():
+            lvl = levelImage[i]
+            mean[i] = lvl
+            #meanSquare[i] = VMath.multV(levelImage[i], levelImage[i])
+            meanSquare[i] = [lvl[j]*lvl[k] for j in range(dim) for k in range(j, dim, 1)]
+
+        for i in tree.iteratorFromPixelsToRoot(includePixels=False):
+            mmean = [0] * dim
+            mmean2 = [0] * dim2
+            for child in children[i]:
+                mmean = VMath.addV(mmean, mean[child])
+                mmean2 = VMath.addV(mmean2, meanSquare[child])
+
+            #mean = VMath.divS(mean, area[i])
+            #mean2 = VMath.divS(mean2, area[i])
+            mean[i] = mmean
+            meanSquare[i] = mmean2
+        for i in tree.iteratorFromPixelsToRoot(includePixels=True):
+            m = VMath.divS(mean[i], area[i])
+            m2 = VMath.divS(meanSquare[i], area[i])
+            attribute[i] = [m, compVarCovar(dim, m, m2)]
     else:
         for i in tree.iteratorOnLeaves():
             attribute[i] = [levelImage[i], 0]
@@ -422,6 +453,45 @@ def addAttributeLevelHistogram(tree, attribute, bins, minValue=0, maxValue=1, le
 
         for i in tree.iteratorFromPixelsToRoot(includePixels=False):
             attribute[i] = VMath.divS(attribute[i], sum(attribute[i]))
+
+@autoCreateAttribute("chiSquareHistogramDistance", 0)
+def addAttributeChiSquareHistogramDistance(tree, attribute, histogramAttribute="levelHistogram"):
+    """
+    In a binary partition tree, Chi² distance between the histograms of the two children. (In case of multiband histogram,
+     the sum of the distance between each band)
+    """
+    hist = tree.getAttribute(histogramAttribute)
+    children = addAttributeChildren(tree)
+    if type(hist[0][0]) is list or type(hist[0][1]) is tuple:
+        dim = len(hist[0])
+        bins = len(hist[0][0])
+        for i in tree.iteratorFromPixelsToRoot(includePixels=False, includeRoot=True):
+            c1 = children[i][0]
+            c2 = children[i][1]
+            h1 = hist[c1]
+            h2 = hist[c2]
+            res = 0
+            for d in range(dim):
+                l1 = h1[d]
+                l2 = h2[d]
+                for b in range(bins):
+                    div = l1[b]+l2[b]
+                    if div > 0.000001:
+                        res += (l1[b]-l2[b])**2 / div
+            res /= (dim*bins)
+            attribute[i] = res
+    else:
+        bins = len(hist[0])
+        for i in tree.iteratorFromPixelsToRoot(includePixels=False, includeRoot=True):
+            c1 = children[i][0]
+            c2 = children[i][1]
+            h1 = hist[c1]
+            h2 = hist[c2]
+            res = 0
+            for b in range(bins):
+                res += (h1[b] - h2[b]) ** 2 / (h1[b] + h2[b])
+            res /= bins
+            attribute[i] = res
 
 
 @autoCreateAttribute("depth", 0)
@@ -538,7 +608,6 @@ def addAttributeFrontierMeanLevelPartitionHierarchy(tree, attribute, adjacency, 
 
 
 def _computeAttributeFrontierStatPartitionHierarchy(tree, attribute, adjacency, accumulator, level):
-    acc = BasicAccumulator.getMeanAccumulator()
 
     for i in attribute.iterateOnPixels():
         attribute[i] = accumulator.copy()
@@ -560,6 +629,8 @@ def addAttributeCompactness(tree, attribute):
     area = addAttributeArea(tree)
     perimeter = addAttributePerimeterComponentTree(tree)
     for i in tree.iteratorFromPixelsToRoot():
+        if perimeter[i]==0:
+            print("aezeqsdffsdf " +str(i) + " " + str(tree.getRoot()))
         attribute[i] = 4.0 * pi * area[i] / (perimeter[i] * perimeter[i])
 
 
@@ -703,4 +774,101 @@ def addAttributeBoundingBoxArea(tree, attribute):
     for i in tree.iteratorFromPixelsToRoot():
         b = bbox[i]
         attribute[i] = (b[1][0] - b[0][0] + 1) * (b[1][1] - b[0][1] + 1)
+
+
+@autoCreateAttribute("topologicalHeight", 0)
+def addAttributeTopologicalHeight(tree, attribute):
+    """
+    Compute the topological height of each node
+    """
+
+    for i in tree.iteratorFromPixelsToRoot(includeRoot=False):
+        p = tree[i]
+        attribute[p] = max(attribute[p], attribute[i]+1)
+
+
+@autoCreateAttribute("innerNodesMinTree", 0)
+def addAttributeInnerNodesMinTree(tree, attribute):
+    """
+    Number of inner nodes in tree/{leaves(tree)}
+    """
+
+    for i in tree.iteratorFromPixelsToRoot(includePixels=False,includeRoot=False):
+        attribute[tree[i]] = 1
+
+    for i in tree.iteratorFromPixelsToRoot(includePixels=False, includeRoot=False):
+        attribute[tree[i]] += attribute[i]
+
+
+@autoCreateAttribute("wassersteinDistance1", 0)
+def addAttributeWassersteinDistance1(tree, attribute, levelImage=None):
+    """
+    For binary partition tree, Wasserstein Distance 1 (EMD) between child 1 and child 2 assuming
+    a gaussian model of color distributions
+    """
+    import scipy.linalg
+    import numpy
+    stats = addAttributeLevelStatistics(tree, levelImage)
+    children = addAttributeChildren(tree)
+    area = addAttributeArea(tree)
+    for i in tree.iteratorFromPixelsToRoot(includePixels=False, includeRoot=True):
+        c1 = children[i][0]
+        c2 = children[i][1]
+        s1 = stats[c1]
+        s2 = stats[c2]
+        ss1 = numpy.sum(s1[1])
+        ss2 = numpy.sum(s2[1])
+        res = VMath.norm(VMath.diffV(s1[0], s2[0]))
+        tr1 = 0
+        tr2 = 0
+        if abs(ss1)>0.0001:
+            sqrt1 = scipy.linalg.sqrtm(s1[1])
+            #sqrt1, err1 = scipy.linalg.sqrtm(s1[1], disp=False)
+            tr1 = numpy.trace(sqrt1)
+            #if err1 >0.00001:
+            #    print(err1)
+            #    print(s1[1])
+
+        if abs(ss2)>0.0001:
+            sqrt2 = scipy.linalg.sqrtm(s2[1])
+            #sqrt2, err2 = scipy.linalg.sqrtm(s2[1], disp=False)
+            tr2 = numpy.trace(sqrt2)
+            #if err2 >0.00001:
+            #    print(err2)
+            #    print(s2[1])
+
+        res += abs(tr1-tr2)
+        attribute[i] = res
+
+@autoCreateAttribute("kleinClusterDistance", 0)
+def addAttributeKleinClusterDistance(tree, attribute, levelImage=None):
+    """
+    For binary partition tree, Wasserstein Distance 1(c1,c2) /  ( 1/Area(c1) + 1/Area(c2))   between child 1 and child 2
+    This considers a gaussian model of color distribution
+
+    arXiv:1609.06896v1
+    """
+    ws = addAttributeWassersteinDistance1(tree, levelImage)
+    area = addAttributeArea(tree)
+    children = addAttributeChildren(tree)
+    for i in tree.iteratorFromPixelsToRoot(includePixels=False, includeRoot=True):
+        c1 = children[i][0]
+        c2 = children[i][1]
+        attribute[i] = ws[i]/(1/area[c1] + 1/area[c2])
+
+@autoCreateAttribute("kleinSpatialDistance", 0)
+def addAttributeKleinSpatialDistance(tree, attribute, adjacency):
+    """
+    For binary partition tree, pow(area(c1)*area(c2),1/4)/common frontier length(c1,c2);  between child 1 and child 2
+    arXiv:1609.06896v1
+    """
+
+    area = addAttributeArea(tree)
+    children = addAttributeChildren(tree)
+    fl = addAttributeFrontierLengthPartitionHierarchy(tree, adjacency)
+    for i in tree.iteratorFromPixelsToRoot(includePixels=False, includeRoot=True):
+        c1 = children[i][0]
+        c2 = children[i][1]
+        attribute[i] = pow(area[c1]*area[c2], 0.25)/fl[i]
+
 

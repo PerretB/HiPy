@@ -111,10 +111,10 @@ def demoOptimalEnergyHierarchy():
 
 def main():
     print("--- Optimal energy cut")
-    #demoEnergyCut()
+    demoEnergyCut()
 
     print("--- Optimal energy cut hierarchy")
-    #demoOptimalEnergyCutHierarchy()
+    demoOptimalEnergyCutHierarchy()
 
     print("--- Optimal energy hierarchy")
     demoOptimalEnergyHierarchy()

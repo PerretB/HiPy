@@ -43,7 +43,7 @@ def constructMumfordShahEnergyBPT(image, baseAdjacency):
 
     vectorial = type(image[0]) is list
     # attributes on regions
-    regionStats = []  # (area, perimeterLength, mean, mean²)
+    regionStats = []  # (area, perimeterLength, mean, meanï¿½)
     optimalEnergies = []
 
     # attributes on edges
@@ -124,6 +124,13 @@ def constructMumfordShahEnergyBPT(image, baseAdjacency):
     return constructBPT(image, adjacency, computeFusionWeights)
 
 
+def trace(mat):
+    l = len(mat)
+    c = 0
+    for i in range(l):
+        c += mat[i][i]
+    return c
+
 
 @Attributes.autoCreateAttribute("mumfordShahEnergy", False)
 def addAttributeMumfordShahEnergy(tree, attribute, lambdaValue, levelImage):
@@ -141,7 +148,7 @@ def addAttributeMumfordShahEnergy(tree, attribute, lambdaValue, levelImage):
     levelStatistics = Attributes.addAttributeLevelStatistics(tree, levelImage)
     if type(levelStatistics[0][1]) is list:
         for i in tree.iteratorFromPixelsToRoot():
-            attribute[i] = sum(levelStatistics[i][1]) * area[i] + lambdaValue * perimeter[i]
+            attribute[i] = trace(levelStatistics[i][1]) * area[i] + lambdaValue * perimeter[i]
     else:
         for i in tree.iteratorFromPixelsToRoot():
             attribute[i] = levelStatistics[i][1] * area[i] + lambdaValue * perimeter[i]
@@ -203,7 +210,7 @@ def transformTreeToOptimalMumfordShahEnergyCutHierarchy(tree, levelImage):
     perimeter = Attributes.addAttributePerimeterPartitionHierarchy(tree, levelImage.adjacency, False)
     variance, created = tree.addAttribute("variance", 0)
     for i in tree.iteratorFromPixelsToRoot():
-        variance[i] = sum(stats[i][1]) * area[i]
+        variance[i] = trace(stats[i][1]) * area[i]
     return transformTreeToOptimalEnergyCutHierarchy(tree, variance, perimeter)
 
 
