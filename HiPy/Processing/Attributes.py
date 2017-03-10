@@ -45,7 +45,8 @@ import HiPy.Util.VMath as VMath
 from functools import wraps
 import HiPy.Util.Spatial
 from HiPy.Util.Accumulator import BasicAccumulator
-
+import numpy
+import scipy.linalg
 
 def autoCreateAttribute(defaultName, defaultValue=0):
     def decorator(fun):
@@ -401,7 +402,8 @@ def addAttributeLevelStatistics(tree, attribute, levelImage=None):
 @autoCreateAttribute("levelHistogram", None)
 def addAttributeLevelHistogram(tree, attribute, bins, minValue=0, maxValue=1, levelImage=None):
     """
-    (multivariate) histogram of level distribution
+    Histogram of level distribution,
+    if levelImage is multivariate then the histogram of each channel is computed independently
     :param tree:
     :param attribute:
     :param levelImage:
@@ -800,45 +802,50 @@ def addAttributeInnerNodesMinTree(tree, attribute):
         attribute[tree[i]] += attribute[i]
 
 
+def wassersteinDistance1(s1,s2):
+    ss1 = numpy.sum(s1[1])
+    ss2 = numpy.sum(s2[1])
+    res = VMath.norm(VMath.diffV(s1[0], s2[0]))
+    tr1 = 0
+    tr2 = 0
+    if abs(ss1) > 0.0001:
+        sqrt1 = scipy.linalg.sqrtm(s1[1])
+        tr1 = numpy.trace(sqrt1)
+
+    if abs(ss2) > 0.0001:
+        sqrt2 = scipy.linalg.sqrtm(s2[1])
+        tr2 = numpy.trace(sqrt2)
+
+    res += abs(tr1 - tr2)
+    return res
+
 @autoCreateAttribute("wassersteinDistance1", 0)
 def addAttributeWassersteinDistance1(tree, attribute, levelImage=None):
     """
     For binary partition tree, Wasserstein Distance 1 (EMD) between child 1 and child 2 assuming
     a gaussian model of color distributions
     """
+
+    stats = addAttributeLevelStatistics(tree, levelImage)
+    children = addAttributeChildren(tree)
+
+    for i in tree.iteratorFromPixelsToRoot(includePixels=False, includeRoot=True):
+        attribute[i] = wassersteinDistance1(stats[children[i][0]], stats[children[i][1]])
+
+
+@autoCreateAttribute("wassersteinDistance1ParentChild", 0)
+def addAttributeWassersteinDistance1ParentChild(tree, attribute, levelImage=None):
+    """
+    For binary partition tree, Wasserstein Distance 1 (EMD) between current node and its father assuming
+    a gaussian model of color distributions
+    """
     import scipy.linalg
     import numpy
     stats = addAttributeLevelStatistics(tree, levelImage)
-    children = addAttributeChildren(tree)
-    area = addAttributeArea(tree)
-    for i in tree.iteratorFromPixelsToRoot(includePixels=False, includeRoot=True):
-        c1 = children[i][0]
-        c2 = children[i][1]
-        s1 = stats[c1]
-        s2 = stats[c2]
-        ss1 = numpy.sum(s1[1])
-        ss2 = numpy.sum(s2[1])
-        res = VMath.norm(VMath.diffV(s1[0], s2[0]))
-        tr1 = 0
-        tr2 = 0
-        if abs(ss1)>0.0001:
-            sqrt1 = scipy.linalg.sqrtm(s1[1])
-            #sqrt1, err1 = scipy.linalg.sqrtm(s1[1], disp=False)
-            tr1 = numpy.trace(sqrt1)
-            #if err1 >0.00001:
-            #    print(err1)
-            #    print(s1[1])
 
-        if abs(ss2)>0.0001:
-            sqrt2 = scipy.linalg.sqrtm(s2[1])
-            #sqrt2, err2 = scipy.linalg.sqrtm(s2[1], disp=False)
-            tr2 = numpy.trace(sqrt2)
-            #if err2 >0.00001:
-            #    print(err2)
-            #    print(s2[1])
+    for i in tree.iteratorFromPixelsToRoot(includePixels=False, includeRoot=False):
+        attribute[i] = wassersteinDistance1(stats[i], stats[tree[i]])
 
-        res += abs(tr1-tr2)
-        attribute[i] = res
 
 @autoCreateAttribute("kleinClusterDistance", 0)
 def addAttributeKleinClusterDistance(tree, attribute, levelImage=None):
@@ -856,6 +863,21 @@ def addAttributeKleinClusterDistance(tree, attribute, levelImage=None):
         c2 = children[i][1]
         attribute[i] = ws[i]/(1/area[c1] + 1/area[c2])
 
+
+@autoCreateAttribute("kleinClusterDistanceParentChild", 0)
+def addAttributeKleinClusterDistanceParentChild(tree, attribute, levelImage=None):
+    """
+    For binary partition tree, Wasserstein Distance 1(c1,c2) /  ( 1/Area(c1) + 1/Area(c2))   between child 1 and child 2
+    This considers a gaussian model of color distribution
+
+    arXiv:1609.06896v1
+    """
+    ws = addAttributeWassersteinDistance1ParentChild(tree, levelImage)
+    area = addAttributeArea(tree)
+    for i in tree.iteratorFromPixelsToRoot(includePixels=False, includeRoot=False):
+        attribute[i] = ws[i]/(1/area[i] + 1/area[tree[i]])
+
+
 @autoCreateAttribute("kleinSpatialDistance", 0)
 def addAttributeKleinSpatialDistance(tree, attribute, adjacency):
     """
@@ -871,4 +893,43 @@ def addAttributeKleinSpatialDistance(tree, attribute, adjacency):
         c2 = children[i][1]
         attribute[i] = pow(area[c1]*area[c2], 0.25)/fl[i]
 
+
+@autoCreateAttribute("levelVariance", 0)
+def addAttributeLevelVariance(tree, attribute, levelImage=None):
+    """
+    Variance of level inside the region (sum of variances in case of multi channel level image)
+    """
+    stats = addAttributeLevelStatistics(tree, levelImage)
+    if type(levelImage[0]) is list or type(levelImage[0]) is tuple:  # should use duck typing instead
+        dim = len(levelImage[0])
+        for i in tree.iteratorFromPixelsToRoot():
+            varcovar = stats[i][1]
+            attribute[i] = sum([varcovar[j][j] for j in range(dim)])
+    else:
+        for i in tree.iteratorFromPixelsToRoot():
+            attribute[i] = stats[i][1]
+
+
+@autoCreateAttribute("levelEntropy", 0)
+def addAttributeLevelEntropy(tree, attribute, histogramAttribute="levelHistogram"):
+    """
+    Entropy of the given histogram attribute
+    -sum_i(p_i.*log2(p_i)) p_i is the value of the i-th bin of the histogram
+    In case of multivariate histogram, the sum of the independent histogram is computed
+    """
+    hists = tree.getAttribute(histogramAttribute)
+
+    def getEntropy(hist):
+        return -sum([p*log2(p) for p in hist if p != 0])
+
+    if type(hists[-1]) is list or type(hists[-1]) is tuple:  # should use duck typing instead
+
+        for i in tree.iteratorFromPixelsToRoot():
+            res = 0
+            for h in hists[i]:
+                res += getEntropy(h)
+            attribute[i] = res
+    else:
+        for i in tree.iteratorFromPixelsToRoot():
+            attribute[i] = getEntropy(hists[i])
 
