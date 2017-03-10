@@ -126,14 +126,14 @@ def addAttributeChildrenLogical(tree, attribute):
 
 
 @autoCreateAttribute("volume", 0)
-def addAttributeVolume(tree, attribute):
+def addAttributeVolume(tree, attribute, levelAttribute="level"):
     area = addAttributeArea(tree)
-
+    level = tree.getAttribute(levelAttribute)
     for i in tree.iteratorFromPixelsToRoot(True):
         par = tree[i]
         if par != -1:
-            lvl = tree.level[i]
-            lvlPar = tree.level[par]
+            lvl = level[i]
+            lvlPar = level[par]
             v = abs(lvl - lvlPar) * area[i]
             attribute[i] = attribute[i] + v
             attribute[par] = attribute[par] + v
