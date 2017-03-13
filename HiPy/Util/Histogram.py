@@ -173,6 +173,21 @@ def combineBands(*args: "Image"):
     return res
 
 
+def extractBand(image, bandNumber):
+    """
+    Extract a single band (scalar image) from a multi-band (vectorial) image
+    :param image: multi-band image
+    :param bandNumber: band number
+    :return: scalar image i such that i[p] = image[p][bandNumber] for any pixel p
+    """
+    res = image.getCopy(copyData=False)
+
+    for i in res.iterateOnPixels():
+        res[i] = image[i][bandNumber]
+
+    return res
+
+
 def median(*args: "Image"):
     '''
     Compute the median of several scalar images.
