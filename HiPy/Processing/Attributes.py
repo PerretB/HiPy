@@ -330,7 +330,7 @@ def addAttributeLevelStatistics(tree, attribute, levelImage=None):
     :param levelImage:
     :return:
     """
-    if not levelImage:
+    if levelImage is None:
         levelImage = tree.level
     children = addAttributeChildren(tree)
     area = addAttributeArea(tree)
@@ -355,7 +355,6 @@ def addAttributeLevelStatistics(tree, attribute, levelImage=None):
         #print(m2)
         #print(res)
         return res
-
 
     if type(levelImage[0]) is list or type(levelImage[0]) is tuple:  # should use duck typing instead
         mean = attribute.getCopy(False)
@@ -409,7 +408,7 @@ def addAttributeLevelHistogram(tree, attribute, bins, minValue=0, maxValue=1, le
     :param levelImage:
     :return:
     """
-    if not levelImage:
+    if levelImage is None:
         levelImage = tree.level
     children = addAttributeChildren(tree)
     binSize = (maxValue-minValue)/bins
@@ -497,7 +496,6 @@ def addAttributeChiSquareHistogramDistanceParentChild(tree, attribute, histogram
      the normalized sum of the distance between each band)
     """
     hist = tree.getAttribute(histogramAttribute)
-    children = addAttributeChildren(tree)
     if type(hist[0][0]) is list or type(hist[0][1]) is tuple:
         dim = len(hist[0])
         for i in tree.iteratorFromPixelsToRoot(includePixels=False, includeRoot=False):
