@@ -456,44 +456,61 @@ def addAttributeLevelHistogram(tree, attribute, bins, minValue=0, maxValue=1, le
         for i in tree.iteratorFromPixelsToRoot(includePixels=False):
             attribute[i] = VMath.divS(attribute[i], sum(attribute[i]))
 
+
+def chiSquareHistogramDistance(h1, h2):
+    res = 0
+    for b in range(len(h1)):
+        div = h1[b] + h2[b]
+        if div > 0.000001:
+            res += (h1[b] - h2[b]) * (h1[b] - h2[b]) / div
+    res /= len(h1)
+    return res
+
+
 @autoCreateAttribute("chiSquareHistogramDistance", 0)
 def addAttributeChiSquareHistogramDistance(tree, attribute, histogramAttribute="levelHistogram"):
     """
     In a binary partition tree, Chi² distance between the histograms of the two children. (In case of multiband histogram,
-     the sum of the distance between each band)
+     the normalized sum of the distance between each band)
     """
     hist = tree.getAttribute(histogramAttribute)
     children = addAttributeChildren(tree)
     if type(hist[0][0]) is list or type(hist[0][1]) is tuple:
         dim = len(hist[0])
-        bins = len(hist[0][0])
         for i in tree.iteratorFromPixelsToRoot(includePixels=False, includeRoot=True):
-            c1 = children[i][0]
-            c2 = children[i][1]
-            h1 = hist[c1]
-            h2 = hist[c2]
+            h1 = hist[children[i][0]]
+            h2 = hist[children[i][1]]
             res = 0
             for d in range(dim):
-                l1 = h1[d]
-                l2 = h2[d]
-                for b in range(bins):
-                    div = l1[b]+l2[b]
-                    if div > 0.000001:
-                        res += (l1[b]-l2[b])**2 / div
-            res /= (dim*bins)
+                res += chiSquareHistogramDistance(h1[d], h2[d])
+            res /= dim
             attribute[i] = res
     else:
-        bins = len(hist[0])
         for i in tree.iteratorFromPixelsToRoot(includePixels=False, includeRoot=True):
-            c1 = children[i][0]
-            c2 = children[i][1]
-            h1 = hist[c1]
-            h2 = hist[c2]
+            attribute[i] = chiSquareHistogramDistance(hist[children[i][0]], hist[children[i][1]])
+
+
+@autoCreateAttribute("chiSquareHistogramDistanceParentChild", 0)
+def addAttributeChiSquareHistogramDistanceParentChild(tree, attribute, histogramAttribute="levelHistogram"):
+    """
+    In a binary partition tree, Chi² distance between the histograms of the two children. (In case of multiband histogram,
+     the normalized sum of the distance between each band)
+    """
+    hist = tree.getAttribute(histogramAttribute)
+    children = addAttributeChildren(tree)
+    if type(hist[0][0]) is list or type(hist[0][1]) is tuple:
+        dim = len(hist[0])
+        for i in tree.iteratorFromPixelsToRoot(includePixels=False, includeRoot=False):
+            h1 = hist[i]
+            h2 = hist[tree[i]]
             res = 0
-            for b in range(bins):
-                res += (h1[b] - h2[b]) ** 2 / (h1[b] + h2[b])
-            res /= bins
+            for d in range(dim):
+                res += chiSquareHistogramDistance(h1[d], h2[d])
+            res /= dim
             attribute[i] = res
+    else:
+        for i in tree.iteratorFromPixelsToRoot(includePixels=False, includeRoot=False):
+            attribute[i] = chiSquareHistogramDistance(hist[i], hist[tree[i]])
 
 
 @autoCreateAttribute("depth", 0)
