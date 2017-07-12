@@ -123,6 +123,26 @@ class BasicAccumulator(AbstractAccumulator):
 
         return BasicAccumulator(accFun, lambda values: VMath.divS(values[0], values[1]), [[0]*dim, 0])
 
+    @staticmethod
+    def getStatAccumulator():
+        """
+        Compute vector of simple statistics (count, mean, variance, min, max)
+        :return:
+        """
+        def accFun(values, newValue, *_):
+            values[0] += 1
+            values[1] += newValue
+            values[2] += newValue*newValue
+            values[3] = min(values[3], newValue)
+            values[4] = max(values[3], newValue)
+
+        def resFun(values):
+            if values[0] != 0:
+                mean = values[1]/values[0]
+                return values[0], mean, values[2]/values[0]-mean*mean, values[3], values[4]
+            return values
+
+        return BasicAccumulator(accFun, resFun, [0, 0, 0, float("inf"), float("-inf")])
 
     @staticmethod
     def getMedianAccumulator():

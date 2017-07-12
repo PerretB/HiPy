@@ -619,8 +619,62 @@ def addAttributeFrontierLengthPartitionHierarchy(tree, attribute, adjacency):
                 attribute[edge[2]] += 1
 
 
+@autoCreateAttribute("contourLevelStat", [0, 0, 0])
+def addAttributeContourLevelStatPartitionHierarchy(tree, attribute, adjacency, edgeWeights):
+    """
+    Statistics computed on the contour a component : (number of out edges, mean out edge value, variance)
+    """
+    frontierLevelStat = addAttributeFrontierLevelStatPartitionHierarchy(tree, adjacency, edgeWeights)
+
+    for i in tree.iteratorOnPixels():
+        a = attribute[i]
+        for (_, _, w) in adjacency.getOutEdges(i):
+            a[0] += 1
+            a[1] += w
+            a[2] += w*w
+
+    for i in tree.iteratorFromPixelsToRoot():
+        a = attribute[i]
+
+        f = frontierLevelStat[i]
+        # frontier removal
+        a[0] -= 2 * f[0]
+        sumf = f[1]*f[0]
+        a[1] -= 2 * sumf
+        sumsquaref = (f[2]+f[1]*f[1])*f[0]
+        a[2] -= 2 * sumsquaref
+
+        if tree[i] != -1:
+            ap = attribute[tree[i]]
+            # accumulate on parent
+            ap[0] += a[0]
+            ap[1] += a[1]
+            ap[2] += a[2]
+
+        # mean/ variance
+        if a[0] != 0:
+            a[1] /= a[0]
+            a[2] = a[2]/a[0] - a[1]*a[1]
+
+
+@autoCreateAttribute("frontierStatLevel", 0)
+def addAttributeFrontierLevelStatPartitionHierarchy(tree, attribute, adjacency, edgeWeights):
+    """
+    Statistics computed on the frontier inside a component : (number of edges, mean edge value, variance, min, max)
+    """
+    _computeAttributeFrontierStatPartitionHierarchy(tree, attribute, adjacency, BasicAccumulator.getStatAccumulator(), edgeWeights)
+
+
 @autoCreateAttribute("frontierMeanLevel", 0)
 def addAttributeFrontierMeanLevelPartitionHierarchy(tree, attribute, adjacency, edgeWeights):
+    """
+    Mean edge values on the frontier inside a component
+    :param tree:
+    :param attribute:
+    :param adjacency:
+    :param edgeWeights:
+    :return:
+    """
     _computeAttributeFrontierStatPartitionHierarchy(tree, attribute, adjacency, BasicAccumulator.getMeanAccumulator(), edgeWeights)
 
 
@@ -634,7 +688,7 @@ def _computeAttributeFrontierStatPartitionHierarchy(tree, attribute, adjacency, 
     for i in range(nodeMapping.nbPoints):
         for edgei in nodeMapping.getOutEdgeIndices(i):
             edge = nodeMapping.getEdgeFromIndex(edgei)
-            if edge[1] > edge[0]:
+            if edge[0] == i:
                 attribute[edge[2]].accumulate(level[edgei])
 
     for i in attribute.iterateOnPixels():
@@ -643,16 +697,26 @@ def _computeAttributeFrontierStatPartitionHierarchy(tree, attribute, adjacency, 
 
 @autoCreateAttribute("compactness", 0)
 def addAttributeCompactness(tree, attribute):
+    """
+    Compactness is 4*pi*area / perimeter length^2
+    :param tree:
+    :param attribute:
+    :return:
+    """
     area = addAttributeArea(tree)
     perimeter = addAttributePerimeterComponentTree(tree)
     for i in tree.iteratorFromPixelsToRoot():
-        if perimeter[i]==0:
-            print("aezeqsdffsdf " +str(i) + " " + str(tree.getRoot()))
         attribute[i] = 4.0 * pi * area[i] / (perimeter[i] * perimeter[i])
 
 
 @autoCreateAttribute("complexity", 0)
 def addAttributeComplexity(tree, attribute):
+    """
+    Complexity is perimeter length / area
+    :param tree:
+    :param attribute:
+    :return:
+    """
     area = addAttributeArea(tree)
     perimeter = addAttributePerimeterComponentTree(tree)
     for i in tree.iteratorFromPixelsToRoot():
