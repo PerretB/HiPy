@@ -103,8 +103,19 @@ def testContinuousInterpolation():
                   1, 1, 1, 1, 1, 1])
 
     tree = constructComponentTree(image, ComponentTreeType.TreeOfShapes)
-    drawGraphVisualisation("Results/continuousInterpolation_TreeOfShapes.pdf",tree)
+    drawGraphVisualisation("Results/continuousInterpolation_TreeOfShapes.pdf", tree, attributes=["level"])
 
+
+def testSmall():
+    image = Image(45, embedding=Embedding2dGrid(9, 5))
+    image.setAll([1, 1, 1, 1, 1, 1, 1, 1, 1,
+                  1, 2, 2, 2, 1, 0, 0, 0, 1,
+                  1, 2, 1, 3, 1, 0, 5, 0, 1,
+                  1, 2, 2, 4, 1, 0, 0, 0, 1,
+                  1, 1, 1, 1, 1, 1, 1, 1, 1])
+
+    tree = constructComponentTree(image, ComponentTreeType.TreeOfShapes)
+    drawGraphVisualisation("Results/small_TreeOfShapes.pdf", tree, attributes=["level"])
 
 def main():
     """
@@ -113,6 +124,8 @@ def main():
     """
     HiPyLogger.setLevel(logging.DEBUG)
     print("--- Small example tree of shapes")
+    testSmall()
+    print("--- Continuous interpolation tree of shapes")
     testContinuousInterpolation()
     print("--- Grain filter on the tree of shapes")
     testAreaFilter()
