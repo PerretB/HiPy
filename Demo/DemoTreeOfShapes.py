@@ -39,11 +39,11 @@ Created on 9 juin 2015
 """
 from HiPy.Hierarchies.ComponentTree import constructComponentTree, ComponentTreeType
 
-from HiPy.Structures import AdjacencyNdRegular, Tree, HiPyLogger
+from HiPy.Structures import AdjacencyNdRegular, Tree, HiPyLogger, Image, Embedding2dGrid
 from HiPy.Util.Histogram import imageInverseGrayByte
 from HiPy.Util.Geometry2d import imagePadding, reduceKhalimsky, removeBorder
 from HiPy.Processing.Attributes import addAttributeArea
-from HiPy.IO import readImage, saveImage
+from HiPy.IO import readImage, saveImage, drawGraphVisualisation
 import logging
 
 
@@ -94,17 +94,30 @@ def testAreaFilter():
     saveImage(reconstruction, resultName)
 
 
+def testContinuousInterpolation():
+    image = Image(30, embedding=Embedding2dGrid(6, 5))
+    image.setAll([1, 1, 1, 1, 1, 1,
+                  1, 0, 0, 3, 3, 1,
+                  1, 0, 1, 1, 3, 1,
+                  1, 0, 0, 3, 3, 1,
+                  1, 1, 1, 1, 1, 1])
+
+    tree = constructComponentTree(image, ComponentTreeType.TreeOfShapes)
+    drawGraphVisualisation("Results/continuousInterpolation_TreeOfShapes.pdf",tree)
+
+
 def main():
     """
     Simple demo function launcher.
     :return: void
     """
     HiPyLogger.setLevel(logging.DEBUG)
+    print("--- Small example tree of shapes")
+    testContinuousInterpolation()
     print("--- Grain filter on the tree of shapes")
     testAreaFilter()
     print("--- Experimental assessment of the self duality")
     testSelfDuality()
-
 
 if __name__ == '__main__':
     main()
