@@ -134,7 +134,7 @@ class BasicAccumulator(AbstractAccumulator):
             values[1] += newValue
             values[2] += newValue*newValue
             values[3] = min(values[3], newValue)
-            values[4] = max(values[3], newValue)
+            values[4] = max(values[4], newValue)
 
         def resFun(values):
             if values[0] != 0:
