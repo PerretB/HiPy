@@ -212,7 +212,7 @@ class Image(list):
         """
         return range(len(self))
 
-    def addAttribute(self, name: str, defaultValue: "void*"=None, resetIfExist: bool=False) -> ("Image", bool):
+    def addAttribute(self, name: str, defaultValue: "void*/Image"=None, resetIfExist: bool=False) -> ("Image", bool):
         """
         Creates a new attribute image called with the given name and initialized with the given default value.
         The attribute image has the same size as the current image. The attribute is automatically added to
@@ -223,13 +223,17 @@ class Image(list):
         In all cases the attribute with the given name is returned. The method also returns if a new attribute image
         has been created.
         :param name: name of the attribute to create
-        :param defaultValue: the initialisation value of the attribute image
+        :param defaultValue: the initialisation value of the attribute Image. If defaultValue is an Image, it is
+            directly used as the attribute
         :param resetIfExist: indicates is a new attribute image must be created is an attribute with the same name \
             already exists.
         :return: (attribute image, new attribute image created?)
         """
         if name not in self.__dict__ or resetIfExist:
-            image = Image(len(self), defaultValue, self.adjacency, self.embedding)
+            if not isinstance(defaultValue, Image):
+                image = Image(len(self), defaultValue, self.adjacency, self.embedding)
+            else:
+                image = defaultValue
             self.__dict__[name] = image
             self.attributes[name] = image
             return image, True
@@ -1321,6 +1325,9 @@ class Tree(Image):
 
         The level of the nodes in the new tree is given by the level function.
 
+        The returned tree is equipped with an attribute "nodeMap" such that for any node i of the new tree,
+        nodeMap[i] is the index of i in the input tree.
+
         The criterion is a function that takes two argument: a node index and its parent index and returns
         True (this node must be deleted), or False (do not delete node i). The parent index is the updated index (after
         node removal) and may differ from its parent index in the current tree.
@@ -1359,12 +1366,14 @@ class Tree(Image):
         # new relations with correct size
         newParent = [-1] * (nbNodes - count)
         newLevel = [0] * (nbNodes - count)
+        nodeMap = [0] * (nbNodes - count)
 
         count = 0
         for i in range(0, nbNodes - 1):
             if not deleted[i]:
                 par = copyParent[i]
                 newPar = par - deletedMap[par]
+                nodeMap[count] = i
                 newParent[count] = newPar
                 newLevel[count] = levelFunction(i)
                 count += 1
@@ -1373,7 +1382,7 @@ class Tree(Image):
 
         newTree = Tree(self.treeType, newParent, newLevel)
         newTree.leavesAdjacency = self.leavesAdjacency
-
+        newTree.addAttribute("nodeMap", defaultValue=nodeMap)
         return newTree
 
     def simplifyTreeByAttribute(self, attributeName, levelName="level"):
