@@ -1366,7 +1366,7 @@ class Tree(Image):
         # new relations with correct size
         newParent = [-1] * (nbNodes - count)
         newLevel = [0] * (nbNodes - count)
-        nodeMap = [0] * (nbNodes - count)
+        nodeMap = Image(nbNodes - count)
 
         count = 0
         for i in range(0, nbNodes - 1):
@@ -1381,7 +1381,10 @@ class Tree(Image):
         newLevel[count] = levelFunction(self.getRoot())
 
         newTree = Tree(self.treeType, newParent, newLevel)
-        newTree.leavesAdjacency = self.leavesAdjacency
+        if self.leavesAdjacency:
+            newTree.leavesAdjacency = self.leavesAdjacency
+        if self.leavesEmbedding:
+            newTree.leavesEmbedding = self.leavesEmbedding
         newTree.addAttribute("nodeMap", defaultValue=nodeMap)
         return newTree
 
