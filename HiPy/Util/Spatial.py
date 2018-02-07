@@ -42,10 +42,14 @@ Created on 6 juil. 2015
 '''
 
 import HiPy.Structures
+import HiPy.Util.Accumulator
 from HiPy.Util.Accumulator import BasicAccumulator
 
 
-def spatialFilter(image, adjacency, accumulator):
+def spatialFilter(image: HiPy.Structures.Image,
+                  adjacency: HiPy.Structures.AbstractAdjacency,
+                  accumulator: HiPy.Util.Accumulator.AbstractAccumulator) \
+        -> HiPy.Structures.Image:
     res = image.getCopy(False)
     for i in image.iterateOnPixels():
         accumulator.reset()
@@ -80,11 +84,37 @@ def constructAdjacencyFromStructuringElement(image, structuringElement):
 
 
 def getCrossStructuringElement():
-    return [(0, -1), (-1, 0), (0, 0), (1, 0), (0, 1)]
+    return getDiamondStructuringElement()
 
 
-def getSquareStructuringElement():
-    return [(-1, -1), (0, -1), (1, -1), (-1, 0), (0, 0), (1, 0), (-1, 1), (0, 1), (1, 1)]
+def getSquareStructuringElement(maxHalfWidth=1):
+    """
+    Return a square shape structuring element
+    :param maxHalfWidth: maxHalfWidth: the width (and height) of the square will be 2*maxHalfWidth + 1
+    :return:
+    """
+    points = []
+    maxWidth = 2 * maxHalfWidth + 1
+    for y in range(-maxHalfWidth, maxHalfWidth+1, 1):
+        for x in range(-maxHalfWidth, maxHalfWidth + 1, 1):
+            points.append((x, y))
+    return points
+
+
+def getDiamondStructuringElement(maxHalfWidth=1):
+    """
+    Return a diamond shape structuring element
+    :param maxHalfWidth: the width (and height) of the diamond will be 2*maxHalfWidth + 1
+    :return:
+    """
+    points = []
+    maxWidth = 2 * maxHalfWidth + 1
+    for i in range(maxWidth):
+        height = i - maxHalfWidth
+        halfWidth = maxHalfWidth - abs(i - maxHalfWidth)
+        for x in range(-halfWidth, halfWidth+1, 1):
+            points.append((x, height))
+    return points
 
 
 def simpleXGradient(image):
@@ -96,16 +126,8 @@ def simpleYGradient(image):
     adj = HiPy.Structures.AdjacencyNdRegular(image.embedding, neighbourList=[(0, -1), (0, 1)], weights=[-1, 1])
     return spatialFilter(image, adj, BasicAccumulator.getWeightedSumAccumulator())
 
-    # image = readImage("../../samples/lennaGray256.png")
-    # image.adjacency = AdjacencyNdRegular.getAdjacency2d4(image.embedding.size)
-    # bigSquareAdj = WeightedAdjacency.createKHopAjacency(image.adjacency, 6, lambda *_:1)
-    # res = spatialFilter(image,bigSquareAdj,BasicAccumulator.getMaxAccumulator())
-#     # saveImage(res,"bigdil.png")
-# image = readImage("../../samples/lennaGray256.png", grayScale=True)
-# xg = simpleXGradient(image)
-# yg = simpleYGradient(image)
-#
-# xg = normalizeToByte(xg)
-# yg = normalizeToByte(yg)
-# saveImage(xg, "f:/xg.png")
-# saveImage(yg, "f:/yg.png")
+
+if __name__ == "__main__":
+    print(getSquareStructuringElement(1))
+    print(getSquareStructuringElement(2))
+    print(getSquareStructuringElement(3))

@@ -72,7 +72,6 @@ class BasicAccumulator(AbstractAccumulator):
     def copy(self):
         return BasicAccumulator(self.accumulateFunction, self.resultFunction, self.resetValues)
 
-
     @staticmethod
     def getCounterAccumulator():
         def accFun(values, newValue, *_):
@@ -158,3 +157,20 @@ class BasicAccumulator(AbstractAccumulator):
             values[1] += weight
 
         return BasicAccumulator(accFun, lambda values: values[0] / values[1] if normalize else values[0], [0, 0])
+
+    @staticmethod
+    def getAnyDifferenceAccumulator():
+        """
+        An accumulator that returns False if all the values it has seen are equal and True otherwise
+        :return:
+        """
+        def accFun(values, newValue, *_):
+            # values[0] is None before first call to accFun, then it holds the accumulator result
+            # values[1] is None before first call to accFun, then it holds the firs value seen by the accumulator
+            if values[0] is None:
+                values[0] = False
+                values[1] = newValue
+            elif not values[0] and values[1] != newValue:
+                values[0] = True
+
+        return BasicAccumulator(accFun, lambda values: values[0], [None, None])
