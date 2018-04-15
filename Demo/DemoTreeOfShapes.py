@@ -42,7 +42,7 @@ from HiPy.Hierarchies.ComponentTree import constructComponentTree, ComponentTree
 from HiPy.Structures import AdjacencyNdRegular, Tree, HiPyLogger, Image, Embedding2dGrid
 from HiPy.Util.Histogram import imageInverseGrayByte
 from HiPy.Util.Geometry2d import imagePadding, reduceKhalimsky, removeBorder
-from HiPy.Processing.Attributes import addAttributeArea
+from HiPy.Processing.Attributes import addAttributeArea, autoCreateAttribute
 from HiPy.IO import readImage, saveImage, drawGraphVisualisation
 import logging
 
@@ -107,6 +107,7 @@ def testContinuousInterpolation():
 
 
 def testSmall():
+
     image = Image(45, embedding=Embedding2dGrid(9, 5))
     image.setAll([1, 1, 1, 1, 1, 1, 1, 1, 1,
                   1, 2, 2, 2, 1, 0, 0, 0, 1,
@@ -115,6 +116,23 @@ def testSmall():
                   1, 1, 1, 1, 1, 1, 1, 1, 1])
 
     tree = constructComponentTree(image, ComponentTreeType.TreeOfShapes)
+    embeddingKhalimsky = Embedding2dGrid(9*2-1, 5*2-1) # size of interpolated image is [2*w-1, 2*h-1]
+
+    @autoCreateAttribute("area", 0)
+    def addAttributeAreaTOS(tree, attribute):
+        for i in tree.iteratorFromPixelsToRoot(True):
+            if i < tree.nbPixels:
+                x, y = embeddingKhalimsky.fromLinearCoordinate(i)
+                if x % 2 == 0 and y % 2 == 0: # original pixels have even coordinates
+                    attribute[i] = 1
+            par = tree[i]
+            if par != -1:
+                attribute[par] += attribute[i]
+
+    addAttributeAreaTOS(tree)
+    reconstruction = tree.reconstructImage("level", lambda x: tree.area[x] <= 2)
+    reconstruction = reduceKhalimsky(reconstruction)
+    print(reconstruction)
     drawGraphVisualisation("Results/small_TreeOfShapes.pdf", tree, attributes=["level"])
 
 def main():

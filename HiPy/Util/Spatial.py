@@ -46,10 +46,9 @@ import HiPy.Util.Accumulator
 from HiPy.Util.Accumulator import BasicAccumulator
 
 
-def spatialFilter(image: HiPy.Structures.Image,
-                  adjacency: HiPy.Structures.AbstractAdjacency,
-                  accumulator: HiPy.Util.Accumulator.AbstractAccumulator) \
-        -> HiPy.Structures.Image:
+def spatialFilter(image,
+                  adjacency,
+                  accumulator):
     res = image.getCopy(False)
     for i in image.iterateOnPixels():
         accumulator.reset()
