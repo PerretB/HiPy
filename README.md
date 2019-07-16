@@ -1,3 +1,5 @@
+**HiPy is not maintained anymore: checkout the new library https://github.com/PerretB/Higra with improved performances**
+
 # HiPy
 Hierarchical image representation in Python
 
